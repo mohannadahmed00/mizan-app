@@ -9,6 +9,5 @@ enum class Category {
     QURAN,
     ADKAR,
     FAST,
-    JUMAAH,
     OTHER
 }
