@@ -7,7 +7,7 @@ class TaskCompletionTest {
 
     @Test
     fun `task completion correctly stores task id and date`() {
-        val date = CompactDate(Date(1, 1, 1445), Date(1, 1, 2024))
+        val date = CompactDate(SimpleDate(1, 1, 1445), SimpleDate(1, 1, 2024))
         val taskCompletion = TaskCompletion(taskId = 100L, date = date)
         
         assertThat(taskCompletion.taskId).isEqualTo(100L)

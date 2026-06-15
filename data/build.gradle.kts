@@ -23,6 +23,10 @@ android {
 }
 
 dependencies {
+    implementation(project(":domain"))
+
+    implementation(libs.kotlinx.datetime)
+
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)

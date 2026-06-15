@@ -3,11 +3,11 @@ package com.giraffe.domain.model
 import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.Test
 
-class DateTest {
+class SimpleDateTest {
 
     @Test
     fun `date correctly stores day month and year`() {
-        val date = Date(day = 15, month = 5, year = 2024)
+        val date = SimpleDate(day = 15, month = 5, year = 2024)
         
         assertThat(date.day).isEqualTo(15)
         assertThat(date.month).isEqualTo(5)

@@ -7,8 +7,8 @@ class CompactDateTest {
 
     @Test
     fun `compact date correctly stores hijri and gregorian dates`() {
-        val hijri = Date(1, 9, 1445)
-        val gregorian = Date(11, 3, 2024)
+        val hijri = SimpleDate(1, 9, 1445)
+        val gregorian = SimpleDate(11, 3, 2024)
         
         val compactDate = CompactDate(hijri, gregorian)
         
