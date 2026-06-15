@@ -14,6 +14,7 @@ kotlin {
 dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.truth)
+    testImplementation(libs.mockk)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
