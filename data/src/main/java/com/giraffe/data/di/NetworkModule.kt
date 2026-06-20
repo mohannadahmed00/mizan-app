@@ -1,6 +1,6 @@
 package com.giraffe.data.di
 
-import com.giraffe.data.datasource.RemoteDataSource
+import com.giraffe.data.datasource.remote.api.HijriApi
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.core.annotation.Configuration
@@ -40,6 +40,6 @@ class NetworkModule {
             .build()
 
     @Single
-    fun provideRemoteDataSource(retrofit: Retrofit): RemoteDataSource =
-        retrofit.create(RemoteDataSource::class.java)
+    fun provideRemoteDataSource(retrofit: Retrofit): HijriApi =
+        retrofit.create(HijriApi::class.java)
 }

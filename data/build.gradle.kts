@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.koin.compiler)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -33,6 +34,9 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.koin.core)
     implementation(libs.koin.annotations)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)

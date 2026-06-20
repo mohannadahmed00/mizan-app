@@ -1,16 +1,22 @@
 package com.giraffe.domain.usecase
 
-import com.giraffe.domain.repository.Repository
+import com.giraffe.domain.provider.SystemDateProvider
+import com.giraffe.domain.repository.HijriDateRepository
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Provided
 
 @Factory
 class SyncMonthlyHijriDatesUseCase(
-    @Provided private val repository: Repository,
+    @Provided private val hijriDateRepository: HijriDateRepository,
+    @Provided private val systemDateProvider: SystemDateProvider,
 ) {
     suspend operator fun invoke() {
-        // 1. Fetch data from the endpoint
-        repository.syncMonthlyHijriDates()
-        // 2. Validate the payload isn't empty before wiping/updating local storage
+        val currentDate = systemDateProvider.getCurrentGregorianDate()
+        repeat(2) { index ->
+            hijriDateRepository.syncMonthlyHijriDates(
+                month = currentDate.month + index,
+                year = currentDate.year
+            )
+        }
     }
 }
