@@ -7,7 +7,9 @@ import com.giraffe.domain.model.SimpleDate
 import com.giraffe.domain.model.Task
 import com.giraffe.domain.provider.SystemDateProvider
 import com.giraffe.domain.repository.Repository
+import org.koin.core.annotation.Singleton
 
+@Singleton
 class RepositoryImpl(
     private val remoteDataSource: RemoteDataSource,
     private val systemDateProvider: SystemDateProvider

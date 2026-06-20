@@ -1,20 +1,21 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.koin.compiler)
 }
 
 android {
     namespace = "com.giraffe.mizanapp"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
+        version = release(37) {
+            minorApiLevel = 0
         }
     }
 
     defaultConfig {
         applicationId = "com.giraffe.mizanapp"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -38,6 +39,20 @@ android {
 }
 
 dependencies {
+    implementation(project(":domain"))
+    implementation(project(":data"))
+    implementation(project(":presentation"))
+
+    implementation(libs.retrofit)
+    implementation(libs.logging.interceptor)
+    implementation(libs.gson)
+    implementation(libs.converter.gson)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
+    implementation(libs.koin.core)
+    implementation(libs.koin.annotations)
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

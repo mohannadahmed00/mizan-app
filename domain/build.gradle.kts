@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     alias(libs.plugins.jetbrains.kotlin.jvm)
+    alias(libs.plugins.koin.compiler)
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_11
@@ -12,6 +13,9 @@ kotlin {
     }
 }
 dependencies {
+    implementation(libs.koin.core)
+    implementation(libs.koin.annotations)
+
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.truth)
     testImplementation(libs.mockk)

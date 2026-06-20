@@ -2,8 +2,10 @@ package com.giraffe.data.provider
 
 import com.giraffe.domain.model.SimpleDate
 import com.giraffe.domain.provider.SystemDateProvider
+import org.koin.core.annotation.Single
 import java.util.Calendar
 
+@Single
 class SystemDateProviderImpl : SystemDateProvider {
     /**
      * Returns the current device date mapped to your custom domain model.
