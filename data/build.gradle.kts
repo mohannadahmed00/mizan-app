@@ -26,6 +26,10 @@ dependencies {
     implementation(project(":domain"))
 
     implementation(libs.kotlinx.datetime)
+    implementation(libs.retrofit)
+    implementation(libs.logging.interceptor)
+    implementation(libs.gson)
+    implementation(libs.converter.gson)
 
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
