@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -30,6 +31,8 @@ dependencies {
     implementation(libs.logging.interceptor)
     implementation(libs.gson)
     implementation(libs.converter.gson)
+    implementation(libs.koin.core)
+    implementation(libs.koin.annotations)
 
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
