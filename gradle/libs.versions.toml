@@ -12,6 +12,7 @@ kotlinxDatetime = "0.8.0"
 lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
 kotlin = "2.4.0"
+ksp = "2.3.4"
 composeBom = "2026.06.00"
 jetbrainsKotlinJvm = "2.4.0"
 appcompat = "1.7.1"
@@ -19,11 +20,15 @@ loggingInterceptor = "5.4.0"
 material = "1.14.0"
 junitJupiter = "6.1.0"
 retrofit = "3.0.0"
+roomRuntime = "2.8.4"
 truth = "1.4.5"
 mockk = "1.14.11"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -64,5 +69,6 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koinPlugin" }
 

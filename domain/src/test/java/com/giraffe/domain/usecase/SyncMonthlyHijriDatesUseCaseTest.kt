@@ -1,9 +1,12 @@
 package com.giraffe.domain.usecase
 
-import com.giraffe.domain.repository.Repository
+import com.giraffe.domain.provider.SystemDateProvider
+import com.giraffe.domain.repository.HijriDateRepository
 import io.mockk.mockk
 
 class SyncMonthlyHijriDatesUseCaseTest {
-    private val repository: Repository = mockk()
-    private val syncMonthlyHijriDates = SyncMonthlyHijriDatesUseCase(repository)
+    private val hijriDateRepository: HijriDateRepository = mockk()
+    private val systemDateProvider: SystemDateProvider = mockk()
+    private val syncMonthlyHijriDates =
+        SyncMonthlyHijriDatesUseCase(hijriDateRepository, systemDateProvider)
 }
