@@ -11,16 +11,8 @@ class GetCurrentDateUseCase(
     @Provided private val hijriDateRepository: HijriDateRepository,
     @Provided private val systemDateProvider: SystemDateProvider,
 ) {
-    suspend operator fun invoke(): CompactDate {
+    suspend operator fun invoke(): CompactDate? {
         val currentDate = systemDateProvider.getCurrentGregorianDate()
-        var compactDate = hijriDateRepository.getCompactDateOf(currentDate)
-        if (compactDate == null) {
-            hijriDateRepository.syncMonthlyHijriDates(
-                currentDate.month,
-                currentDate.year
-            )
-            compactDate = hijriDateRepository.getCompactDateOf(currentDate)
-        }
-        return requireNotNull(compactDate)
+        return hijriDateRepository.getCompactDateOf(currentDate)
     }
 }

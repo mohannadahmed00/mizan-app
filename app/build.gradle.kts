@@ -52,6 +52,8 @@ dependencies {
     implementation(libs.koin.compose)
     implementation(libs.koin.core)
     implementation(libs.koin.annotations)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.koin.androidx.workmanager)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

@@ -10,9 +10,9 @@ import com.giraffe.domain.model.CompactDate
 import com.giraffe.domain.model.SimpleDate
 import com.giraffe.domain.model.Task
 import com.giraffe.domain.repository.HijriDateRepository
-import org.koin.core.annotation.Singleton
+import org.koin.core.annotation.Single
 
-@Singleton
+@Single
 class HijriDateRepositoryImpl(
     private val hijriApi: HijriApi,
     private val hijriDateDao: HijriDateDao,
