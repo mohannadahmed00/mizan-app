@@ -36,16 +36,16 @@ The accountability day is the local civil date. Hijri must be *stored alongside*
 ## Phase 1 — Foundation / Product & Domain Planning
 
 ### Goal
-Produce the canonical task catalog, the domain glossary, and the eight or nine architectural decisions that cannot be discovered later without rework. No production code.
+Produce the canonical task catalogue, the domain glossary, and the eight or nine architectural decisions that cannot be discovered later without rework. No production code.
 
 ### User value
 None directly. Its value is that Phases 2–4 can be built without stopping to re-decide the data model.
 
 ### Scope
-- Canonicalize the weekly accountability sheet into a machine-readable seed catalog (stable task IDs, section, points, schedule rule, max occurrences per day, display order, catalog version).
+- Canonicalize the weekly accountability sheet into a machine-readable seed catalogue (stable task IDs, section, points, schedule rule, max occurrences per day, display order, catalogue version).
 - Validate the point arithmetic. I checked it and it holds: 6×2 (Fajr) + 4×2 (Dhuhr) + 3×2 (Asr) + 3×2 (Maghrib) + 3×2 (Isha) = 38; + 9 (Qiyam/Witr) = 47; + 4 (Quran memorization and reading) = 51; + 18 (nine Adhkar) = **69 base day**. Monday and Thursday add fasting (5) = **74**. Friday adds seven 1-point activities = **76**. Week total = (69×4) + (74×2) + 76 = **500**. The sheet is internally consistent — worth locking as a regression test fixture in Phase 2.
 - Write the domain glossary: Task Definition, Task Version, Section, Schedule Rule, Day Plan, Planned Task, Completion, Occurrence, Daily Score, Weekly Score, Consistency Day, Streak.
-- Decide the accountability day boundary and the week boundary (see *Architectural Decisions to Make Early*).
+- Decide the accountability day boundary and the week boundary (see *Architectural Decisions (Recorded)*).
 - Confirm the module shape (`:domain`, `:data`, `:app`) and that Koin is the sole DI framework. `develop-v1` carries no DI code of any kind, so this is a decision to record, not a migration to perform.
 - Write the SpecKit constitution / spec skeletons for Phases 2–4.
 
@@ -56,7 +56,7 @@ Room entities, Supabase schemas, Compose screens, tickets, sync design, leaderbo
 All of the above, as definitions only.
 
 ### Data/storage requirements
-None persisted. Output is a seed catalog file (JSON or YAML) plus written specs, both version-controlled.
+None persisted. Output is a seed catalogue file (JSON or YAML) plus written specs, both version-controlled.
 
 ### Architecture requirements
 Module boundary decision only: `:core:*`, `:domain`, `:data`, `:feature:today`, etc. Decide the shape, do not build empty modules you have no code for yet.
@@ -65,16 +65,16 @@ Module boundary decision only: `:core:*`, `:domain`, `:data`, `:feature:today`, 
 None. Low-fidelity wireframes for Today and Week are useful but not required.
 
 ### Testing requirements
-The catalog seed gets a validation checklist: every task has a unique stable ID, a schedule rule, and a positive point value; per-day totals equal 69/74/76 and the week equals 500.
+The catalogue seed gets a validation checklist: every task has a unique stable ID, a schedule rule, and a positive point value; per-day totals equal 69/74/76 and the week equals 500.
 
 ### Dependencies
 None.
 
 ### Definition of Done
-Seed catalog exists and validates against the expected daily/weekly totals; glossary is written; every item under *Architectural Decisions to Make Early* has a recorded answer with a one-line rationale; Phase 2 spec is drafted and reviewable.
+Seed catalogue exists and validates against the expected daily/weekly totals; glossary is written; every item under *Architectural Decisions (Recorded)* has a recorded answer with a one-line rationale; Phase 2 spec is drafted and reviewable.
 
 ### Why now
-The task catalog is the product's entire content model and it is fixed content, not user content. Getting it into a canonical, versioned form first means Phase 2 is plumbing rather than product design. It also surfaces the DI conflict and the day-boundary question before they become load-bearing.
+The task catalogue is the product's entire content model and it is fixed content, not user content. Getting it into a canonical, versioned form first means Phase 2 is plumbing rather than product design. It also surfaces the DI conflict and the day-boundary question before they become load-bearing.
 
 ---
 
@@ -87,7 +87,7 @@ A user opens the app, sees exactly the tasks applicable to today grouped by sect
 The core loop. This alone is a usable product — a digital replacement for the paper sheet.
 
 ### Scope
-- Seed the versioned task catalog into Room on first launch, idempotently, keyed by catalog version.
+- Seed the versioned task catalogue into Room on first launch, idempotently, keyed by catalogue version.
 - Resolve applicability for a date: daily, specific-weekday (fasting on Monday/Thursday), Friday-only.
 - Materialize and persist an immutable Day Plan for the current date on first access, including the Hijri label snapshot and the computed available-points total.
 - Append-only completion log with occurrence support; undo removes the latest occurrence.
@@ -101,13 +101,13 @@ Today screen with sectioned task list, complete/undo, occurrence counters (`2/3`
 Weekly view, history browsing, streaks, charts, editing past days, task creation/editing of any kind, accounts, sync, notifications, achievements, leaderboards, settings beyond what the screen needs, animations and celebration UI.
 
 ### Domain concepts introduced
-Task Definition, Task Version, Catalog Version, Section, Schedule Rule (`Daily`, `DaysOfWeek`, later `HijriDate`), Occurrence limit, Day Plan, Planned Task, Completion, Daily Score.
+Task Definition, Task Version, Catalogue Version, Section, Schedule Rule (`Daily`, `DaysOfWeek`, later `HijriDate`), Occurrence limit, Day Plan, Planned Task, Completion, Daily Score.
 
 ### Data/storage requirements
 Room, offline-only. Roughly: task definition/version tables, day plan + planned task tables, completion table. Day Plan rows are written once and treated as immutable for past dates. Hijri lookup and the date provider are **net-new** — `develop-v1` has no `HijriDateRepository`, no `GetCurrentDateUseCase`, and no Room, so budget for building them rather than reusing them. The clock goes behind an injectable provider from the first commit so tests can move time.
 
 ### Architecture requirements
-Clean Architecture with an isolated domain layer holding scoring and applicability as pure functions. Repository interfaces in domain (`TaskCatalogRepository`, `DayPlanRepository`, `CompletionRepository`) with Room implementations in data — Phase 7 replaces implementations only. MVVM + StateFlow, single immutable UI state per screen. Retrofit is introduced here for Hijri sync and is the only network surface in the app.
+Clean Architecture with an isolated domain layer holding scoring and applicability as pure functions. Repository interfaces in domain (`TaskCatalogueRepository`, `DayPlanRepository`, `CompletionRepository`) with Room implementations in data — Phase 7 replaces implementations only. MVVM + StateFlow, single immutable UI state per screen. Retrofit is introduced here for Hijri sync and is the only network surface in the app.
 
 ### UI/screens
 `TodayScreen` only. Arabic content, RTL-correct layout.
@@ -116,7 +116,7 @@ Clean Architecture with an isolated domain layer holding scoring and applicabili
 Unit tests for applicability (each weekday produces the right task set), scoring (partial, zero, all-complete, multi-occurrence), and the 69/74/76/500 fixtures. Room instrumentation tests for the completion log and Day Plan immutability. One ViewModel test per state transition. A day-rollover test with a fake clock.
 
 ### Dependencies
-Phase 1 catalog and decisions.
+Phase 1 catalogue and decisions.
 
 ### Definition of Done
 On a fresh install with no network, the user can complete and undo tasks for today, points update correctly, the Day Plan persists across process death, day rollover produces a new plan without mutating yesterday's, and the daily total matches the expected value for that weekday.
@@ -137,7 +137,7 @@ The paper sheet is a *weekly* instrument. This is the phase where the app matche
 ### Scope
 - Week boundary (Saturday → Friday) and week identity/key.
 - Week aggregate: per-day earned and available, weekly earned, weekly available, weekly percentage.
-- Materialize Day Plans for elapsed days in the current week that were never opened, using the catalog version that was current for that date — so a skipped day shows `0/69` rather than vanishing.
+- Materialize Day Plans for elapsed days in the current week that were never opened, using the catalogue version that was current for that date — so a skipped day shows `0/69` rather than vanishing.
 - Week screen with per-day drill-in to a read-only day summary.
 
 ### Features included
@@ -159,7 +159,7 @@ No new tables strictly required — week aggregates are queries over day plans a
 `WeekScreen`, read-only `DaySummary` detail.
 
 ### Testing requirements
-Week-boundary tests including the Saturday and Friday edges and month/year crossings; backfill tests (day never opened → correct available points from the then-current catalog version); a full-week fixture that must total 500.
+Week-boundary tests including the Saturday and Friday edges and month/year crossings; backfill tests (day never opened → correct available points from the then-current catalogue version); a full-week fixture that must total 500.
 
 ### Dependencies
 Phase 2.
@@ -242,7 +242,7 @@ Charts, export, sharing, notes/journaling, sync.
 Retro-Completion Window, Locked Day, `completedAt` distinct from the day the completion is credited to.
 
 ### Data/storage requirements
-Completions need both the credited date and the actual timestamp. Pagination over day plans. This is the phase where an admin catalog change should be simulated against real stored history.
+Completions need both the credited date and the actual timestamp. Pagination over day plans. This is the phase where an admin catalogue change should be simulated against real stored history.
 
 ### Architecture requirements
 A single `DayEditPolicy` in domain consulted by every write path, including Today. Do not let two screens hold different opinions about whether a day is writable.
@@ -251,13 +251,13 @@ A single `DayEditPolicy` in domain consulted by every write path, including Toda
 `HistoryScreen`, `DayDetailScreen`.
 
 ### Testing requirements
-The critical one: seed history under catalog v1, bump to v2 with changed points and a changed schedule, and assert that past days still render v1 values and totals while today renders v2. Plus grace-window boundary tests and pagination tests.
+The critical one: seed history under catalogue v1, bump to v2 with changed points and a changed schedule, and assert that past days still render v1 values and totals while today renders v2. Plus grace-window boundary tests and pagination tests.
 
 ### Dependencies
 Phases 2–4.
 
 ### Definition of Done
-Any recorded day renders with its original definitions and totals after a catalog change; the edit policy is enforced identically everywhere; history loads smoothly over a year of seeded data.
+Any recorded day renders with its original definitions and totals after a catalogue change; the edit policy is enforced identically everywhere; history loads smoothly over a year of seeded data.
 
 ### Why now
 The versioning machinery went in during Phase 2, but nothing has *proved* it. This phase is that proof, and it needs to happen before charts aggregate over the same data and before sync starts moving it between devices.
@@ -315,21 +315,21 @@ Backup, device migration, multi-device continuity — and the precondition for a
 ### Scope
 - Supabase auth (email/OTP or a single provider — do not ship three).
 - Local-first sync engine: outbox/queue, `syncState` per row, `updatedAt`, tombstones for undone completions, idempotent upserts on client-generated UUIDs.
-- Remote task catalog with versioning; local seed becomes the fallback, not the source of truth.
+- Remote task catalogue with versioning; local seed becomes the fallback, not the source of truth.
 - Anonymous-to-authenticated migration for existing local data — existing users must not lose their history.
 - Conflict policy: last-write-wins per completion occurrence is adequate here because completions are near-immutable facts; document it explicitly.
 
 ### Features included
-Sign up / sign in / sign out, profile basics, background sync, sync status indicator, remote catalog pull with local Day Plan preservation.
+Sign up / sign in / sign out, profile basics, background sync, sync status indicator, remote catalogue pull with local Day Plan preservation.
 
 ### Features explicitly NOT included
 Leaderboards, friends, real-time subscriptions, admin console, push notifications, social profiles.
 
 ### Domain concepts introduced
-User Identity, Sync State, Outbox, Tombstone, Remote Catalog Version, Device.
+User Identity, Sync State, Outbox, Tombstone, Remote Catalogue Version, Device.
 
 ### Data/storage requirements
-`userId` becomes non-null after migration; sync metadata columns (already present from Phase 2); Supabase tables for profiles, task definitions/versions, and completions with row-level security. Day Plans are a deliberate choice: keep them local-authoritative and re-derivable, or sync them. Recommendation: sync completions and catalog; keep Day Plans local and rebuildable from the catalog version, since two devices must produce the same plan from the same version.
+`userId` becomes non-null after migration; sync metadata columns (already present from Phase 2); Supabase tables for profiles, task definitions/versions, and completions with row-level security. Day Plans are a deliberate choice: keep them local-authoritative and re-derivable, or sync them. Recommendation: sync completions and catalogue; keep Day Plans local and rebuildable from the catalogue version, since two devices must produce the same plan from the same version.
 
 ### Architecture requirements
 This is where the Phase 2 repository interfaces pay off: swap or decorate implementations, leave domain untouched. If a single domain use case has to change to accommodate sync, treat that as a design smell and fix the boundary instead.
@@ -434,7 +434,7 @@ The first usable version:
 - Consistency streak: current and longest, driven by "opened the app and completed at least one task."
 - Gregorian and Hijri dates displayed.
 - Fully offline, no account, no network dependency for the core loop.
-- Versioned task catalog and immutable Day Plans underneath, so history stays honest from the very first record.
+- Versioned task catalogue and immutable Day Plans underneath, so history stays honest from the very first record.
 
 **Deliberately excluded from MVP:** accounts, sync, leaderboards, Honor Board, charts, achievements, friends, challenges, notifications, retroactive editing beyond the current day, task customization of any kind, export, and any Supabase dependency.
 
@@ -455,22 +455,22 @@ The first usable version:
 
 ---
 
-# Architectural Decisions to Make Early
+# Architectural Decisions (Recorded)
 
-These genuinely block Phase 2 or are prohibitively expensive to reverse.
+These are settled. Each states the decision taken and why. They are not open questions and must not be reopened per-feature — a decision here is changed only by amending this section deliberately, and where a decision is fixed by the constitution it cannot be changed here at all.
 
-1. **Accountability day boundary.** Civil midnight, or a religiously-motivated boundary (Fajr, or Maghrib as the Hijri day actually begins)? This determines which date a late-night completion is credited to, and therefore every score and streak. Recommendation: civil midnight for the accountability key, with Hijri shown as a label. Simple, testable, matches how the paper sheet is used. If you ever want Maghrib-based days, it must be a stored per-day rule, not a code change.
-2. **Week boundary.** Saturday→Friday, per the sheet. Locked in one `WeekCalculator`.
-3. **Historical accuracy strategy.** Immutable Task Versions + materialized immutable Day Plans + `pointsAwarded` denormalized onto each completion. This is the central decision of the whole project.
-4. **Completion representation.** Append-only occurrence log, no boolean state, undo = remove/tombstone latest occurrence.
-5. **Identity of records.** Client-generated UUIDs for completions, day plans, and task versions. Not auto-increment.
-6. **Sync-ready columns from day one.** `updatedAt`, soft-delete/tombstone marker, nullable `userId`. No sync code, just the shape.
-7. **Schedule rule representation.** A sealed/extensible rule type (`Daily`, `DaysOfWeek`, reserved `HijriDate`/`DateRange`) rather than boolean columns like `isFriday` — Ramadan and Ashura tasks are clearly coming.
-8. **DI framework.** Koin, sole and uncontested — `develop-v1` contains no Hilt, no KSP, and no DI wiring at all. Recorded here only so it cannot be reopened per-feature.
-9. **Module and layer boundaries.** Domain must have zero Android and zero Room dependencies; repository interfaces live in domain. This is what makes Phase 7 a swap instead of a rewrite.
-10. **Hijri date storage.** Snapshot per Day Plan, not looked up at render time.
-11. **Clock injection.** An injectable time/date provider from the start, or day-rollover and streak logic become untestable.
-12. **Content and language strategy.** Task text is Arabic and is data, not UI strings; decide now whether the *interface* is Arabic-only or bilingual, since RTL and string extraction are much cheaper before there are screens.
+1. **Accountability day boundary.** Local midnight to local midnight. *Why:* fixed by constitution Principle VII; testable with a fake clock and matches how the paper sheet is used. Hijri is a label attached to a day, never the thing defining its boundaries. A Maghrib-based day, if ever wanted, must arrive as a stored per-day rule rather than a code change.
+2. **Week boundary.** Saturday to Friday, implemented in exactly one `WeekCalculator`. *Why:* fixed by Principle VII, which also forbids a second implementation — two screens must never disagree about which week a date falls in.
+3. **Historical accuracy strategy.** Immutable Task Versions, materialised immutable Day Plans, and `pointsAwarded` denormalised onto each completion. *Why:* Principle III. A recorded day must report the same figures forever, and this is the only category of bug that cannot be repaired after the fact.
+4. **Completion representation.** Append-only occurrence log. No boolean `isCompleted` column anywhere; undo removes or tombstones the most recent occurrence. *Why:* it is the only shape that supports multi-occurrence tasks, and it is what a sync engine and a leaderboard both want.
+5. **Identity of records.** Client-generated UUIDs for completions, day plans, and task versions — never auto-increment. **Task Definition identity is a human-readable slug** (`fajr-sunnah-before`), not a UUID. *Why:* Principle V governs synchronisable rows, and a catalogue definition is administrator content rather than user data. A slug keeps a hand-authored catalogue reviewable in a diff and stays a valid natural key when the catalogue later moves server-side. Recorded in `001` clarification Q1.
+6. **Sync-ready columns from day one.** `updatedAt`, a soft-delete/tombstone marker, and a nullable `userId` on every synchronisable row. No sync code yet — only the shape. *Why:* Principle V. These cost hours now and prevent a data migration over real user history later.
+7. **Schedule rule representation.** A sealed, extensible rule type — `EveryDay`, `DaysOfWeek`, with `DateAnchored` reserved for Ramadan and Ashura — rather than boolean columns like `isFriday`. *Why:* the occasions are clearly coming, and adding one must extend the type rather than redefine the existing variants. Reserved, deliberately not implemented until needed.
+8. **DI framework.** Koin, sole and uncontested. *Why:* `develop-v1` contains no Hilt, no KSP, and no DI wiring at all, so this is a decision to record rather than a migration to perform. Two DI frameworks may never coexist.
+9. **Module and layer boundaries.** `:domain` has zero Android and zero Room dependencies; repository interfaces live there and are implemented in `:data`. *Why:* Principle II. This is what makes the arrival of a backend an implementation swap instead of a rewrite.
+10. **Hijri date storage.** Snapshotted per Day Plan, never looked up at render time. *Why:* history screens must work offline for any past date, and a cold cache or a shifted API conversion must not change what a recorded day displays.
+11. **Clock injection.** A single injected time provider from the first commit; no other code reads the system clock, current date, or default timezone. *Why:* Principle VII. Day rollover and streak logic are untestable without it, and every hard bug in an app like this is a date bug.
+12. **Content and language strategy.** Task text is Arabic and is treated as data, not UI strings. The interface shell language is a product decision recorded in the design — an English shell with Arabic task content, each string rendered in an Arabic face with its own direction — and is not settled in the catalogue, which holds content rather than interface strings. *Why:* the catalogue must stay a content model; how it is presented is a separate concern that may change without touching it.
 
 ---
 
@@ -486,10 +486,10 @@ These genuinely block Phase 2 or are prohibitively expensive to reverse.
 - Retroactive edit window length, and whether it exists at all (Phase 5) — but the *policy object* it will live in should exist in Phase 2.
 - Streak grace rules, freezes, timezone-travel leniency (Phase 4, refine later).
 - Whether to cache streak and day-summary values (only when measurement says so).
-- Achievement catalog (Phase 10).
+- Achievement catalogue (Phase 10).
 - Theming, dark mode, animations, onboarding polish.
 - Analytics and crash reporting vendor.
-- Admin tooling for editing the catalog (until Phase 7 makes it remote).
+- Admin tooling for editing the catalogue (until Phase 7 makes it remote).
 - Notification copy and timing heuristics (Phase 9).
 
 ---
@@ -497,10 +497,10 @@ These genuinely block Phase 2 or are prohibitively expensive to reverse.
 # What Changes When Supabase Arrives — and What Must Not
 
 **Likely to change (design for it):**
-- Task catalog *source*: local seed → remote pull with versioning. The catalog repository *interface* should not change.
+- Task catalogue *source*: local seed → remote pull with versioning. The catalogue repository *interface* should not change.
 - Identity: `userId` goes from absent/nullable to required.
 - Completion writes: local-only → local write plus outbox enqueue.
-- New concerns that do not exist today: auth session, sync status, tombstone propagation, remote catalog version reconciliation.
+- New concerns that do not exist today: auth session, sync status, tombstone propagation, remote catalogue version reconciliation.
 - Leaderboard and Honor Board read models — entirely new, entirely remote.
 
 **Must remain backend-independent:**
@@ -520,7 +520,7 @@ The test for whether the boundary is right: **turning Supabase off should degrad
 Work in small specs. One spec should be implementable and verifiable in a sitting or two — a solo developer's real constraint.
 
 **Stage 1 — Foundations (no user-visible output)**
-1. `spec: task-catalog` — canonical catalog, stable IDs, schedule rules, occurrence limits, point totals as fixtures.
+1. `spec: task-catalogue` — canonical catalogue, stable IDs, schedule rules, occurrence limits, point totals as fixtures.
 2. `spec: domain-glossary-and-decisions` — glossary plus the twelve early decisions with recorded rationale.
 3. `spec: persistence-foundation` — Room schema for task definitions/versions, day plans, completions, with UUID ids and sync-ready columns; seeding and migration strategy.
 
@@ -546,7 +546,7 @@ Work in small specs. One spec should be implementable and verifiable in a sittin
 **Stage 5 — Phase 5 (History)**
 15. `spec: day-edit-policy` — retro window, locked days, enforced from one place.
 16. `spec: history-browsing`
-17. `spec: historical-integrity-verification` — the catalog-change regression suite. Treat this as a first-class spec, not a test chore.
+17. `spec: historical-integrity-verification` — the catalogue-change regression suite. Treat this as a first-class spec, not a test chore.
 
 **Stage 6 — Phase 6 (Insights)**
 18. `spec: aggregation-use-cases`
@@ -556,7 +556,7 @@ Work in small specs. One spec should be implementable and verifiable in a sittin
 20. `spec: supabase-schema-and-rls`
 21. `spec: authentication`
 22. `spec: sync-engine` — outbox, tombstones, idempotency, conflict policy.
-23. `spec: remote-task-catalog`
+23. `spec: remote-task-catalogue`
 24. `spec: local-to-account-migration` — write this *before* the sync engine ships; it is the one that can destroy real user data.
 
 **Stage 8 — Phase 8 and beyond**

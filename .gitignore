@@ -32,3 +32,11 @@ render.experimental.xml
 google-services.json
 *.hprof
 *.base64
+
+out/
+*.class
+.env
+.env.*
+Thumbs.db
+*.tmp
+*.swp
