@@ -47,6 +47,31 @@ catalogue unmodified, which is precisely the property it was built to have.
 Two count assertions in `001`'s parse test move from 40 to 32. That is test data catching up with
 content, not a contract change.
 
+### Clarification pass 2026-08-09
+
+Four further questions asked and answered. No checklist item changed state — 16/16 before and
+after. These removed latent ambiguity rather than fixing defects:
+
+| # | Resolved | Effect |
+|---|---|---|
+| 1 | An absent Hijri label may be filled once; a set label never changes | FR-009a/b; US4 scenarios 3–5 |
+| 2 | Stepped flow lands on the earliest incomplete section, derived not stored | FR-020b; US3 scenarios 4–7 |
+| 3 | App launch and rollover create the plan, not screen navigation | FR-006a/b; new edge case |
+| 4 | Undo frees exactly one occurrence slot; reversed records are invisible | FR-012, FR-013a, FR-014; SC-012 |
+
+**Q1 and Q4 were the load-bearing ones.**
+
+Q1 sat on the seam between Principle III and Principle IV. Read strictly, a user who opens the app
+offline loses the Hijri date for that day permanently — and for every day they ever open offline.
+Resolved by distinguishing missing data from a recorded value: the label may be written once, never
+revised.
+
+Q4 was worse. Because undo is a tombstone rather than an erasure, a naive count over all records
+would lock the Adhkar task at nine of nine after one mistaken tap, with no way back and no visible
+reason. That is a destructive accident in a record the user is asked to trust, and hostile under
+Principle IX. FR-014 now states plainly that tombstones are storage bookkeeping and must be
+invisible in every count, score, and limit.
+
 Deliberately *not* asked, because a defensible default exists and is recorded in Assumptions:
 
 | Question | Default taken | Authority |

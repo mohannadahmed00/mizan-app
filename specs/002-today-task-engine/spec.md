@@ -34,6 +34,10 @@ content arrives it replaces one data file. That substitutability is Principle VI
 ### Session 2026-08-09
 
 - Q: Are the nine Adhkar nine separate tasks worth 2 points each, or one task completed nine times at 2 points per occurrence? → A: One task, nine occurrences, 2 points each. Multi-occurrence is therefore central to the Today screen, not incidental, and the placeholder catalogue must be corrected before this increment ships.
+- Q: If a day is created while offline and has no Hijri date, may that date be filled in later, or does the day keep an empty label forever? → A: An empty label may be filled once, when a value first becomes available. Once set it never changes. Absence is missing data, not a recorded value.
+- Q: When the user opens the app partway through the day, which section should the stepped flow land on? → A: The earliest section containing an incomplete task; the first section if the day is fully complete. Derived on open, never persisted.
+- Q: What counts as "opening" a date, such that its plan is created and frozen? → A: App launch, plus any rollover while the app is running, creates the plan for the current date. Not tied to viewing a particular screen.
+- Q: After an undo, does the freed occurrence slot become available again? → A: Yes. Reversed records are excluded from the occurrence count, so undo always frees exactly one slot. The tombstone is bookkeeping for a future sync, never something the user feels.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -130,8 +134,15 @@ moving between sections never alters the day's totals.
    previous section are retained.
 3. **Given** the user is on the last section, **When** they attempt to move forward, **Then** the
    interface does not advance past the end and does not present this as an error.
-4. **Given** the app is reopened, **When** the screen loads, **Then** the section shown is a
-   defined, predictable starting point rather than an arbitrary one.
+4. **Given** the first three sections are fully complete and the fourth is not, **When** the user
+   opens the app, **Then** the fourth section is shown.
+5. **Given** every task in the day is complete, **When** the user opens the app, **Then** the first
+   section is shown and nothing suggests an error or a dead end.
+6. **Given** the user has navigated to a later section, **When** they close and reopen the app,
+   **Then** the landing section is derived again from what is incomplete — position is not
+   remembered.
+7. **Given** a multi-occurrence task at 3 of 9, **When** the landing section is determined,
+   **Then** that section counts as incomplete.
 
 ---
 
@@ -153,10 +164,13 @@ and records completions normally, with the Hijri label absent or pending rather 
    Hijri dates appear.
 2. **Given** no Hijri date has ever been retrieved, **When** the app opens with no network, **Then**
    the day, its tasks, and completion all work normally and the Hijri label is simply absent.
-3. **Given** a day was created with a Hijri label, **When** the label's source later reports a
-   different value for that date, **Then** the recorded day continues to show the label it was
-   created with.
-4. **Given** the network is unavailable, **When** the user completes a task, **Then** the completion
+3. **Given** a day was created offline with no Hijri label, **When** a value for that date first
+   becomes available, **Then** the day acquires that label and nothing else about the day changes.
+4. **Given** a day that already carries a Hijri label, **When** the source later reports a different
+   value for that date, **Then** the day continues to show the label it already had.
+5. **Given** a day that already carries a Hijri label, **When** the app is offline, **Then** the
+   label is still shown — it is stored on the day, not looked up.
+6. **Given** the network is unavailable, **When** the user completes a task, **Then** the completion
    is recorded immediately with no waiting.
 
 ---
@@ -183,6 +197,10 @@ and records completions normally, with the Hijri label absent or pending rather 
   empty day that looks like a completed one.
 - A day is opened, nothing is completed, and the app is closed — the plan persists, and the day
   reports 0 out of its available total rather than disappearing.
+- The app is launched and closed immediately, without the user reaching any task list — the plan for
+  that date exists nonetheless, so the day is recorded as having 0 of its available total rather
+  than being absent. A later phase reading "the user opened the app that day" can rely on the plan's
+  existence, and must not confuse it with having completed something.
 
 ## Requirements *(mandatory)*
 
@@ -206,15 +224,23 @@ and records completions normally, with the Hijri label absent or pending rather 
 
 **The day's record**
 
-- **FR-006**: The first time a date is opened, the system MUST create and persist that date's plan:
-  the tasks that applied, the points each was worth, each task's occurrence limit, and the total
-  points available.
+- **FR-006**: The system MUST create and persist a plan for the current date when the app launches,
+  and again whenever the date changes while the app is running, if no plan for that date already
+  exists. The plan records the tasks that applied, the points each was worth, each task's occurrence
+  limit, and the total points available.
+- **FR-006a**: Plan creation MUST NOT depend on which screen the user is viewing. Launching the app
+  is sufficient; no navigation is required.
+- **FR-006b**: The system MUST NOT create plans for any date other than the current one. Dates that
+  elapsed while the app was never launched have no plan until a later phase backfills them.
 - **FR-007**: Once created, a date's plan MUST NOT be recomputed or altered. Subsequent openings
   MUST read the stored plan.
 - **FR-008**: A change to the task catalogue MUST affect only dates whose plans have not yet been
   created.
-- **FR-009**: Each date's plan MUST carry the Hijri label determined when it was created, and MUST
-  NOT re-derive it afterwards.
+- **FR-009**: Each date's plan MUST carry the Hijri label determined when it was created.
+- **FR-009a**: A plan created without a Hijri label MAY have one written once, the first time a
+  value becomes available for that date. This is filling missing data, not revising a record.
+- **FR-009b**: Once a plan carries a Hijri label, that label MUST NOT change — not on a later
+  lookup, not if the source reports a different value, not ever. Exactly one write per date.
 
 **Recording completions**
 
@@ -223,10 +249,15 @@ and records completions normally, with the Hijri label absent or pending rather 
 - **FR-011**: A completion MUST carry the points that applied at the moment it was recorded, and
   those points MUST NOT change afterwards.
 - **FR-012**: A task MUST be completable up to its occurrence limit for that date and no further.
-- **FR-013**: Undo MUST remove the most recently recorded completion for that task on that date, and
-  MUST leave earlier completions intact.
+  The count of recorded occurrences MUST exclude reversed records.
+- **FR-013**: Undo MUST reverse the most recently recorded completion for that task on that date,
+  and MUST leave earlier completions intact.
+- **FR-013a**: Undo MUST free exactly one occurrence slot. A task at its limit MUST become
+  completable again after a single undo, however many reversed records already exist for it.
 - **FR-014**: Undo MUST be recorded as a reversal rather than an erasure, so that the change can be
-  reconciled with other devices later without losing the fact that it happened.
+  reconciled with other devices later without losing the fact that it happened. This is bookkeeping
+  only: reversed records MUST NOT be visible to the user, MUST NOT contribute to any score, and MUST
+  NOT consume an occurrence slot.
 - **FR-015**: The system MUST NOT permit completions to be recorded against any date other than the
   current one. The rule deciding which dates are writable MUST live in exactly one place, so that
   later phases can widen it without two screens disagreeing.
@@ -248,6 +279,10 @@ and records completions normally, with the Hijri label absent or pending rather 
 - **FR-020a**: A multi-occurrence task MUST be presented as a single row showing progress toward its
   limit, not as repeated rows. Recording one occurrence MUST advance that row's count without
   removing it from the list until the limit is reached.
+- **FR-020b**: When the day is presented one section at a time, the section shown on opening MUST be
+  the earliest one containing an incomplete task, or the first section when every task is complete.
+  A task below its occurrence limit counts as incomplete. This position MUST be derived on each
+  opening and MUST NOT be stored.
 - **FR-021**: The screen MUST show the civil date, and the Hijri date when one is known.
 - **FR-022**: The screen MUST reflect a completion or undo without the user having to leave and
   return.
@@ -310,6 +345,9 @@ and records completions normally, with the Hijri label absent or pending rather 
 - **SC-011**: Completing the Adhkar task nine times contributes exactly 18 earned points, matching
   the 18 it contributes to available — a fully completed day reads exactly its available total, not
   more.
+- **SC-012**: Completing a task to its limit, undoing once, and completing once more leaves the
+  earned total identical to never having undone at all — repeated any number of times. No sequence
+  of undos can permanently reduce what a task can contribute.
 - **SC-008**: Recording a completion is perceived as immediate — the interface never shows a waiting
   state for it.
 - **SC-009**: Zero interface elements express a negative quantity, a penalty, or fault. Verified by
@@ -328,15 +366,17 @@ and records completions normally, with the Hijri label absent or pending rather 
   multi-occurrence path. If the real sheet turns out to have others, nothing in this feature changes
   — only the data does.
 - **Records are reversed, not erased.** Principle V requires deletion of a synchronisable record to
-  be a tombstone. Undo therefore marks a completion reversed rather than removing it.
+  be a tombstone. Undo therefore marks a completion reversed rather than removing it — but that is
+  storage bookkeeping and must be invisible in every user-facing count, score, and limit.
 - **Only the current date is writable.** Retroactive completion is Phase 5 work. The policy that
   decides this exists here as a single named rule so Phase 5 can widen it in one place.
 - **Days that are never opened are not created here.** Phase 3 backfills them. A day skipped
   entirely simply has no plan until then.
 - **The Hijri label is retrieved opportunistically** and never sits on the path of any user action.
   A day created without one keeps that absence rather than acquiring a label retroactively.
-- **The stepped flow starts at a defined position**, not at wherever the user left off — resuming
-  position is a refinement, not a requirement of this increment.
+- **The stepped flow's landing position is derived, never stored.** It is the earliest incomplete
+  section, recomputed on each opening, so it survives process death and day rollover without any
+  persisted UI state to migrate or reconcile later.
 - **No settings screen** beyond what the Today screen itself needs.
 
 ## Dependencies
