@@ -1,8 +1,10 @@
 package com.giraffe.data.datasource.system
 
+import com.giraffe.domain.model.Day
 import com.giraffe.domain.model.SimpleDate
 import com.giraffe.domain.provider.SystemDateProvider
 import org.koin.core.annotation.Single
+import java.time.LocalDate
 import java.util.Calendar
 
 @Single
@@ -15,4 +17,9 @@ class SystemDateProviderImpl : SystemDateProvider {
             year = calendar.get(Calendar.YEAR)
         )
     }
+
+    fun getDayOfWeek(date: SimpleDate): Day = Day.valueOf(
+        LocalDate.of(date.year, date.month, date.day)
+            .dayOfWeek.name.take(2)
+    )
 }

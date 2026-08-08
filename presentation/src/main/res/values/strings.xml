@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MizanApp</string>
+    <string name="no_tasks_scheduled">No tasks scheduled today</string>
+    <string name="todays_tasks">Today\'s Tasks</string>
+    <string name="points">points</string>
+    <string name="all_tasks_complete">All tasks complete!</string>
+    <string name="streaks_title">Streaks</string>
+    <string name="current_streak">Current</string>
+    <string name="longest_streak">Longest</string>
+    <string name="days">days</string>
+    <string name="completion_rates">Completion Rates</string>
+    <string name="daily">Daily</string>
+    <string name="weekly">Weekly</string>
+    <string name="monthly">Monthly</string>
+    <string name="total_points">Total Points</string>
+    <string name="nav_today">Today</string>
+    <string name="nav_stats">Stats</string>
+</resources>

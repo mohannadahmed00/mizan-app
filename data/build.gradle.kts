@@ -22,6 +22,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
 }
 
 dependencies {

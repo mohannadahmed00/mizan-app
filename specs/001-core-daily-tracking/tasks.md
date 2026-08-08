@@ -36,7 +36,7 @@ implementation and testing of each story.
 
 **Purpose**: Project initialization and dependency configuration
 
-- [ ] T001 [P] Add presentation dependencies for ViewModel + Compose in
+- [x] T001 [P] Add presentation dependencies for ViewModel + Compose in
   `presentation/build.gradle.kts`:
   - `implementation(libs.koin.compose)`
   - `implementation(libs.koin.compose.viewmodel)`
@@ -47,10 +47,10 @@ implementation and testing of each story.
   - `implementation(libs.androidx.lifecycle.viewmodel)`
   - `implementation(libs.androidx.lifecycle.runtime.compose)`
 
-- [ ] T002 [P] Create `presentation/src/main/java/com/giraffe/presentation/`
+- [x] T002 [P] Create `presentation/src/main/java/com/giraffe/presentation/`
   directory structure with subdirectories: `dashboard/`, `stats/`, `common/`
 
-- [ ] T003 [P] Create `data/src/main/java/com/giraffe/data/mapper/`
+- [x] T003 [P] Create `data/src/main/java/com/giraffe/data/mapper/`
   directory for entity ↔ domain mappers
 
 ---
@@ -61,7 +61,7 @@ implementation and testing of each story.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create `TaskEntity` in
+- [x] T004 Create `TaskEntity` in
   `data/src/main/java/com/giraffe/data/datasource/local/entity/TaskEntity.kt`:
   ```kotlin
   @Entity(tableName = "tasks")
@@ -75,7 +75,7 @@ implementation and testing of each story.
   )
   ```
 
-- [ ] T005 Create `TaskCompletionEntity` in
+- [x] T005 Create `TaskCompletionEntity` in
   `data/src/main/java/com/giraffe/data/datasource/local/entity/TaskCompletionEntity.kt`:
   ```kotlin
   @Entity(
@@ -95,7 +95,7 @@ implementation and testing of each story.
   )
   ```
 
-- [ ] T006 Create `TaskDao` in
+- [x] T006 Create `TaskDao` in
   `data/src/main/java/com/giraffe/data/datasource/local/dao/TaskDao.kt`:
   ```kotlin
   @Dao
@@ -114,7 +114,7 @@ implementation and testing of each story.
   }
   ```
 
-- [ ] T007 Create `TaskCompletionDao` in
+- [x] T007 Create `TaskCompletionDao` in
   `data/src/main/java/com/giraffe/data/datasource/local/dao/TaskCompletionDao.kt`:
   ```kotlin
   @Dao
@@ -133,7 +133,7 @@ implementation and testing of each story.
   }
   ```
 
-- [ ] T008 Update `AppDatabase` in
+- [x] T008 Update `AppDatabase` in
   `data/src/main/java/com/giraffe/data/datasource/local/database/AppDatabase.kt`:
   - Add `TaskEntity` and `TaskCompletionEntity` to `entities` array
   - Bump `version = 2`
@@ -141,7 +141,7 @@ implementation and testing of each story.
   - Add abstract DAO methods: `taskDao(): TaskDao` and
     `taskCompletionDao(): TaskCompletionDao`
 
-- [ ] T009 [P] Create `TaskMapper` in
+- [x] T009 [P] Create `TaskMapper` in
   `data/src/main/java/com/giraffe/data/mapper/TaskMapper.kt`:
   - `fun TaskEntity.toDomain(): Task` — maps `category` string to
     `Category.valueOf()`, splits `activeDays` by comma and maps each to
@@ -149,14 +149,14 @@ implementation and testing of each story.
   - `fun Task.toEntity(): TaskEntity` — reverse mapping
   - Reference: `data-model.md` Task ↔ TaskEntity mapping table
 
-- [ ] T010 [P] Create `TaskCompletionMapper` in
+- [x] T010 [P] Create `TaskCompletionMapper` in
   `data/src/main/java/com/giraffe/data/mapper/TaskCompletionMapper.kt`:
   - `fun TaskCompletionEntity.toDomain(taskDao: TaskDao, hijriDateDao: HijriDateDao): TaskCompletion`
     — maps `gregorianDateKey` to `CompactDate` via `HijriDateDao`; maps
     `completedAt` directly
   - Reference: `data-model.md` TaskCompletion ↔ TaskCompletionEntity mapping
 
-- [ ] T011 [P] Create `TaskSeeder` in
+- [x] T011 [P] Create `TaskSeeder` in
   `data/src/main/java/com/giraffe/data/datasource/local/seed/TaskSeeder.kt`:
   - Implement `RoomDatabase.Callback` that inserts 10 pre-seeded tasks on
     `onCreate`:
@@ -168,7 +168,7 @@ implementation and testing of each story.
   - Use `Executors.newSingleThreadScheduledExecutor()` for background execution
   - Reference: `research.md` Task 6 table for exact values
 
-- [ ] T012 Implement `HijriDateRepositoryImpl.getTodayTasks()` in
+- [x] T012 Implement `HijriDateRepositoryImpl.getTodayTasks()` in
   `data/src/main/java/com/giraffe/data/repository/HijriDateRepositoryImpl.kt`:
   - Inject `TaskDao` into constructor
   - `override suspend fun getTodayTasks()` calls `taskDao.getAllActive()`
@@ -176,7 +176,7 @@ implementation and testing of each story.
   - The existing `@Single` annotation is already present
   - Inject `TaskDao` as a constructor parameter
 
-- [ ] T013 [P] Implement `GetTodayTasksUseCase` in
+- [x] T013 [P] Implement `GetTodayTasksUseCase` in
   `domain/src/main/java/com/giraffe/domain/usecase/GetTodayTasksUseCase.kt`:
   - Replace current stub with:
     ```kotlin
@@ -200,7 +200,7 @@ implementation and testing of each story.
   - Map `java.time.DayOfWeek.name` (e.g. "MONDAY") to `Day` enum via
     `name.take(2)` ("MO") then `Day.valueOf()`
 
-- [ ] T014 [P] Create `ToggleTaskCompletionUseCase` in
+- [x] T014 [P] Create `ToggleTaskCompletionUseCase` in
   `domain/src/main/java/com/giraffe/domain/usecase/ToggleTaskCompletionUseCase.kt`:
   - `@Factory` class with `@Provided HijriDateRepository` dependency
   - `suspend operator fun invoke(taskId: Long, date: CompactDate)` toggles
@@ -210,7 +210,7 @@ implementation and testing of each story.
     to the `HijriDateRepository` interface, which then delegates to
     `TaskCompletionDao`
 
-- [ ] T015 [P] Create `GetTodayStatsUseCase` in
+- [x] T015 [P] Create `GetTodayStatsUseCase` in
   `domain/src/main/java/com/giraffe/domain/usecase/GetTodayStatsUseCase.kt`:
   - `@Factory` with `@Provided HijriDateRepository`
   - `suspend operator fun invoke(): TodayStats` returns:
@@ -220,7 +220,7 @@ implementation and testing of each story.
     - `todayPoints: Int` — sum of points for today's completed tasks
   - Create a `TodayStats` data class in `domain/src/main/java/com/giraffe/domain/usecase/TodayStats.kt`
 
-- [ ] T016 [P] Create `GetStreaksUseCase` in
+- [x] T016 [P] Create `GetStreaksUseCase` in
   `domain/src/main/java/com/giraffe/domain/usecase/GetStreaksUseCase.kt`:
   - `@Factory` with `@Provided HijriDateRepository`
   - `suspend operator fun invoke(): StreakData` returns:
@@ -230,26 +230,26 @@ implementation and testing of each story.
     day runs
   - Create a `StreakData` data class
 
-- [ ] T017 [P] Update `HijriDateRepository` interface in
+- [x] T017 [P] Update `HijriDateRepository` interface in
   `domain/src/main/java/com/giraffe/domain/repository/HijriDateRepository.kt`:
   - Add methods: `suspend fun getCompletionsForDate(dateKey: String): List<TaskCompletion>`
   - Add methods: `suspend fun getAllCompletions(): List<TaskCompletion>`
   - Add methods: `suspend fun insertCompletion(taskId: Long, dateKey: String, completedAt: Long)`
   - Add methods: `suspend fun deleteCompletion(taskId: Long, dateKey: String)`
 
-- [ ] T018 Update `HijriDateRepositoryImpl` in
+- [x] T018 Update `HijriDateRepositoryImpl` in
   `data/src/main/java/com/giraffe/data/repository/HijriDateRepositoryImpl.kt`:
   - Inject `TaskCompletionDao`
   - Implement the 4 new interface methods delegating to `TaskCompletionDao`
     and using `TaskCompletionMapper`
 
-- [ ] T019 [P] Add TaskDao and TaskCompletionDao to DatabaseModule in
+- [x] T019 [P] Add TaskDao and TaskCompletionDao to DatabaseModule in
   `data/src/main/java/com/giraffe/data/di/DatabaseModule.kt`:
   - Ensure `@Single` provides for `TaskDao` and `TaskCompletionDao`
     are wired within the existing `@Module @ComponentScan`
   - Add `TaskSeeder` callback to the `AppDatabase` builder if necessary
 
-- [ ] T020 [P] Add new use cases to DomainModule in
+- [x] T020 [P] Add new use cases to DomainModule in
   `domain/src/main/java/com/giraffe/domain/di/DomainModule.kt`:
   - The `@ComponentScan` should auto-detect the `@Factory` annotated
     use cases, but verify the scan includes `com.giraffe.domain.usecase`
@@ -264,20 +264,20 @@ implementation and testing of each story.
     use `MigrationTestHelper` for JUnit 4; alternatively test via
     repository integration test)
 
-- [ ] T022 [US1] Write test for `GetTodayTasksUseCase` in
+- [x] T022 [US1] Write test for `GetTodayTasksUseCase` in
   `domain/src/test/java/com/giraffe/domain/usecase/GetTodayTasksUseCaseTest.kt`:
   - Mock `HijriDateRepository` and `SystemDateProvider` with MockK
   - Test that tasks are filtered by today's day-of-week
   - Test that empty repository returns empty list
   - Follow the pattern from `GetCurrentDateUseCaseTest.kt`
 
-- [ ] T023 [US2] Write test for `ToggleTaskCompletionUseCase` in
+- [x] T023 [US2] Write test for `ToggleTaskCompletionUseCase` in
   `domain/src/test/java/com/giraffe/domain/usecase/ToggleTaskCompletionUseCaseTest.kt`:
   - Test that first call inserts a completion
   - Test that second call (same task+date) deletes the completion
   - Mock repository with MockK, use Truth assertions
 
-- [ ] T024 [US3] Write test for `GetStreaksUseCase` in
+- [x] T024 [US3] Write test for `GetStreaksUseCase` in
   `domain/src/test/java/com/giraffe/domain/usecase/GetStreaksUseCaseTest.kt`:
   - Test current streak with consecutive day completions
   - Test current streak resets after a missed day
@@ -301,7 +301,7 @@ sum of those 3 tasks' values (e.g., Fajr 5 + Dhuhr 5 + Asr 5 = 15).
 
 ### Implementation
 
-- [ ] T025 [P] [US1][US2] Create `DashboardViewState` in
+- [x] T025 [P] [US1][US2] Create `DashboardViewState` in
   `presentation/src/main/java/com/giraffe/presentation/dashboard/DashboardViewState.kt`:
   ```kotlin
   data class DashboardViewState(
@@ -317,7 +317,7 @@ sum of those 3 tasks' values (e.g., Fajr 5 + Dhuhr 5 + Asr 5 = 15).
   )
   ```
 
-- [ ] T026 [P] [US1][US2] Create `DashboardViewEffect` sealed interface in
+- [x] T026 [P] [US1][US2] Create `DashboardViewEffect` sealed interface in
   `presentation/src/main/java/com/giraffe/presentation/dashboard/DashboardViewEffect.kt`:
   ```kotlin
   sealed interface DashboardViewEffect {
@@ -325,7 +325,7 @@ sum of those 3 tasks' values (e.g., Fajr 5 + Dhuhr 5 + Asr 5 = 15).
   }
   ```
 
-- [ ] T027 [US1][US2] Create `DashboardViewModel` in
+- [x] T027 [US1][US2] Create `DashboardViewModel` in
   `presentation/src/main/java/com/giraffe/presentation/dashboard/DashboardViewModel.kt`:
   - `@Inject constructor` with use cases:
     - `GetCurrentDateUseCase`
@@ -346,7 +346,7 @@ sum of those 3 tasks' values (e.g., Fajr 5 + Dhuhr 5 + Asr 5 = 15).
     3. Uses `tryToExecute` for coroutine management
   - References: spec.md US1 + US2, research.md Task 5, constitution Principle VI
 
-- [ ] T028 [US1][US2] Create `DashboardScreen` in
+- [x] T028 [US1][US2] Create `DashboardScreen` in
   `presentation/src/main/java/com/giraffe/presentation/dashboard/DashboardScreen.kt`:
   - Composable function `DashboardScreen(viewModel: DashboardViewModel)`
   - Observes `viewModel.state` via `collectAsState()`
@@ -362,12 +362,12 @@ sum of those 3 tasks' values (e.g., Fajr 5 + Dhuhr 5 + Asr 5 = 15).
   - Progress section: Linear progress indicator + percentage + points
   - Follow `Material 3` design system
 
-- [ ] T029 [US1][US2] Create `DashboardModule` in
+- [x] T029 [US1][US2] Create `DashboardModule` in
   `presentation/src/main/java/com/giraffe/presentation/dashboard/DashboardModule.kt`:
   - `@Module @ComponentScan("com.giraffe.presentation.dashboard")`
   - Koin auto-detects `DashboardViewModel` via `@Inject` constructor
 
-- [ ] T030 [US1][US2] Wire `DashboardScreen` into `MainActivity` in
+- [x] T030 [US1][US2] Wire `DashboardScreen` into `MainActivity` in
   `app/src/main/java/com/giraffe/mizanapp/MainActivity.kt`:
   - Use `setContent` with `MaterialTheme`
   - Obtain `DashboardViewModel` via `koinViewModel()`
@@ -390,7 +390,7 @@ shows 0, longest streak shows 3.
 
 ### Implementation
 
-- [ ] T031 [P] [US3] Create `StatsViewState` in
+- [x] T031 [P] [US3] Create `StatsViewState` in
   `presentation/src/main/java/com/giraffe/presentation/stats/StatsViewState.kt`:
   ```kotlin
   data class StatsViewState(
@@ -404,11 +404,11 @@ shows 0, longest streak shows 3.
   )
   ```
 
-- [ ] T032 [P] [US3] Create `StatsViewEffect` in
+- [x] T032 [P] [US3] Create `StatsViewEffect` in
   `presentation/src/main/java/com/giraffe/presentation/stats/StatsViewEffect.kt`:
   Use `Unit` since no one-shot effects are needed for stats (no navigation).
 
-- [ ] T033 [US3] Create `StatsViewModel` in
+- [x] T033 [US3] Create `StatsViewModel` in
   `presentation/src/main/java/com/giraffe/presentation/stats/StatsViewModel.kt`:
   - `@Inject constructor` with use cases:
     - `GetStreaksUseCase`
@@ -418,7 +418,7 @@ shows 0, longest streak shows 3.
   - `init` block calls `loadStats()`
   - States: loading, loaded with data
 
-- [ ] T041 [US3] Create `GetMonthlyStatsUseCase` in
+- [x] T041 [US3] Create `GetMonthlyStatsUseCase` in
   `domain/src/main/java/com/giraffe/domain/usecase/GetMonthlyStatsUseCase.kt`:
   - `@Factory` with `@Provided HijriDateRepository`
   - `suspend operator fun invoke(yearMonth: String): MonthlyStats` returns:
@@ -429,7 +429,7 @@ shows 0, longest streak shows 3.
     query `getCompletionsForDate()` for each day, compute per-day stats
   - Create a `MonthlyStats` data class
 
-- [ ] T034 [US3] Create `StatsScreen` in
+- [x] T034 [US3] Create `StatsScreen` in
   `presentation/src/main/java/com/giraffe/presentation/stats/StatsScreen.kt`:
   - Composable function `StatsScreen(viewModel: StatsViewModel)`
   - Sections:
@@ -438,11 +438,11 @@ shows 0, longest streak shows 3.
     - **Points total**: Total points earned
   - Material 3 cards, clean typography
 
-- [ ] T035 [US3] Create `StatsModule` in
+- [x] T035 [US3] Create `StatsModule` in
   `presentation/src/main/java/com/giraffe/presentation/stats/StatsModule.kt`:
   - `@Module @ComponentScan("com.giraffe.presentation.stats")`
 
-- [ ] T036 [US3] Add navigation from Dashboard to Stats in
+- [x] T036 [US3] Add navigation from Dashboard to Stats in
   `presentation/src/main/java/com/giraffe/presentation/common/Navigation.kt`:
   - Simple tab or button toggle between Dashboard and Stats screens
   - Or use a bottom navigation bar with 2 tabs: "Today" and "Stats"
@@ -456,25 +456,25 @@ MVP complete: dashboard + task completion + statistics.
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T037 [P] Add Compose Navigation or simple state-based screen switching
+- [x] T037 [P] Add Compose Navigation or simple state-based screen switching
   in `presentation/src/main/java/com/giraffe/presentation/common/MizanNavHost.kt`:
   - Sealed class `Screen { object Dashboard, object Stats }`
   - Simple `remember` state to switch between screens
   - Pass ViewModels via Koin
 
-- [ ] T038 [P] Add `SystemDateProviderImpl` day-of-week utility in
+- [x] T038 [P] Add `SystemDateProviderImpl` day-of-week utility in
   `data/src/main/java/com/giraffe/data/datasource/system/SystemDateProviderImpl.kt`:
   - Use `java.time.LocalDate.of(year, month, day).dayOfWeek` to derive
     the day-of-week from `SimpleDate`
   - Map `java.time.DayOfWeek` to `Day` enum values (SUNDAY → SU, etc.)
 
-- [ ] T039 String extraction: Move all user-facing strings to
+- [x] T039 String extraction: Move all user-facing strings to
   `presentation/src/main/res/values/strings.xml` for future localization
 
-- [ ] T040 Run quickstart.md validation: Launch app, verify all scenarios
+- [x] T040 Run quickstart.md validation: Launch app, verify all scenarios
   in `quickstart.md` produce expected outcomes
 
-- [ ] T042 Smoke & performance validation:
+- [x] T042 Smoke & performance validation:
   - Manual instrumentation or Compose UI test verifying:
     - **SC-001**: Dashboard loads within 1 second (measure from `onCreate`
       to first frame with task data rendered)
