@@ -31,7 +31,28 @@
 
 ## Notes
 
-**16/16 pass.** Validation iterations: 2.
+**16/16 pass.** Validation iterations: 2, plus one `/speckit-clarify` pass.
+
+### Clarification pass 2026-08-08
+
+Five questions asked, five answered. No checklist item changed state — the spec passed 16/16
+before and after. The clarifications removed latent ambiguity rather than fixing defects:
+
+| # | Resolved | Effect |
+|---|---|---|
+| 1 | Task identifier is a human-readable slug | FR-002 tightened; Task Definition entity |
+| 2 | Catalogue version is a monotonic integer **plus an effective-from date** | FR-004a/b added; 2 edge cases; Catalogue Version entity |
+| 3 | Decisions recorded in `docs/PLAN.md` in place, not a second document | FR-015; US3 |
+| 4 | Display position is section-scoped | FR-003a; new US1 scenario 7; Section entity |
+| 5 | Canonical spelling is "catalogue" | FR-012a; SC-005 |
+
+**Q2 was the load-bearing one.** Without an effective-from date, "which version applied on a day the
+user never opened" is unanswerable from the catalogue, and Phase 3's backfill would silently score
+skipped days against current points — a Principle III violation discovered only after real history
+existed.
+
+**Scope grew.** This feature now edits `docs/PLAN.md` (decisions in place, spelling). Still zero
+production code, so SC-007 holds.
 
 Iteration 1 carried one `[NEEDS CLARIFICATION]` on the source of task content — the ~40 Arabic task
 names are not in this repository. Resolved by narrowing scope: the catalogue *contract* is

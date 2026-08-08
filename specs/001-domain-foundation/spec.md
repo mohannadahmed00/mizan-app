@@ -31,6 +31,16 @@ whatever was typed. That is Principle I applied to data.
 maintaining Mizan. End-user value is indirect but real — every number the app later asks a user to
 trust is admitted by the contract authored here.
 
+## Clarifications
+
+### Session 2026-08-08
+
+- Q: What form should a task's stable identifier take in the catalogue — an opaque UUID, or a human-readable slug? → A: Human-readable stable slug (e.g. `fajr-sunnah-before`), unique across the catalogue, never reused.
+- Q: Should each catalogue version record the date it took effect, so the app can work out which version applied on a day the user never opened? → A: Yes. Monotonic integer version, plus an effective-from date on each version.
+- Q: Where should the twelve architectural decisions live once answered — a new standalone record, or `docs/PLAN.md` edited in place? → A: In place. Rename the section to *Architectural Decisions (Recorded)* and replace each recommendation with the decision plus rationale. No second document.
+- Q: Should a task's display position order it only within its own section, or across the whole catalogue? → A: Section-scoped. Unique within a section; sections carry their own order.
+- Q: Should the project spell it "catalogue" or "catalog"? → A: "catalogue" everywhere, matching the constitution. `docs/PLAN.md` is corrected to match as part of this feature.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Catalogue validation contract (Priority: P1)
@@ -68,9 +78,12 @@ bad one, with a distinct failure per defect. Delivers value with no catalogue an
    asserts Fajr 6 tasks × 2 points, Dhuhr 4 × 2, Asr 3 × 2, Maghrib 3 × 2, Isha 3 × 2 (38 total);
    Qiyam and Witr 9; Quran memorisation and reading 4; nine Adhkar 18 — summing to the 69-point
    base day.
-7. **Given** a known-good fixture, **When** any single point value is altered, **Then** the contract
+7. **Given** two tasks in the same section sharing a display position, **When** the contract runs,
+   **Then** it rejects the catalogue; **and given** two tasks in *different* sections sharing a
+   display position, **Then** it accepts them.
+8. **Given** a known-good fixture, **When** any single point value is altered, **Then** the contract
    fails. A contract that cannot fail is not a contract.
-8. **Given** any fixture, **When** the contract reports, **Then** each defect appears as its own
+9. **Given** any fixture, **When** the contract reports, **Then** each defect appears as its own
    distinct failure rather than a single aggregate error.
 
 ---
@@ -104,7 +117,8 @@ definition expressible without reference to a framework, database, or screen.
 
 The maintainer needs each early decision answered once, in writing, with a one-line rationale, so
 no later feature reopens it mid-build. The list is the twelve items under *Architectural Decisions
-to Make Early* in `docs/PLAN.md`.
+to Make Early* in `docs/PLAN.md`. The answers replace that section in place rather than forming a
+second document, so the roadmap cannot outlive the decisions it recommended.
 
 **Why this priority**: Lowest of the three because several answers are already fixed by the
 constitution and need recording rather than deciding. Still gates Phase 2 — an unrecorded decision
@@ -141,6 +155,10 @@ rationale; no answer contradicts the constitution.
 - A date-anchored rule (Ramadan, Ashura) is not needed yet — the rule vocabulary must have room for
   one without redefining existing rules.
 - A catalogue is loaded twice — the definition must be idempotent; reload changes nothing.
+- Two catalogue versions share an effective-from date, or a higher version takes effect earlier than
+  a lower one — rejected. "Which version was current on this date" must have exactly one answer.
+- A date falls before the earliest effective-from date — no version is current, and the contract
+  must say so rather than defaulting to the earliest.
 - The contract is run with no catalogue present — it must report that clearly, not pass vacuously.
 
 ## Requirements *(mandatory)*
@@ -151,12 +169,23 @@ rationale; no answer contradicts the constitution.
 
 - **FR-001**: A validation contract MUST exist that decides whether a given task catalogue is
   admissible.
-- **FR-002**: The contract MUST require each task to carry a stable identifier unique across the
-  catalogue.
+- **FR-002**: The contract MUST require each task to carry a stable identifier that is a
+  human-readable slug (lower-case words separated by hyphens, e.g. `fajr-sunnah-before`), unique
+  across the catalogue. An identifier MUST NOT be reused for a different task once published, and
+  MUST NOT change when the task's points or schedule change.
 - **FR-003**: The contract MUST require each task to carry exactly one section, one positive point
   value, one schedule rule, one maximum-occurrences-per-day of at least 1, and one display position.
+- **FR-003a**: Display position MUST be scoped to the task's section — unique within that section,
+  and permitted to repeat across different sections. Sections MUST carry their own ordering,
+  independent of the tasks inside them.
 - **FR-004**: The contract MUST require the catalogue to carry a version identifier that changes
-  whenever any task's points, schedule, occurrence limit, or membership changes.
+  whenever any task's points, schedule, occurrence limit, or membership changes. The identifier MUST
+  be a monotonically increasing integer.
+- **FR-004a**: The contract MUST require every catalogue version to carry an effective-from date,
+  and MUST reject a catalogue in which version order and effective-from order disagree.
+- **FR-004b**: The contract MUST reject a catalogue in which two versions share an effective-from
+  date, so that exactly one version is resolvable as current for any date on or after the earliest
+  effective-from date.
 - **FR-005**: The contract MUST accept a schedule-rule vocabulary covering "every day" and "specific
   days of the week", and MUST admit date-anchored rules later without redefining existing rules.
 - **FR-006**: The contract MUST assert per-weekday available-point totals of 69, 74 and 76, and a
@@ -172,13 +201,18 @@ rationale; no answer contradicts the constitution.
 **Glossary**
 
 - **FR-012**: The glossary MUST define each of the twelve named terms.
+- **FR-012a**: The canonical spelling is **catalogue**, matching the constitution. `docs/PLAN.md`
+  MUST be corrected from "catalog" to "catalogue" as part of this feature. No document may use both.
 - **FR-013**: Each definition MUST be free of technology names.
 - **FR-014**: The glossary MUST explicitly distinguish Task Definition from Task Version, Day Plan
   from Planned Task, and Completion from Occurrence.
 
 **Decision record**
 
-- **FR-015**: The record MUST answer each of the twelve early decisions with a one-line rationale.
+- **FR-015**: The record MUST answer each of the twelve early decisions with a one-line rationale,
+  and MUST live in `docs/PLAN.md` itself. The section currently titled *Architectural Decisions to
+  Make Early* MUST be renamed to *Architectural Decisions (Recorded)*, and each item's
+  recommendation MUST be replaced by the decision taken. No second document may restate them.
 - **FR-016**: The record MUST NOT contain an answer contradicting the constitution. Where the
   constitution already fixes an answer, the record MUST cite the principle rather than restate a
   competing decision.
@@ -198,13 +232,17 @@ rationale; no answer contradicts the constitution.
 
 Vocabulary. None is given concrete content in this feature.
 
-- **Task Definition**: A practice that can be recorded. Identity, section, display position.
+- **Task Definition**: A practice that can be recorded. Identity is a human-readable slug; carries a
+  section and a display position.
 - **Task Version**: The point value, schedule rule and occurrence limit a Task Definition had under
   a given catalogue version. What a past day is scored against.
 - **Section**: The grouping a task is displayed and totalled under — prayer blocks, Qiyam/Witr,
-  Quran, Adhkar, the weekday fast, the Friday activities.
+  Quran, Adhkar, the weekday fast, the Friday activities. Carries its own ordering; task display
+  positions are scoped inside it.
 - **Schedule Rule**: The statement of which dates a task applies to.
-- **Catalogue Version**: The identifier fixing the whole set of Task Versions at a point in time.
+- **Catalogue Version**: A monotonically increasing integer fixing the whole set of Task Versions,
+  paired with the date from which it takes effect. Together these make "which version applied on a
+  given date" answerable from the catalogue alone.
 - **Occurrence**: One recordable instance of a task within a day, bounded by the task's maximum.
 - **Day Plan**: The frozen set of tasks applicable to one date and the points available on it.
 - **Planned Task**: One task's entry within a Day Plan.
@@ -225,7 +263,9 @@ Vocabulary. None is given concrete content in this feature.
 - **SC-004**: All **12** glossary terms are defined; zero terms used in this specification are left
   undefined.
 - **SC-005**: All **12** early decisions carry a recorded answer and rationale; zero contradict the
-  constitution.
+  constitution. Zero occurrences of "catalog" (without the trailing "ue") remain in any project
+  document, excluding passages that quote the spelling itself in order to forbid it. Baseline at
+  clarification time: `docs/PLAN.md` 32, constitution 0, `CLAUDE.md` 0.
 - **SC-006**: A maintainer who has never seen the paper sheet can state, from the contract alone,
   every structural and arithmetic condition a catalogue must meet.
 - **SC-007**: Zero lines of production application code are added. Nothing from this feature is
@@ -256,9 +296,12 @@ None. This is the first increment.
 
 ## Out of Scope
 
-Authoring the real catalogue (see below); storage schemas and migrations; screens and layouts;
-network calls; module creation and dependency wiring; sync design; leaderboard rules; notification
-content; anything a user can click.
+Authoring the real catalogue (see below); anything else requiring the source sheet; storage schemas
+and migrations; screens and layouts; network calls; module creation and dependency wiring; sync
+design; leaderboard rules; notification content; anything a user can click.
+
+In scope by consequence of clarification: edits to `docs/PLAN.md` — recording the twelve decisions
+in place (FR-015) and correcting the "catalog" spelling (FR-012a).
 
 ## Deferred to 002
 
