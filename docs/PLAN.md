@@ -1,0 +1,570 @@
+# Recommended Development Strategy
+
+## How I read this product
+
+Before the phases, four observations that actually drive the phase boundaries. If these are wrong, the roadmap is wrong.
+
+**1. The hard requirement is not "track tasks" — it is "reproduce a past day exactly as it was."**
+Snapshotting the points on each completion row is the obvious move, and it is not enough. The daily score is `earned / available`. Completions only give you the numerator. If the admin adds a task or changes a schedule, the *denominator* of every past day silently changes, and a day where the user completed nothing loses its record entirely. The fix is to materialize an immutable **Day Plan** — the list of applicable tasks and their point values for a given date — the first time that date is opened, and never recompute it afterwards. This decision must land in Phase 2, because retrofitting it later means rewriting the schema and losing real user history.
+
+**2. "Applicable multiple times per day" means completion is an append-only event log, not a boolean.**
+No `isCompleted` column anywhere. A completion is a row: which task version, which day, which occurrence, how many points awarded, when. Uncompleting is deleting (or tombstoning) the most recent occurrence. This also happens to be the shape a leaderboard and a sync engine both want, which is convenient.
+
+**3. Supabase should stay out of the early phases — but sync-readiness should not.**
+Deferring Supabase is right. Deferring *client-generated UUID primary keys, `updatedAt`, and a soft-delete marker* is not: those cost roughly an afternoon in Phase 2 and cost a full data migration in Phase 7. Ship local-only, but never let an auto-increment `Long` become the identity of a completion record.
+
+**4. Hijri date is a display label and a future feature key — it is not the accountability key.**
+The accountability day is the local civil date. Hijri must be *stored alongside* each Day Plan as a denormalized snapshot, not looked up at render time, or your history screens break when the cache is cold or the API-synced conversion shifts by a day. This lets the app work fully offline for any past date and unlocks later Ramadan/Ashura features without a new lookup path.
+
+## Phase overview
+
+| Phase | Name | Ships to user? | MVP |
+|---|---|---|---|
+| 1 | Foundation / Product & Domain Planning | No | Yes (planning) |
+| 2 | Today Screen — Local Task Engine | Yes | Yes |
+| 3 | Weekly Accountability Sheet | Yes | Yes |
+| 4 | Streaks & Consistency | Yes | Yes |
+| 5 | History & Past-Day Review | Yes | No |
+| 6 | Charts & Insights | Yes | No |
+| 7 | Identity & Cloud Sync (Supabase) | Yes | No |
+| 8 | Leaderboards & Honor Board | Yes | No |
+| 9 | Notifications & Weekly Summaries | Yes | No |
+| 10 | Achievements, Friends & Challenges | Yes | No |
+
+---
+
+## Phase 1 — Foundation / Product & Domain Planning
+
+### Goal
+Produce the canonical task catalog, the domain glossary, and the eight or nine architectural decisions that cannot be discovered later without rework. No production code.
+
+### User value
+None directly. Its value is that Phases 2–4 can be built without stopping to re-decide the data model.
+
+### Scope
+- Canonicalize the weekly accountability sheet into a machine-readable seed catalog (stable task IDs, section, points, schedule rule, max occurrences per day, display order, catalog version).
+- Validate the point arithmetic. I checked it and it holds: 6×2 (Fajr) + 4×2 (Dhuhr) + 3×2 (Asr) + 3×2 (Maghrib) + 3×2 (Isha) = 38; + 9 (Qiyam/Witr) = 47; + 4 (Quran memorization and reading) = 51; + 18 (nine Adhkar) = **69 base day**. Monday and Thursday add fasting (5) = **74**. Friday adds seven 1-point activities = **76**. Week total = (69×4) + (74×2) + 76 = **500**. The sheet is internally consistent — worth locking as a regression test fixture in Phase 2.
+- Write the domain glossary: Task Definition, Task Version, Section, Schedule Rule, Day Plan, Planned Task, Completion, Occurrence, Daily Score, Weekly Score, Consistency Day, Streak.
+- Decide the accountability day boundary and the week boundary (see *Architectural Decisions to Make Early*).
+- Confirm the module shape (`:domain`, `:data`, `:app`) and that Koin is the sole DI framework. `develop-v1` carries no DI code of any kind, so this is a decision to record, not a migration to perform.
+- Write the SpecKit constitution / spec skeletons for Phases 2–4.
+
+### Out of scope
+Room entities, Supabase schemas, Compose screens, tickets, sync design, leaderboard rules.
+
+### Domain concepts introduced
+All of the above, as definitions only.
+
+### Data/storage requirements
+None persisted. Output is a seed catalog file (JSON or YAML) plus written specs, both version-controlled.
+
+### Architecture requirements
+Module boundary decision only: `:core:*`, `:domain`, `:data`, `:feature:today`, etc. Decide the shape, do not build empty modules you have no code for yet.
+
+### UI/screens
+None. Low-fidelity wireframes for Today and Week are useful but not required.
+
+### Testing requirements
+The catalog seed gets a validation checklist: every task has a unique stable ID, a schedule rule, and a positive point value; per-day totals equal 69/74/76 and the week equals 500.
+
+### Dependencies
+None.
+
+### Definition of Done
+Seed catalog exists and validates against the expected daily/weekly totals; glossary is written; every item under *Architectural Decisions to Make Early* has a recorded answer with a one-line rationale; Phase 2 spec is drafted and reviewable.
+
+### Why now
+The task catalog is the product's entire content model and it is fixed content, not user content. Getting it into a canonical, versioned form first means Phase 2 is plumbing rather than product design. It also surfaces the DI conflict and the day-boundary question before they become load-bearing.
+
+---
+
+## Phase 2 — Today Screen — Local Task Engine
+
+### Goal
+A user opens the app, sees exactly the tasks applicable to today grouped by section, marks them complete (including multiple times where allowed), and sees today's earned points against today's available points. Fully offline.
+
+### User value
+The core loop. This alone is a usable product — a digital replacement for the paper sheet.
+
+### Scope
+- Seed the versioned task catalog into Room on first launch, idempotently, keyed by catalog version.
+- Resolve applicability for a date: daily, specific-weekday (fasting on Monday/Thursday), Friday-only.
+- Materialize and persist an immutable Day Plan for the current date on first access, including the Hijri label snapshot and the computed available-points total.
+- Append-only completion log with occurrence support; undo removes the latest occurrence.
+- Daily score: earned points, available points, percentage.
+- Sync-ready primitives from day one: client-generated UUID ids, `updatedAt`, soft-delete marker, nullable `userId`.
+
+### Features included
+Today screen with sectioned task list, complete/undo, occurrence counters (`2/3`), daily points header, Gregorian + Hijri date display, day rollover handling while the app is open.
+
+### Features explicitly NOT included
+Weekly view, history browsing, streaks, charts, editing past days, task creation/editing of any kind, accounts, sync, notifications, achievements, leaderboards, settings beyond what the screen needs, animations and celebration UI.
+
+### Domain concepts introduced
+Task Definition, Task Version, Catalog Version, Section, Schedule Rule (`Daily`, `DaysOfWeek`, later `HijriDate`), Occurrence limit, Day Plan, Planned Task, Completion, Daily Score.
+
+### Data/storage requirements
+Room, offline-only. Roughly: task definition/version tables, day plan + planned task tables, completion table. Day Plan rows are written once and treated as immutable for past dates. Hijri lookup and the date provider are **net-new** — `develop-v1` has no `HijriDateRepository`, no `GetCurrentDateUseCase`, and no Room, so budget for building them rather than reusing them. The clock goes behind an injectable provider from the first commit so tests can move time.
+
+### Architecture requirements
+Clean Architecture with an isolated domain layer holding scoring and applicability as pure functions. Repository interfaces in domain (`TaskCatalogRepository`, `DayPlanRepository`, `CompletionRepository`) with Room implementations in data — Phase 7 replaces implementations only. MVVM + StateFlow, single immutable UI state per screen. Retrofit is introduced here for Hijri sync and is the only network surface in the app.
+
+### UI/screens
+`TodayScreen` only. Arabic content, RTL-correct layout.
+
+### Testing requirements
+Unit tests for applicability (each weekday produces the right task set), scoring (partial, zero, all-complete, multi-occurrence), and the 69/74/76/500 fixtures. Room instrumentation tests for the completion log and Day Plan immutability. One ViewModel test per state transition. A day-rollover test with a fake clock.
+
+### Dependencies
+Phase 1 catalog and decisions.
+
+### Definition of Done
+On a fresh install with no network, the user can complete and undo tasks for today, points update correctly, the Day Plan persists across process death, day rollover produces a new plan without mutating yesterday's, and the daily total matches the expected value for that weekday.
+
+### Why now
+Everything else in the product is a projection over completions and day plans. Until the log and the plan exist and are correct, nothing downstream can be built on solid ground — and this is the smallest slice that is genuinely useful on its own.
+
+---
+
+## Phase 3 — Weekly Accountability Sheet
+
+### Goal
+Turn the daily log into the weekly artifact the user actually recognizes: a Saturday–Friday sheet with per-day earned/available and a weekly total out of 500.
+
+### User value
+The paper sheet is a *weekly* instrument. This is the phase where the app matches the user's existing mental model, and where past days become visible for the first time.
+
+### Scope
+- Week boundary (Saturday → Friday) and week identity/key.
+- Week aggregate: per-day earned and available, weekly earned, weekly available, weekly percentage.
+- Materialize Day Plans for elapsed days in the current week that were never opened, using the catalog version that was current for that date — so a skipped day shows `0/69` rather than vanishing.
+- Week screen with per-day drill-in to a read-only day summary.
+
+### Features included
+Current-week sheet, weekly totals, day-cell states (untouched / partial / complete), navigation to previous and next week within the recorded range, Hijri labels per day.
+
+### Features explicitly NOT included
+Editing past days, charts, streaks, monthly views, export, sharing, sync.
+
+### Domain concepts introduced
+Week (Sat–Fri), Week Key, Weekly Score, Day Summary, backfilled Day Plan.
+
+### Data/storage requirements
+No new tables strictly required — week aggregates are queries over day plans and completions. Add indexed date columns. Consider a materialized `DaySummary` cache only if a real measurement shows the aggregate query is slow.
+
+### Architecture requirements
+`GetWeekSummaryUseCase` in domain, pure over repository data. Keep the week-boundary rule in one place (a `WeekCalculator`), not spread across queries.
+
+### UI/screens
+`WeekScreen`, read-only `DaySummary` detail.
+
+### Testing requirements
+Week-boundary tests including the Saturday and Friday edges and month/year crossings; backfill tests (day never opened → correct available points from the then-current catalog version); a full-week fixture that must total 500.
+
+### Dependencies
+Phase 2.
+
+### Why now
+It is the first read-model over the log, it validates that the Phase 2 storage design is actually queryable, and it forces the backfill question while there is still almost no user data at risk.
+
+### Definition of Done
+A week with mixed activity renders correct per-day and weekly figures; a fully completed week reads exactly 500/500; navigating away and back is consistent; no past-day mutation is possible from this screen.
+
+---
+
+## Phase 4 — Streaks & Consistency
+
+### Goal
+Implement the product's actual thesis: consistency over perfection. A day counts toward the streak when the user opens the app and completes at least one applicable task.
+
+### User value
+The retention mechanic, and the emotional core of the app. Cheap to build, disproportionately motivating.
+
+### Scope
+- Consistency Day rule: at least one completion recorded against that date's Day Plan.
+- Current streak, longest streak, last active date.
+- Streak state on the Today screen; streak-at-risk state late in the day.
+- Explicit grace/timezone policy (see deferred decisions) applied consistently.
+
+### Features included
+Current streak, best streak, a compact recent-activity indicator, break handling.
+
+### Features explicitly NOT included
+Freezes, repairs, purchased saves, achievements, badges, notifications, social comparison.
+
+### Domain concepts introduced
+Consistency Day, Streak, Longest Streak, Streak Break.
+
+### Data/storage requirements
+Derive from completions first — no new source of truth. Add a small cached streak row (current, longest, last active date, computed-through date) only if the derived query becomes visibly slow. Cache must be reconstructible from the log, never authoritative.
+
+### Architecture requirements
+`GetStreakUseCase` as a pure fold over consistency days. Injected clock. No Android dependencies in the streak logic.
+
+### UI/screens
+Streak element on `TodayScreen`; optionally a small streak detail sheet.
+
+### Testing requirements
+Same-day multiple completions count once; a single gap day breaks the streak; streak survives process death and app restart; behavior across a device timezone change and a manual clock change; long-history performance sanity check.
+
+### Dependencies
+Phases 2–3.
+
+### Why now
+It is the last piece the product needs to be *the app described in the brief* rather than a checklist. It is also the cheapest high-retention feature available, and it depends only on data that already exists.
+
+### Definition of Done
+Streak is correct across the tricky cases above, is visible on the main screen, and requires no new writes on the completion path.
+
+---
+
+## Phase 5 — History & Past-Day Review
+
+### Goal
+Let the user browse and reflect on any recorded past day or week, and decide once and for all whether past days are editable.
+
+### User value
+Reflection and self-accountability — the *muhasabah* the app is named for. Also the first real test of the historical-accuracy promise.
+
+### Scope
+- History list by week/month with completion indicators.
+- Full past-day detail showing the tasks *as they were on that day*, with the points that were awarded.
+- Retroactive completion policy: fixed grace window (e.g. yesterday until a cutoff), or read-only past. Decide, apply, and make the rule visible in the UI.
+- Empty-state handling for dates before install.
+
+### Features included
+History browsing, past-day detail, retro-completion within the chosen window (if allowed), Hijri/Gregorian toggle if desired.
+
+### Features explicitly NOT included
+Charts, export, sharing, notes/journaling, sync.
+
+### Domain concepts introduced
+Retro-Completion Window, Locked Day, `completedAt` distinct from the day the completion is credited to.
+
+### Data/storage requirements
+Completions need both the credited date and the actual timestamp. Pagination over day plans. This is the phase where an admin catalog change should be simulated against real stored history.
+
+### Architecture requirements
+A single `DayEditPolicy` in domain consulted by every write path, including Today. Do not let two screens hold different opinions about whether a day is writable.
+
+### UI/screens
+`HistoryScreen`, `DayDetailScreen`.
+
+### Testing requirements
+The critical one: seed history under catalog v1, bump to v2 with changed points and a changed schedule, and assert that past days still render v1 values and totals while today renders v2. Plus grace-window boundary tests and pagination tests.
+
+### Dependencies
+Phases 2–4.
+
+### Definition of Done
+Any recorded day renders with its original definitions and totals after a catalog change; the edit policy is enforced identically everywhere; history loads smoothly over a year of seeded data.
+
+### Why now
+The versioning machinery went in during Phase 2, but nothing has *proved* it. This phase is that proof, and it needs to happen before charts aggregate over the same data and before sync starts moving it between devices.
+
+---
+
+## Phase 6 — Charts & Insights
+
+### Goal
+Visualize consistency over weeks and months.
+
+### User value
+Pattern recognition — which sections are consistently missed, whether the trend is improving.
+
+### Scope
+Weekly trend, monthly overview/heatmap, per-section breakdown, best/worst day, personal bests. Read-only aggregations.
+
+### Out of scope
+Predictions, AI summaries, goal setting, sharing/export images, social comparison.
+
+### Domain concepts introduced
+Aggregation Period, Section Performance, Trend, Completion Rate.
+
+### Data/storage requirements
+Read-only aggregate queries; optional pre-computed monthly rollups if measured to be necessary. No new writes on the completion path.
+
+### Architecture requirements
+Aggregation use cases in domain returning chart-agnostic models. Chart library confined to the UI layer so it can be swapped.
+
+### UI/screens
+`InsightsScreen` with period switching; possibly a chart card on Today.
+
+### Testing requirements
+Aggregation correctness against fixtures, sparse-data and single-day cases, month/year boundaries, performance over a year of data.
+
+### Dependencies
+Phase 5 (needs trustworthy history).
+
+### Definition of Done
+Charts match hand-computed fixtures, render with 1 day and with 365 days of data, and add no measurable cost to the completion flow.
+
+### Why now
+Charts are only meaningful once there is enough correct history to chart, and they are pure read-model work — safe, self-contained, and a natural pause before the sync phase.
+
+---
+
+## Phase 7 — Identity & Cloud Sync (Supabase)
+
+### Goal
+Introduce accounts and bidirectional sync without changing the offline-first behavior of anything shipped so far.
+
+### User value
+Backup, device migration, multi-device continuity — and the precondition for anything competitive.
+
+### Scope
+- Supabase auth (email/OTP or a single provider — do not ship three).
+- Local-first sync engine: outbox/queue, `syncState` per row, `updatedAt`, tombstones for undone completions, idempotent upserts on client-generated UUIDs.
+- Remote task catalog with versioning; local seed becomes the fallback, not the source of truth.
+- Anonymous-to-authenticated migration for existing local data — existing users must not lose their history.
+- Conflict policy: last-write-wins per completion occurrence is adequate here because completions are near-immutable facts; document it explicitly.
+
+### Features included
+Sign up / sign in / sign out, profile basics, background sync, sync status indicator, remote catalog pull with local Day Plan preservation.
+
+### Features explicitly NOT included
+Leaderboards, friends, real-time subscriptions, admin console, push notifications, social profiles.
+
+### Domain concepts introduced
+User Identity, Sync State, Outbox, Tombstone, Remote Catalog Version, Device.
+
+### Data/storage requirements
+`userId` becomes non-null after migration; sync metadata columns (already present from Phase 2); Supabase tables for profiles, task definitions/versions, and completions with row-level security. Day Plans are a deliberate choice: keep them local-authoritative and re-derivable, or sync them. Recommendation: sync completions and catalog; keep Day Plans local and rebuildable from the catalog version, since two devices must produce the same plan from the same version.
+
+### Architecture requirements
+This is where the Phase 2 repository interfaces pay off: swap or decorate implementations, leave domain untouched. If a single domain use case has to change to accommodate sync, treat that as a design smell and fix the boundary instead.
+
+### UI/screens
+Auth screens, profile/settings, sync status surface.
+
+### Testing requirements
+Offline-then-online reconciliation, duplicate-submission idempotency, undo-then-sync (tombstone) correctness, two-device convergence, local-history migration on first sign-in, auth failure and token expiry paths, RLS verification that no user can read another's completions.
+
+### Dependencies
+Phases 2–5. Phase 6 is not required but usually already done.
+
+### Definition of Done
+A user with local-only history signs in and keeps every record; two devices converge; airplane-mode usage syncs cleanly on reconnect; the app remains fully usable signed-out and offline.
+
+### Why now
+Late on purpose. Sync is the highest-complexity, lowest-immediate-value phase, and its cost drops sharply once the local model is stable and proven. Introducing it earlier would have made every Phase 2–5 decision an argument about sync.
+
+---
+
+## Phase 8 — Leaderboards & Honor Board
+
+### Goal
+Competitive raw-points rankings — daily, weekly, monthly — plus the Honor Board.
+
+### Scope
+Server-computed rankings over raw points, opt-in participation and display name, own-rank visibility, period boundaries agreed server-side (whose timezone defines "daily" is a real question — resolve it here). Honor Board as a curated/threshold recognition surface.
+
+### Out of scope
+Friends, challenges, chat, private groups, anti-cheat beyond basic server-side validation.
+
+### Domain concepts introduced
+Leaderboard Period, Ranking, Participation Consent, Display Identity, Honor Board Criteria.
+
+### Data/storage requirements
+Server-side aggregation (Postgres views or scheduled functions); client caches rankings for offline display. Never rank from client-reported totals — recompute from synced completions.
+
+### Architecture requirements
+Rankings are a remote read model with no local authority. Leaderboard failure must never degrade the core loop.
+
+### Testing requirements
+Tie-breaking, period boundaries across timezones, opt-out honored everywhere, large-list pagination, offline cache behavior, tamper resistance (client cannot inflate points).
+
+### Dependencies
+Phase 7.
+
+### Definition of Done
+Rankings are correct and server-derived, participation is opt-in and revocable, and the app works normally when the leaderboard is unavailable.
+
+### Why now
+Impossible before identity and sync exist, and it introduces social pressure — which is best added to a product whose numbers are already trustworthy.
+
+---
+
+## Phase 9 — Notifications & Weekly Summaries
+
+### Goal
+Bring the user back at the right moments without becoming nagging — prayer-window nudges, streak-at-risk reminders, and an end-of-week summary.
+
+### Scope
+Local scheduled notifications, per-category user control, streak-at-risk timing, weekly summary generation and screen/notification, quiet hours.
+
+### Out of scope
+Push from server, prayer-time calculation from geolocation (a whole feature in itself), social notifications.
+
+### Dependencies
+Phases 4 and 6 (streaks and aggregates).
+
+### Definition of Done
+Notifications respect user settings and quiet hours, survive reboot, never fire for already-completed tasks, and can be fully disabled.
+
+---
+
+## Phase 10 — Achievements, Friends & Challenges
+
+### Goal
+Long-horizon engagement: badges and milestones, friend connections, time-boxed challenges.
+
+### Scope
+Achievement definitions and unlock evaluation over existing history, friend requests/accept/block, challenge creation and participation.
+
+### Dependencies
+Phases 7 and 8.
+
+### Definition of Done
+Achievements evaluate correctly against pre-existing history, social interactions are consent-based and blockable, and none of it is required for solo use.
+
+---
+
+# MVP Boundary
+
+**MVP = Phase 1 + Phase 2 + Phase 3 + Phase 4.**
+
+The first usable version:
+
+- Today screen: applicable tasks grouped by section, correct for the weekday (fasting on Monday/Thursday, the seven Friday activities on Friday).
+- Complete and undo, with multiple occurrences where the task allows it.
+- Daily score as earned/available with the correct 69/74/76 denominators.
+- Weekly Saturday–Friday sheet with per-day figures and a weekly total out of 500.
+- Read-only past-day summaries reachable from the week sheet.
+- Consistency streak: current and longest, driven by "opened the app and completed at least one task."
+- Gregorian and Hijri dates displayed.
+- Fully offline, no account, no network dependency for the core loop.
+- Versioned task catalog and immutable Day Plans underneath, so history stays honest from the very first record.
+
+**Deliberately excluded from MVP:** accounts, sync, leaderboards, Honor Board, charts, achievements, friends, challenges, notifications, retroactive editing beyond the current day, task customization of any kind, export, and any Supabase dependency.
+
+**Deferred, in order of when it should arrive:** history browsing and past-day review → charts → identity and sync → leaderboards → notifications → social. The one thing *not* deferred despite being invisible is the versioning/snapshot model, because it is the only item on this list that cannot be added later without damaging data that already exists.
+
+---
+
+# Future Roadmap
+
+| After MVP | Phase | Unlocks |
+|---|---|---|
+| Next | 5 — History & Past-Day Review | Proves historical accuracy; enables reflection |
+| Then | 6 — Charts & Insights | Pattern recognition over trustworthy history |
+| Then | 7 — Identity & Cloud Sync | Backup, multi-device; precondition for everything social |
+| Then | 8 — Leaderboards & Honor Board | Competition on raw points |
+| Then | 9 — Notifications & Weekly Summaries | Re-engagement |
+| Later | 10 — Achievements, Friends, Challenges | Long-horizon retention |
+
+---
+
+# Architectural Decisions to Make Early
+
+These genuinely block Phase 2 or are prohibitively expensive to reverse.
+
+1. **Accountability day boundary.** Civil midnight, or a religiously-motivated boundary (Fajr, or Maghrib as the Hijri day actually begins)? This determines which date a late-night completion is credited to, and therefore every score and streak. Recommendation: civil midnight for the accountability key, with Hijri shown as a label. Simple, testable, matches how the paper sheet is used. If you ever want Maghrib-based days, it must be a stored per-day rule, not a code change.
+2. **Week boundary.** Saturday→Friday, per the sheet. Locked in one `WeekCalculator`.
+3. **Historical accuracy strategy.** Immutable Task Versions + materialized immutable Day Plans + `pointsAwarded` denormalized onto each completion. This is the central decision of the whole project.
+4. **Completion representation.** Append-only occurrence log, no boolean state, undo = remove/tombstone latest occurrence.
+5. **Identity of records.** Client-generated UUIDs for completions, day plans, and task versions. Not auto-increment.
+6. **Sync-ready columns from day one.** `updatedAt`, soft-delete/tombstone marker, nullable `userId`. No sync code, just the shape.
+7. **Schedule rule representation.** A sealed/extensible rule type (`Daily`, `DaysOfWeek`, reserved `HijriDate`/`DateRange`) rather than boolean columns like `isFriday` — Ramadan and Ashura tasks are clearly coming.
+8. **DI framework.** Koin, sole and uncontested — `develop-v1` contains no Hilt, no KSP, and no DI wiring at all. Recorded here only so it cannot be reopened per-feature.
+9. **Module and layer boundaries.** Domain must have zero Android and zero Room dependencies; repository interfaces live in domain. This is what makes Phase 7 a swap instead of a rewrite.
+10. **Hijri date storage.** Snapshot per Day Plan, not looked up at render time.
+11. **Clock injection.** An injectable time/date provider from the start, or day-rollover and streak logic become untestable.
+12. **Content and language strategy.** Task text is Arabic and is data, not UI strings; decide now whether the *interface* is Arabic-only or bilingual, since RTL and string extraction are much cheaper before there are screens.
+
+---
+
+# Decisions That Can Be Deferred
+
+- Supabase project setup, schema, and RLS design (Phase 7).
+- Auth provider choice (Phase 7).
+- Conflict-resolution refinement beyond last-write-wins (revisit in Phase 7).
+- Whether Day Plans sync or are re-derived per device (Phase 7).
+- Chart library (Phase 6) — the domain returns library-agnostic models.
+- Leaderboard period timezone semantics and tie-breaking (Phase 8).
+- Whether the Honor Board is threshold-based or curated (Phase 8).
+- Retroactive edit window length, and whether it exists at all (Phase 5) — but the *policy object* it will live in should exist in Phase 2.
+- Streak grace rules, freezes, timezone-travel leniency (Phase 4, refine later).
+- Whether to cache streak and day-summary values (only when measurement says so).
+- Achievement catalog (Phase 10).
+- Theming, dark mode, animations, onboarding polish.
+- Analytics and crash reporting vendor.
+- Admin tooling for editing the catalog (until Phase 7 makes it remote).
+- Notification copy and timing heuristics (Phase 9).
+
+---
+
+# What Changes When Supabase Arrives — and What Must Not
+
+**Likely to change (design for it):**
+- Task catalog *source*: local seed → remote pull with versioning. The catalog repository *interface* should not change.
+- Identity: `userId` goes from absent/nullable to required.
+- Completion writes: local-only → local write plus outbox enqueue.
+- New concerns that do not exist today: auth session, sync status, tombstone propagation, remote catalog version reconciliation.
+- Leaderboard and Honor Board read models — entirely new, entirely remote.
+
+**Must remain backend-independent:**
+- All scoring: daily earned/available, weekly totals, percentages.
+- Applicability resolution and Day Plan materialization.
+- Streak and consistency computation.
+- Aggregations behind charts.
+- Every domain model and use case; every repository *interface*.
+- Room as the offline source of truth for the core loop — Supabase is a peer to sync with, never the thing the UI reads from directly.
+
+The test for whether the boundary is right: **turning Supabase off should degrade the app to exactly the MVP, with no crashes and no missing history.** If that is not true, the coupling is in the wrong place.
+
+---
+
+# Recommended SpecKit Execution Order
+
+Work in small specs. One spec should be implementable and verifiable in a sitting or two — a solo developer's real constraint.
+
+**Stage 1 — Foundations (no user-visible output)**
+1. `spec: task-catalog` — canonical catalog, stable IDs, schedule rules, occurrence limits, point totals as fixtures.
+2. `spec: domain-glossary-and-decisions` — glossary plus the twelve early decisions with recorded rationale.
+3. `spec: persistence-foundation` — Room schema for task definitions/versions, day plans, completions, with UUID ids and sync-ready columns; seeding and migration strategy.
+
+**Stage 2 — Phase 2 (Today)**
+4. `spec: task-applicability` — resolve the applicable task set for a date.
+5. `spec: day-plan-materialization` — create and freeze the Day Plan, including the Hijri snapshot.
+6. `spec: completion-logging` — append/undo occurrences, `pointsAwarded` denormalization.
+7. `spec: daily-scoring` — earned/available/percentage.
+8. `spec: today-screen` — Compose UI, ViewModel, state, day rollover.
+
+**Stage 3 — Phase 3 (Week)**
+9. `spec: week-calculation` — Saturday–Friday boundaries and week keys.
+10. `spec: weekly-scoring-and-backfill` — aggregates plus Day Plans for unopened elapsed days.
+11. `spec: week-screen` — sheet UI and read-only day summary.
+
+**Stage 4 — Phase 4 (Streak)**
+12. `spec: consistency-day-rule`
+13. `spec: streak-calculation`
+14. `spec: streak-ui`
+
+*MVP ships here. Use it yourself for at least two full weeks before starting Stage 5 — the sheet will tell you things the spec cannot.*
+
+**Stage 5 — Phase 5 (History)**
+15. `spec: day-edit-policy` — retro window, locked days, enforced from one place.
+16. `spec: history-browsing`
+17. `spec: historical-integrity-verification` — the catalog-change regression suite. Treat this as a first-class spec, not a test chore.
+
+**Stage 6 — Phase 6 (Insights)**
+18. `spec: aggregation-use-cases`
+19. `spec: insights-screen`
+
+**Stage 7 — Phase 7 (Sync)**
+20. `spec: supabase-schema-and-rls`
+21. `spec: authentication`
+22. `spec: sync-engine` — outbox, tombstones, idempotency, conflict policy.
+23. `spec: remote-task-catalog`
+24. `spec: local-to-account-migration` — write this *before* the sync engine ships; it is the one that can destroy real user data.
+
+**Stage 8 — Phase 8 and beyond**
+25. `spec: leaderboard-aggregation` (server-side)
+26. `spec: leaderboard-ui-and-consent`
+27. `spec: honor-board`
+28. `spec: notifications`
+29. `spec: weekly-summary`
+30. `spec: achievements`, then `spec: friends`, then `spec: challenges`
+
+The ordering principle throughout: **specs that define immutable data shapes come before specs that read them, and specs that touch existing user data come with their migration spec attached.**
