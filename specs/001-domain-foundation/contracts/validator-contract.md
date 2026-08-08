@@ -71,7 +71,9 @@ Each row is one bad fixture and one test. This table *is* the SC-003 obligation.
 | 16 | Parse succeeds | `MalformedCatalogue` | `malformed.json` |
 | 17 | File present | `NoCatalogue` | *(absence — no file)* |
 
-17 rules, 17 defect variants, 16 fixture files. `NoCatalogue`'s fixture is the absence of one.
+17 rules, 17 defect variants, 17 rule fixture files — rule 3 carries two (zero and negative points),
+and `NoCatalogue`'s fixture is the absence of one. With `two-defects.json` that is 18 files in
+`bad/`.
 
 **Positive control**: `good/valid-catalogue.json` returns `emptyList()`.
 
