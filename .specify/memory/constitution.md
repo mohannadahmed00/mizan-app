@@ -1,6 +1,24 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.1.0 → 1.1.1 (2026-08-09)
+Bump rationale: PATCH. Clarifies the wording of one technology constraint. No principle is added,
+removed, or redefined; no requirement is loosened or tightened in substance.
+
+Amendment rationale: "Layouts MUST be RTL-correct" was read as mandating a right-to-left interface
+shell. The product design settles on an English LTR shell carrying Arabic task content, with each
+Arabic string rendered in a dedicated face and its own direction so mixed rows do not reflow the
+layout. That is a stricter bidirectional discipline than a naive full-RTL flip, but the old wording
+appeared to forbid it. The constraint now states the actual requirement — correct bidirectional
+rendering of Arabic content — and names shell language and direction as a product decision.
+
+Modified sections:
+  - Technology Constraints, "Content and localisation" bullet (reworded)
+
+Invalidates: nothing. No spec or code depended on a full-RTL shell; increment 001 ships no UI.
+
+---- PRIOR VERSIONS ----
+
 Version change: 1.0.0 → 1.1.0 (2026-08-08)
 Bump rationale: MINOR. Materially expands the existing "Development Workflow and Quality
 Gates" section with branch-protection and merge-gate requirements. No principle was added,
@@ -221,7 +239,11 @@ These are fixed and are not renegotiated per feature.
 - **Networking**: Retrofit and coroutines, for the existing Hijri date synchronisation only. New
   network surfaces require an explicit justification in the plan.
 - **Content and localisation**: Task content is Arabic and is treated as data, not as UI strings.
-  Layouts MUST be RTL-correct.
+  Arabic content MUST render with correct bidirectional handling and an Arabic-appropriate
+  typeface, and MUST NOT reflow or reorder the layout around it. The language and reading direction
+  of the interface shell are a product decision, not a constitutional one — an English
+  left-to-right shell carrying right-to-left Arabic content satisfies this constraint, as does a
+  fully right-to-left interface.
 
 ## Development Workflow and Quality Gates
 
@@ -266,4 +288,4 @@ conflicts with it, this constitution wins.
 Constitution Check, and again before an increment is considered complete. An increment that violates
 Principle I or Principle III is not complete, regardless of whether it works.
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-08
+**Version**: 1.1.1 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-09

@@ -95,7 +95,9 @@ The core loop. This alone is a usable product — a digital replacement for the 
 - Sync-ready primitives from day one: client-generated UUID ids, `updatedAt`, soft-delete marker, nullable `userId`.
 
 ### Features included
-Today screen with sectioned task list, complete/undo, occurrence counters (`2/3`), daily points header, Gregorian + Hijri date display, day rollover handling while the app is open.
+Today screen as a **stepped flow** — one prayer block at a time rather than a single 40-row list, per the product design — with complete/undo, occurrence counters (`2/3`), daily points header, Gregorian + Hijri date display, and day rollover handling while the app is open.
+
+The stepped flow is a presentation decision, not a domain one: sections and their order come from the catalogue exactly as before, and the day's available points are still the whole applicable set, not the block currently on screen. It does change the UI state shape — the screen holds a current-block position alongside the day's data — so budget for it in the Phase 2 spec rather than discovering it during implementation.
 
 ### Features explicitly NOT included
 Weekly view, history browsing, streaks, charts, editing past days, task creation/editing of any kind, accounts, sync, notifications, achievements, leaderboards, settings beyond what the screen needs, animations and celebration UI.
@@ -110,7 +112,7 @@ Room, offline-only. Roughly: task definition/version tables, day plan + planned 
 Clean Architecture with an isolated domain layer holding scoring and applicability as pure functions. Repository interfaces in domain (`TaskCatalogueRepository`, `DayPlanRepository`, `CompletionRepository`) with Room implementations in data — Phase 7 replaces implementations only. MVVM + StateFlow, single immutable UI state per screen. Retrofit is introduced here for Hijri sync and is the only network surface in the app.
 
 ### UI/screens
-`TodayScreen` only. Arabic content, RTL-correct layout.
+`TodayScreen` only. English interface shell, Arabic task content, each Arabic string rendered right-to-left in an Arabic face so mixed rows do not reflow the layout. See the *Design* section of `CLAUDE.md` for tokens and the per-change audit list.
 
 ### Testing requirements
 Unit tests for applicability (each weekday produces the right task set), scoring (partial, zero, all-complete, multi-occurrence), and the 69/74/76/500 fixtures. Room instrumentation tests for the completion log and Day Plan immutability. One ViewModel test per state transition. A day-rollover test with a fake clock.
