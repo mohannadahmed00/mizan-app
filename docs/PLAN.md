@@ -14,7 +14,7 @@ No `isCompleted` column anywhere. A completion is a row: which task version, whi
 Deferring Supabase is right. Deferring *client-generated UUID primary keys, `updatedAt`, and a soft-delete marker* is not: those cost roughly an afternoon in Phase 2 and cost a full data migration in Phase 7. Ship local-only, but never let an auto-increment `Long` become the identity of a completion record.
 
 **4. Hijri date is a display label and a future feature key — it is not the accountability key.**
-The accountability day is the local civil date (your existing `CompactDate`). Hijri must be *stored alongside* each Day Plan as a denormalized snapshot, not looked up at render time, or your history screens break when the cache is cold or the API-synced conversion shifts by a day. This lets the app work fully offline for any past date and unlocks later Ramadan/Ashura features without a new lookup path.
+The accountability day is the local civil date. Hijri must be *stored alongside* each Day Plan as a denormalized snapshot, not looked up at render time, or your history screens break when the cache is cold or the API-synced conversion shifts by a day. This lets the app work fully offline for any past date and unlocks later Ramadan/Ashura features without a new lookup path.
 
 ## Phase overview
 
@@ -46,7 +46,7 @@ None directly. Its value is that Phases 2–4 can be built without stopping to r
 - Validate the point arithmetic. I checked it and it holds: 6×2 (Fajr) + 4×2 (Dhuhr) + 3×2 (Asr) + 3×2 (Maghrib) + 3×2 (Isha) = 38; + 9 (Qiyam/Witr) = 47; + 4 (Quran memorization and reading) = 51; + 18 (nine Adhkar) = **69 base day**. Monday and Thursday add fasting (5) = **74**. Friday adds seven 1-point activities = **76**. Week total = (69×4) + (74×2) + 76 = **500**. The sheet is internally consistent — worth locking as a regression test fixture in Phase 2.
 - Write the domain glossary: Task Definition, Task Version, Section, Schedule Rule, Day Plan, Planned Task, Completion, Occurrence, Daily Score, Weekly Score, Consistency Day, Streak.
 - Decide the accountability day boundary and the week boundary (see *Architectural Decisions to Make Early*).
-- Resolve the DI conflict: the existing project code was built on Hilt/KSP, while the stated direction for Mizan is Koin. Pick one before Phase 2 — this is not a decision to discover mid-feature.
+- Confirm the module shape (`:domain`, `:data`, `:app`) and that Koin is the sole DI framework. `develop-v1` carries no DI code of any kind, so this is a decision to record, not a migration to perform.
 - Write the SpecKit constitution / spec skeletons for Phases 2–4.
 
 ### Out of scope
@@ -104,10 +104,10 @@ Weekly view, history browsing, streaks, charts, editing past days, task creation
 Task Definition, Task Version, Catalog Version, Section, Schedule Rule (`Daily`, `DaysOfWeek`, later `HijriDate`), Occurrence limit, Day Plan, Planned Task, Completion, Daily Score.
 
 ### Data/storage requirements
-Room, offline-only. Roughly: task definition/version tables, day plan + planned task tables, completion table. Day Plan rows are written once and treated as immutable for past dates. Reuse the existing `HijriDateRepository` and `GetCurrentDateUseCase`; wrap the clock behind an injectable provider so tests can move time.
+Room, offline-only. Roughly: task definition/version tables, day plan + planned task tables, completion table. Day Plan rows are written once and treated as immutable for past dates. Hijri lookup and the date provider are **net-new** — `develop-v1` has no `HijriDateRepository`, no `GetCurrentDateUseCase`, and no Room, so budget for building them rather than reusing them. The clock goes behind an injectable provider from the first commit so tests can move time.
 
 ### Architecture requirements
-Clean Architecture with an isolated domain layer holding scoring and applicability as pure functions. Repository interfaces in domain (`TaskCatalogRepository`, `DayPlanRepository`, `CompletionRepository`) with Room implementations in data — Phase 7 replaces implementations only. MVVM + StateFlow, single immutable UI state per screen. Retrofit stays where it already is for Hijri sync; no new network surface.
+Clean Architecture with an isolated domain layer holding scoring and applicability as pure functions. Repository interfaces in domain (`TaskCatalogRepository`, `DayPlanRepository`, `CompletionRepository`) with Room implementations in data — Phase 7 replaces implementations only. MVVM + StateFlow, single immutable UI state per screen. Retrofit is introduced here for Hijri sync and is the only network surface in the app.
 
 ### UI/screens
 `TodayScreen` only. Arabic content, RTL-correct layout.
@@ -466,7 +466,7 @@ These genuinely block Phase 2 or are prohibitively expensive to reverse.
 5. **Identity of records.** Client-generated UUIDs for completions, day plans, and task versions. Not auto-increment.
 6. **Sync-ready columns from day one.** `updatedAt`, soft-delete/tombstone marker, nullable `userId`. No sync code, just the shape.
 7. **Schedule rule representation.** A sealed/extensible rule type (`Daily`, `DaysOfWeek`, reserved `HijriDate`/`DateRange`) rather than boolean columns like `isFriday` — Ramadan and Ashura tasks are clearly coming.
-8. **DI framework.** Koin as stated, but the existing project code was written against Hilt/KSP. Choose one and migrate before Phase 2 rather than running both.
+8. **DI framework.** Koin, sole and uncontested — `develop-v1` contains no Hilt, no KSP, and no DI wiring at all. Recorded here only so it cannot be reopened per-feature.
 9. **Module and layer boundaries.** Domain must have zero Android and zero Room dependencies; repository interfaces live in domain. This is what makes Phase 7 a swap instead of a rewrite.
 10. **Hijri date storage.** Snapshot per Day Plan, not looked up at render time.
 11. **Clock injection.** An injectable time/date provider from the start, or day-rollover and streak logic become untestable.
