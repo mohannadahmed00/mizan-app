@@ -30,6 +30,23 @@ This file records the concrete, changeable details the constitution deliberately
 Solo PRs are not ceremony here — they are where CI runs and where the diff gets read cold. Do not
 skip them by committing straight to `develop-v1`.
 
+### Starting a spec
+
+Every `/speckit-specify` run **starts by cutting a branch**, without being asked:
+
+```bash
+git fetch origin
+git switch -c spec/<NNN>-<slug> origin/develop-v1
+```
+
+Branch from `origin/develop-v1`, never from whatever is checked out — otherwise a spec written
+mid-task inherits an unrelated branch. Take `<NNN>-<slug>` from the Spec Kit feature name and add
+the `spec/` prefix.
+
+The spec directory stays unprefixed (`specs/001-domain-foundation/`). Spec Kit resolves the active
+feature from `SPECIFY_FEATURE` and `.specify/feature.json`, not from the git branch, so the two may
+differ safely.
+
 ### Abandoned branches — treat as non-existent
 
 As of 2026-08-08 the remote still carries branches from before this workflow was adopted:
@@ -76,6 +93,42 @@ Additionally, before merging `develop-v1` → `main`:
 - Retrofit + coroutines for the existing Hijri date sync only. A new network surface needs explicit
   justification in the plan.
 - Task content is Arabic and is **data, not UI strings**. Layouts must be RTL-correct.
+
+## Design
+
+The product design lives in Claude Design:
+`https://claude.ai/design/p/cbccc4f5-eeaf-401a-b975-5a4484a98fdb` (file `Mizan.dc.html`).
+
+**Design tokens** — background `#EFECE5`, primary green `#0B5D42`, hover `#14805C`, ink `#14211C`,
+muted `#5C6E66`. Latin type Plus Jakarta Sans; Arabic type IBM Plex Sans Arabic; labels IBM Plex
+Mono. Arabic rows use line-height 1.75, headings 1.5.
+
+**Shell is English LTR; task content is Arabic.** Each Arabic string carries its own `dir="rtl"` in
+a dedicated Arabic face, so mixed Arabic/Latin rows never reflow the surrounding layout. This is a
+product decision, permitted explicitly by the constitution since v1.1.1.
+
+**Navigation is three tabs, not four.** Leaderboard lives inside Progress. The design's own
+rationale: a permanent leaderboard tab "puts comparison at the same weight as worship."
+
+**Today is a stepped flow** — one prayer block at a time, not a single 40-row list.
+
+### Audit any design change against these
+
+Three principles bite hardest at the visual layer, which is where they are easiest to violate by
+accident:
+
+- **Principle IX — no shame.** No red "missed" states, no ✗ marks, no empty-ring-as-failure, no
+  streak-loss imagery, no comparative or negative framing. Progress shows what was *completed*.
+  "Incomplete = red" is a near-universal design reflex and is forbidden here.
+- **Principle VI — no user authoring.** No add/edit/delete/reorder affordance on tasks anywhere. No
+  FAB on a task list, no swipe-to-delete, no drag handles, no task customisation in settings.
+- **Principle VIII — vertical slices.** The design spans the whole product, including Leaderboard
+  (Phase 8) and Auth (Phase 7). A screen existing in the design is not permission to build it in
+  the current increment.
+
+The design as audited on 2026-08-08 passes IX and VI: zero red/negative colour values anywhere, no
+authoring affordances, and the streak-reset copy leads protective ("Your 38-day record still
+stands… One task today puts you back on").
 
 ## Things that are out of scope by construction
 
