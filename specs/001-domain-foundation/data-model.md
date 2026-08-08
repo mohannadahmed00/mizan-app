@@ -110,6 +110,7 @@ the file without re-running.
 | `DuplicateDisplayPosition` | sectionId, position, slugs | FR-003a |
 | `DuplicateSectionOrder` | order, sectionIds | FR-003a |
 | `UnreachableSchedule` | slug | FR-005 |
+| `DuplicateVersionNumber` | version, count | FR-004 |
 | `VersionOrderMismatch` | version, effectiveFrom | FR-004a |
 | `DuplicateEffectiveFrom` | date, versions | FR-004b |
 | `WeekdayTotalMismatch` | dayOfWeek, expected, actual | FR-006 |
@@ -119,8 +120,13 @@ the file without re-running.
 | `MalformedCatalogue` | message | FR-011 (parse failure) |
 | `NoCatalogue` | path | FR-011 (absent file) |
 
-Fifteen defect variants, fifteen bad fixtures, one per rule. `NoCatalogue` needs no fixture file —
+Seventeen defect variants, sixteen bad fixtures, one per rule. `NoCatalogue` needs no fixture file —
 its fixture is the absence of one.
+
+`UserAuthoringAffordance` is produced by a **raw-key scan running before the strict parse**, not by
+`validate`. Without that ordering it would be unreachable: `ignoreUnknownKeys = false` makes every
+unexpected key a parse failure, so a forbidden field would surface as `MalformedCatalogue` and
+FR-019 would lose its name. See [contracts/validator-contract.md](./contracts/validator-contract.md).
 
 ---
 

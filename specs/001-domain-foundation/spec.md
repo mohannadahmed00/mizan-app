@@ -258,16 +258,20 @@ Vocabulary. None is given concrete content in this feature.
 - **SC-001**: The contract passes the known-good fixture and fails **every** known-bad fixture.
 - **SC-002**: The contract enforces the totals 69 / 74 / 76 per weekday and 500 per week; mutating
   any single point value in the good fixture causes a failure.
-- **SC-003**: Every rule in FR-002 through FR-007 has at least one dedicated failing fixture. Zero
-  rules are asserted without a fixture proving they can fail.
+- **SC-003**: Every rule listed in the validator contract's rule table has at least one dedicated
+  failing fixture. Zero rules are asserted without a fixture proving they can fail. The table is the
+  authoritative list; it spans FR-002 through FR-019, not FR-002 through FR-007.
 - **SC-004**: All **12** glossary terms are defined; zero terms used in this specification are left
   undefined.
 - **SC-005**: All **12** early decisions carry a recorded answer and rationale; zero contradict the
   constitution. Zero occurrences of "catalog" (without the trailing "ue") remain in any project
   document, excluding passages that quote the spelling itself in order to forbid it. Baseline at
   clarification time: `docs/PLAN.md` 32, constitution 0, `CLAUDE.md` 0.
-- **SC-006**: A maintainer who has never seen the paper sheet can state, from the contract alone,
-  every structural and arithmetic condition a catalogue must meet.
+- **SC-006**: The validator contract's rule table lists every enforced rule, and each row names its
+  defect type, its fixture, and — where the rule is arithmetic — its expected value. A reader can
+  therefore enumerate every condition a catalogue must meet without seeing the source sheet. Checked
+  by counting: rows in the table equals variants in the defect vocabulary equals fixtures on disk,
+  plus one for the absent-file case which has no fixture.
 - **SC-007**: Zero lines of production application code are added. Nothing from this feature is
   reachable from a running app.
 
@@ -287,6 +291,10 @@ Vocabulary. None is given concrete content in this feature.
 - **The nine Adhkar are one section of nine tasks at 2 points each**, and **the seven Friday
   activities are 1 point each, additional to the 69-point base** (76 − 69 = 7). Both derived from
   the arithmetic in `docs/PLAN.md`, to be confirmed when the source sheet arrives.
+- **The Qiyam/Witr section's 9 points are split as two tasks, 5 and 4.** `docs/PLAN.md` gives only
+  the section total. The split is **arbitrary and arithmetic-preserving** — chosen so the fixture
+  totals reach 69, nothing more. It carries no claim about the real sheet and is superseded by
+  `002`. Any other split summing to 9 would serve the contract equally.
 - **Contract placement is an implementation choice** for `/speckit-plan`. Constraint: it must not
   require creating a module that has no other code in it yet.
 

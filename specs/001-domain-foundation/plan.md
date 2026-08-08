@@ -46,7 +46,7 @@ Constitution v1.1.0. Every principle this feature touches, and how it complies.
 
 | Principle | Touched | Compliance |
 |---|---|---|
-| **I — Test-first (NON-NEGOTIABLE)** | Yes | The deliverable *is* the test. Order is fixed: known-bad fixture → failing assertion → defect type → validator rule. FR-010 and SC-003 require every rule to have a fixture proving it can fail. No exemption claimed — the validator is not DI wiring, not a `@Preview`, not generated. |
+| **I — Test-first (NON-NEGOTIABLE)** | Yes | The deliverable *is* the test. **Every phase opens with a failing test**, including the first: `CatalogueJsonTest` is written before any model type exists, and its compile failure is the red state. Thereafter the order is fixed: known-bad fixture → failing assertion → defect type → validator rule. FR-010 and SC-003 require every rule to have a fixture proving it can fail. No exemption claimed — neither the validator nor the model types are DI wiring, `@Preview`, or generated, so none of the three exemptions apply and none is invoked. |
 | **II — Domain purity** | Yes | Validator and model types are pure Kotlin: stdlib only, zero Android, zero framework. Enforced by a test asserting no `android.*` import appears in the validator sources, so the Phase 2 move into `:domain` cannot silently rot. |
 | **III — Immutable history** | Yes | No persistence here, so nothing can rewrite a past day. The contract *protects* III downstream: FR-004a/b force a catalogue version to carry an effective-from date, which is what makes "which version applied on this date" answerable for a day never opened. |
 | **IV — Offline-first** | No | No network, no UI, no storage. |
@@ -83,46 +83,55 @@ specs/001-domain-foundation/
 
 ### Source Code (repository root)
 
+Kotlin lives under `src/test/java/`, not `src/test/kotlin/` — matching the existing
+`ExampleUnitTest.kt` and avoiding any source-set configuration.
+
 ```text
-app/src/test/kotlin/com/giraffe/mizanapp/catalogue/
+app/src/test/java/com/giraffe/mizanapp/catalogue/
 ├── model/
-│   ├── TaskDefinition.kt        # slug, section, displayPosition
+│   ├── TaskDefinition.kt        # slug, sectionId, displayPosition, label
 │   ├── TaskVersion.kt           # points, scheduleRule, maxOccurrencesPerDay
 │   ├── Section.kt               # id, label, order
 │   ├── ScheduleRule.kt          # sealed: EveryDay | DaysOfWeek (DateAnchored reserved)
 │   ├── CatalogueVersion.kt      # version: Int, effectiveFrom: LocalDate
-│   └── Catalogue.kt             # versions + sections + tasks
-├── CatalogueDefect.kt           # sealed defect type, one variant per rule
+│   └── Catalogue.kt             # versions + sections + tasks + taskVersions
+├── CatalogueDefect.kt           # sealed, 17 variants, one per rule
 ├── CatalogueValidator.kt        # Catalogue -> List<CatalogueDefect>
-├── CatalogueJson.kt             # JSON -> Catalogue, parse failures as defects
-└── ...
+├── CatalogueJson.kt             # raw-key scan, then strict parse
+├── CatalogueJsonTest.kt
+├── CatalogueValidatorTest.kt    # one test per defect type
+├── CatalogueArithmeticTest.kt   # 69 / 74 / 76 / 500 and section composition
+├── CatalogueMutationTest.kt     # SC-002: mutate good fixture, assert failure
+└── DomainPurityTest.kt          # Principle II: no android.* import
 
 app/src/test/resources/catalogue/
 ├── good/valid-catalogue.json
-└── bad/
+└── bad/                                    # 16 rule fixtures + 1 multi-defect fixture
     ├── duplicate-slug.json
+    ├── malformed-slug.json
     ├── zero-points.json
     ├── negative-points.json
     ├── zero-occurrences.json
     ├── missing-section.json
-    ├── unreachable-schedule.json
     ├── duplicate-position-in-section.json
+    ├── duplicate-section-order.json
+    ├── unreachable-schedule.json
+    ├── duplicate-version-number.json
     ├── version-order-mismatch.json
     ├── duplicate-effective-from.json
     ├── wrong-weekday-total.json
     ├── wrong-week-total.json
-    └── malformed.json
-
-app/src/test/kotlin/com/giraffe/mizanapp/catalogue/
-├── CatalogueValidatorTest.kt        # one test per defect type
-├── CatalogueArithmeticTest.kt       # 69 / 74 / 76 / 500 and section composition
-├── CatalogueMutationTest.kt         # SC-002: mutate good fixture, assert failure
-└── DomainPurityTest.kt              # Principle II: no android.* import in validator
+    ├── wrong-section-composition.json
+    ├── user-editable-flag.json
+    ├── malformed.json
+    └── two-defects.json                    # not a rule fixture; proves multi-defect reporting
 
 docs/
 ├── GLOSSARY.md          # new — the twelve terms
 └── PLAN.md              # edited in place — decisions recorded, spelling corrected
 ```
+
+Rule 17 (`NoCatalogue`) has no fixture file — its fixture is the absence of one.
 
 **Structure Decision**: Everything lives in the existing `:app` module's **unit test source set**.
 No `:domain` or `:data` module is created by this feature.

@@ -50,6 +50,8 @@ rule → defect → fixture table in
 [contracts/validator-contract.md](./contracts/validator-contract.md).
 
 Each bad fixture differs from the good one in exactly one way, so a caught defect names one rule.
+The single exception is `bad/two-defects.json`, which is not a rule fixture — it proves that
+`validate` reports every defect rather than stopping at the first.
 
 ## Scenario 4 — Mutation check (SC-002)
 
@@ -103,8 +105,8 @@ grep -c "^[0-9]\+\. \*\*" docs/PLAN.md                           # expect 12 dec
 | SC-003 | Every rule row has a fixture and a test |
 | SC-004 | 12 terms in `docs/GLOSSARY.md` |
 | SC-005 | 12 decisions recorded; zero stray `catalog` spellings |
-| SC-006 | Contract readable without the source sheet |
-| SC-007 | `git diff --stat` touches no `src/main` |
+| SC-006 | Rule table rows = defect variants = fixtures + 1. Count them: 17 / 17 / 16 |
+| SC-007 | `git diff --stat` touches no `src/main`; `settings.gradle.kts` has one `include` |
 
 Last one is worth running literally:
 

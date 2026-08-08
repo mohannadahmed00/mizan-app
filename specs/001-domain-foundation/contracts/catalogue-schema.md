@@ -76,14 +76,22 @@ Ramadan and Ashura rules later extends the discriminator rather than redefining 
 ## Forbidden by contract
 
 Any field implying user authorship — `editable`, `userCreated`, `custom`, `deletable`, `sortable`,
-or an `ownerId` — is a `UserAuthoringAffordance` defect (FR-019, Principle VI). The catalogue is
-administrator content; a field that admits otherwise is rejected at the door rather than policed in
-the UI later.
+`reorderable`, `ownerId`, `userId` — is a `UserAuthoringAffordance` defect (FR-019, Principle VI).
+The catalogue is administrator content; a field that admits otherwise is rejected at the door rather
+than policed in the UI later.
+
+Detected by a **raw-key scan that runs before parsing**, so the defect keeps its name instead of
+being swallowed as a generic parse error. See the two-stage note in
+[validator-contract.md](./validator-contract.md).
 
 ## Unknown fields
 
 Rejected, not ignored. A typo'd key in a hand-authored 40-record file is a likely defect and silent
 tolerance would let `pointz: 2` default a task to zero points.
+
+An unknown key that is *not* on the forbidden list is a `MalformedCatalogue`. An unknown key that
+*is* on the forbidden list is a `UserAuthoringAffordance`. Both are rejections; they differ in what
+they tell the author.
 
 ## Stability guarantee
 
