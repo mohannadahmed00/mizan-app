@@ -84,7 +84,7 @@ If you find yourself adding Retrofit, an API client, or a DTO, stop — you have
 
 - [X] T006 Create `domain/build.gradle.kts`. It must apply **only** `alias(libs.plugins.kotlin.jvm)` and `alias(libs.plugins.kotlin.serialization)`. Add `kotlin { jvmToolchain(11) }`. Dependencies: `implementation(libs.kotlinx.serialization.json)`, `implementation(libs.kotlinx.coroutines.core)`, `testImplementation(libs.junit)`. **Do not apply any Android plugin here.** This module must never see the Android SDK.
 
-- [ ] T007 Create `data/build.gradle.kts` applying `alias(libs.plugins.android.library)` and `alias(libs.plugins.ksp)`. Set `namespace = "com.giraffe.mizanapp.data"`, `compileSdk { version = release(37) }`, `defaultConfig { minSdk = 24; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }`, `compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11; isCoreLibraryDesugaringEnabled = true }`. Add `ksp { arg("room.schemaLocation", "$projectDir/schemas") }`. Dependencies: `api(project(":domain"))`, `implementation(libs.room.runtime)`, `implementation(libs.room.ktx)`, `ksp(libs.room.compiler)`, `coreLibraryDesugaring(libs.desugar.jdk.libs)`, `androidTestImplementation(libs.androidx.junit)`, `androidTestImplementation(libs.androidx.room.testing)`, `androidTestImplementation(libs.kotlinx.coroutines.test)`. **Do not add Koin here** — all DI modules are declared in `:app`, so `:data` has no use for it.
+- [X] T007 Create `data/build.gradle.kts` applying `alias(libs.plugins.android.library)` and `alias(libs.plugins.ksp)`. Set `namespace = "com.giraffe.mizanapp.data"`, `compileSdk { version = release(37) }`, `defaultConfig { minSdk = 24; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }`, `compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11; isCoreLibraryDesugaringEnabled = true }`. Add `ksp { arg("room.schemaLocation", "$projectDir/schemas") }`. Dependencies: `api(project(":domain"))`, `implementation(libs.room.runtime)`, `implementation(libs.room.ktx)`, `ksp(libs.room.compiler)`, `coreLibraryDesugaring(libs.desugar.jdk.libs)`, `androidTestImplementation(libs.androidx.junit)`, `androidTestImplementation(libs.androidx.room.testing)`, `androidTestImplementation(libs.kotlinx.coroutines.test)`. **Do not add Koin here** — all DI modules are declared in `:app`, so `:data` has no use for it.
 
 - [X] T008 In `app/build.gradle.kts` add to `compileOptions`: `isCoreLibraryDesugaringEnabled = true`. Add to `dependencies`: `implementation(project(":data"))`, `implementation(project(":domain"))`, `implementation(libs.koin.android)`, `implementation(libs.koin.androidx.compose)`, `coreLibraryDesugaring(libs.desugar.jdk.libs)`, `testImplementation(libs.kotlinx.coroutines.test)`. **Desugaring is mandatory** — the domain model uses `java.time` and `minSdk` is 24, which would crash on API 24 and 25 without it.
 
@@ -198,63 +198,63 @@ the right available total; completing and undoing move the earned total by the r
 
 ### 3e — Data: Room entities and DAOs
 
-- [ ] T045 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/entities/CatalogueEntities.kt` with `@Entity` classes `SectionEntity` (PK `id`), `TaskDefinitionEntity` (PK `slug`), `CatalogueVersionEntity` (PK `version`), `TaskVersionEntity` (PK `id`, columns `taskSlug`, `catalogueVersion`, `points`, `maxOccurrencesPerDay`, `scheduleType`, `scheduleDays`, plus `updatedAt`, `deletedAt`, `userId`). Store the schedule rule as a discriminator string plus a comma-separated day list — a sealed type does not map to a column.
+- [X] T045 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/entities/CatalogueEntities.kt` with `@Entity` classes `SectionEntity` (PK `id`), `TaskDefinitionEntity` (PK `slug`), `CatalogueVersionEntity` (PK `version`), `TaskVersionEntity` (PK `id`, columns `taskSlug`, `catalogueVersion`, `points`, `maxOccurrencesPerDay`, `scheduleType`, `scheduleDays`, plus `updatedAt`, `deletedAt`, `userId`). Store the schedule rule as a discriminator string plus a comma-separated day list — a sealed type does not map to a column.
 
-- [ ] T046 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/entities/DayEntities.kt` with `DayPlanEntity` (PK `id` TEXT, unique index on `date`, `hijriLabel` **non-null TEXT**, plus `updatedAt`, `deletedAt`, `userId`), `PlannedTaskEntity` (PK `id`, index on `dayPlanId`), and `CompletionEntity` (PK `id`, index on `creditedDate` and on `dayPlanId, taskSlug`, columns `pointsAwarded`, `recordedAt`, `reversedAt`, plus `updatedAt`, `deletedAt`, `userId`). Dates stored as ISO strings, instants as epoch millis.
+- [X] T046 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/entities/DayEntities.kt` with `DayPlanEntity` (PK `id` TEXT, unique index on `date`, `hijriLabel` **non-null TEXT**, plus `updatedAt`, `deletedAt`, `userId`), `PlannedTaskEntity` (PK `id`, index on `dayPlanId`), and `CompletionEntity` (PK `id`, index on `creditedDate` and on `dayPlanId, taskSlug`, columns `pointsAwarded`, `recordedAt`, `reversedAt`, plus `updatedAt`, `deletedAt`, `userId`). Dates stored as ISO strings, instants as epoch millis.
 
-- [ ] T047 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/Converters.kt` with Room `@TypeConverter`s for `LocalDate` ↔ `String` and `Instant` ↔ `Long`. Null-safe both ways.
+- [X] T047 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/Converters.kt` with Room `@TypeConverter`s for `LocalDate` ↔ `String` and `Instant` ↔ `Long`. Null-safe both ways.
 
-- [ ] T048 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/daos/CatalogueDao.kt` with insert methods (`OnConflictStrategy.IGNORE`) for the four catalogue tables, a `countVersions()`, and `versionEffectiveOn(date: String): Int?` returning the greatest `version` whose `effectiveFrom <= date`, or null.
+- [X] T048 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/daos/CatalogueDao.kt` with insert methods (`OnConflictStrategy.IGNORE`) for the four catalogue tables, a `countVersions()`, and `versionEffectiveOn(date: String): Int?` returning the greatest `version` whose `effectiveFrom <= date`, or null.
 
-- [ ] T049 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/daos/DayPlanDao.kt` with `insertPlan`, `insertPlannedTasks`, `planByDate(date: String): DayPlanWithTasks?`, and `observePlanByDate(date: String): Flow<DayPlanWithTasks?>`. **There must be no update method of any kind for day plans** — not for the Hijri label, not for anything. The DAO must offer no way to express the forbidden operation.
+- [X] T049 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/daos/DayPlanDao.kt` with `insertPlan`, `insertPlannedTasks`, `planByDate(date: String): DayPlanWithTasks?`, and `observePlanByDate(date: String): Flow<DayPlanWithTasks?>`. **There must be no update method of any kind for day plans** — not for the Hijri label, not for anything. The DAO must offer no way to express the forbidden operation.
 
-- [ ] T050 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/daos/CompletionDao.kt` with `insert(completion)`, `observeLiveByDate(date: String): Flow<List<CompletionEntity>>` filtered `WHERE reversedAt IS NULL`, `liveCount(date: String, slug: String): Int` likewise filtered, and `reverseLatest(date: String, slug: String, at: Long): Int` setting `reversedAt` on the single most recent live row. **Every read filters `reversedAt IS NULL`.**
+- [X] T050 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/daos/CompletionDao.kt` with `insert(completion)`, `observeLiveByDate(date: String): Flow<List<CompletionEntity>>` filtered `WHERE reversedAt IS NULL`, `liveCount(date: String, slug: String): Int` likewise filtered, and `reverseLatest(date: String, slug: String, at: Long): Int` setting `reversedAt` on the single most recent live row. **Every read filters `reversedAt IS NULL`.**
 
-- [ ] T051 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/MizanDatabase.kt`: `@Database(entities = [...7 entities...], version = 1, exportSchema = true)` with `@TypeConverters(Converters::class)` and abstract accessors for the three DAOs.
+- [X] T051 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/db/MizanDatabase.kt`: `@Database(entities = [...7 entities...], version = 1, exportSchema = true)` with `@TypeConverters(Converters::class)` and abstract accessors for the three DAOs.
 
-- [ ] T052 [US1] Run `./gradlew :data:assembleDebug`. **Expected**: BUILD SUCCESSFUL, and `data/schemas/com.giraffe.mizanapp.data.db.MizanDatabase/1.json` now exists. **Commit that schema file** — the constitution requires exported schemas.
+- [X] T052 [US1] Run `./gradlew :data:assembleDebug`. **Expected**: BUILD SUCCESSFUL, and `data/schemas/com.giraffe.mizanapp.data.db.MizanDatabase/1.json` now exists. **Commit that schema file** — the constitution requires exported schemas.
 
 ### 3f — Data: mappers, seeder, repositories
 
-- [ ] T053 [TEST] [US1] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/mapper/MapperTest.kt` asserting round trips: domain → entity → domain returns an equal object for `DayPlan`, `PlannedTask`, `Completion`, and `TaskVersion` including both schedule rule shapes. Mappers are **not** exempt from test-first. Run `./gradlew :data:connectedDebugAndroidTest`. **Expected: COMPILE FAILURE.**
+- [X] T053 [TEST] [US1] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/mapper/MapperTest.kt` asserting round trips: domain → entity → domain returns an equal object for `DayPlan`, `PlannedTask`, `Completion`, and `TaskVersion` including both schedule rule shapes. Mappers are **not** exempt from test-first. Run `./gradlew :data:connectedDebugAndroidTest`. **Expected: COMPILE FAILURE.**
 
-- [ ] T054 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/mapper/Mappers.kt` with pure extension functions both directions for the four types. Schedule rule maps to `scheduleType` plus `scheduleDays`; an unknown discriminator throws, because it means corrupt storage rather than an expected state. Run tests. **Expected: T053 passes.**
+- [X] T054 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/mapper/Mappers.kt` with pure extension functions both directions for the four types. Schedule rule maps to `scheduleType` plus `scheduleDays`; an unknown discriminator throws, because it means corrupt storage rather than an expected state. Run tests. **Expected: T053 passes.**
 
-- [ ] T055 [TEST] [US1] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/seed/CatalogueSeederTest.kt` asserting: seeding an empty database returns `Seeded` with 32 tasks; seeding again returns `AlreadyPresent` and leaves every row count identical; seeding a catalogue with a known defect returns `Failed` and writes **nothing at all**. Run tests. **Expected: COMPILE FAILURE.**
+- [X] T055 [TEST] [US1] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/seed/CatalogueSeederTest.kt` asserting: seeding an empty database returns `Seeded` with 32 tasks; seeding again returns `AlreadyPresent` and leaves every row count identical; seeding a catalogue with a known defect returns `Failed` and writes **nothing at all**. Run tests. **Expected: COMPILE FAILURE.**
 
-- [ ] T056 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/seed/CatalogueSeeder.kt`. It reads `/catalogue/valid-catalogue.json` from the classpath via `CatalogueSeeder::class.java.getResourceAsStream`, parses it with the `001` `parseCatalogue`, validates it with `CatalogueValidator`, and inserts only if validation returns an empty list and the database has no versions. All inserts run in one Room transaction so a failure writes nothing. Run tests. **Expected: T055 passes.**
+- [X] T056 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/seed/CatalogueSeeder.kt`. It reads `/catalogue/valid-catalogue.json` from the classpath via `CatalogueSeeder::class.java.getResourceAsStream`, parses it with the `001` `parseCatalogue`, validates it with `CatalogueValidator`, and inserts only if validation returns an empty list and the database has no versions. All inserts run in one Room transaction so a failure writes nothing. Run tests. **Expected: T055 passes.**
 
-- [ ] T057 [TEST] [US1] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/repository/DayPlanRepositoryTest.kt` asserting: `ensurePlanFor` on an empty database returns `Created`; calling it again returns `AlreadyExists` with the identical plan; the stored `availablePoints` equals the expected weekday total; the created plan carries a non-blank `hijriLabel`. Run tests. **Expected: COMPILE FAILURE.**
+- [X] T057 [TEST] [US1] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/repository/DayPlanRepositoryTest.kt` asserting: `ensurePlanFor` on an empty database returns `Created`; calling it again returns `AlreadyExists` with the identical plan; the stored `availablePoints` equals the expected weekday total; the created plan carries a non-blank `hijriLabel`. Run tests. **Expected: COMPILE FAILURE.**
 
-- [ ] T058 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomDayPlanRepository.kt` implementing `DayPlanRepository`. `ensurePlanFor` reads the existing plan first and returns it untouched if present; otherwise it resolves the catalogue version for the date, calls the domain's `buildDayPlan`, and inserts plan and planned tasks in one transaction. Run tests. **Expected: T057 passes.**
+- [X] T058 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomDayPlanRepository.kt` implementing `DayPlanRepository`. `ensurePlanFor` reads the existing plan first and returns it untouched if present; otherwise it resolves the catalogue version for the date, calls the domain's `buildDayPlan`, and inserts plan and planned tasks in one transaction. Run tests. **Expected: T057 passes.**
 
 - [ ] T059 [TEST] [US1] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/repository/CompletionRepositoryTest.kt` asserting: `record` returns `Recorded` and stores the planned points; recording past the limit returns `AtLimit` and writes nothing; `undoLast` returns `Reversed` and sets `reversedAt` without deleting the row; `undoLast` with nothing live returns `NothingToUndo`; **the adhkar task accepts 9, refuses the 10th, and after one undo accepts one more**; a reversed row never appears in `observeLiveByDate`. Run tests. **Expected: COMPILE FAILURE.**
 
 - [ ] T060 [TEST] [US1] Add to the same file the FR-015 enforcement tests: with `FakeTimeProvider` set to a known today, `record` against **yesterday** returns `NotWritable` and writes nothing, and `undoLast` against yesterday likewise returns `NotWritable` and reverses nothing. Assert the completion count for that date is unchanged after both. Run tests. **Expected: FAILS** — the policy is not consulted yet.
 
-- [ ] T061 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomCompletionRepository.kt` implementing `CompletionRepository`. It takes a `DayWritePolicy` as a constructor parameter and **consults it first in both `record` and `undoLast`**, returning `NotWritable` and touching no storage when the date is refused. Points come from the stored `PlannedTask`, never from the live catalogue. Run tests. **Expected: T059 and T060 pass.**
+- [X] T061 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomCompletionRepository.kt` implementing `CompletionRepository`. It takes a `DayWritePolicy` as a constructor parameter and **consults it first in both `record` and `undoLast`**, returning `NotWritable` and touching no storage when the date is refused. Points come from the stored `PlannedTask`, never from the live catalogue. Run tests. **Expected: T059 and T060 pass.**
 
-- [ ] T062 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomCatalogueRepository.kt` implementing `CatalogueRepository` and delegating seeding to `CatalogueSeeder`.
+- [X] T062 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomCatalogueRepository.kt` implementing `CatalogueRepository` and delegating seeding to `CatalogueSeeder`.
 
 - [ ] T063 [US1] Run `./gradlew :data:connectedDebugAndroidTest`. **Expected**: all data tests pass. A device or emulator must be connected.
 
 ### 3g — App: DI, ViewModel, screen
 
-- [ ] T064 [US1] Create `app/src/main/java/com/giraffe/mizanapp/di/Modules.kt` with three Koin modules — `domainModule`, `dataModule`, `appModule` — binding the database, DAOs, the three repositories, `SystemTimeProvider` as `TimeProvider`, `DayWritePolicy`, and `TodayViewModel`. **DI wiring is exempt from test-first** (constitution, Principle I) — this is the only task in the feature claiming that exemption.
+- [X] T064 [US1] Create `app/src/main/java/com/giraffe/mizanapp/di/Modules.kt` with three Koin modules — `domainModule`, `dataModule`, `appModule` — binding the database, DAOs, the three repositories, `SystemTimeProvider` as `TimeProvider`, `DayWritePolicy`, and `TodayViewModel`. **DI wiring is exempt from test-first** (constitution, Principle I) — this is the only task in the feature claiming that exemption.
 
-- [ ] T065 [US1] Create `app/src/main/java/com/giraffe/mizanapp/MizanApplication.kt` extending `Application`, starting Koin with the three modules, and register it via `android:name=".MizanApplication"` in `app/src/main/AndroidManifest.xml`.
+- [X] T065 [US1] Create `app/src/main/java/com/giraffe/mizanapp/MizanApplication.kt` extending `Application`, starting Koin with the three modules, and register it via `android:name=".MizanApplication"` in `app/src/main/AndroidManifest.xml`.
 
-- [ ] T066 [P] [US1] Create `app/src/main/java/com/giraffe/mizanapp/today/TodayUiState.kt` with `TodayUiState`, `SectionUi`, `TaskRowUi` and `TodayEvent` **exactly** as given in [contracts/ui-state.md](./contracts/ui-state.md). Derived values are computed properties, never stored fields.
+- [X] T066 [P] [US1] Create `app/src/main/java/com/giraffe/mizanapp/today/TodayUiState.kt` with `TodayUiState`, `SectionUi`, `TaskRowUi` and `TodayEvent` **exactly** as given in [contracts/ui-state.md](./contracts/ui-state.md). Derived values are computed properties, never stored fields.
 
-- [ ] T067 [TEST] [US1] Create `app/src/test/java/com/giraffe/mizanapp/today/TodayViewModelTest.kt` using `FakeTimeProvider` and in-memory fake repositories. Assert one test per transition: initial state is `Loading` then `Ready`; `CompleteTask` raises `earnedPoints` by the task's points; `UndoTask` lowers it by the same; completing past the limit changes nothing; a `NotWritable` outcome leaves every count unchanged; `CatalogueUnavailable` is emitted when seeding fails. Run `./gradlew :app:testDebugUnitTest`. **Expected: COMPILE FAILURE.**
+- [X] T067 [TEST] [US1] Create `app/src/test/java/com/giraffe/mizanapp/today/TodayViewModelTest.kt` using `FakeTimeProvider` and in-memory fake repositories. Assert one test per transition: initial state is `Loading` then `Ready`; `CompleteTask` raises `earnedPoints` by the task's points; `UndoTask` lowers it by the same; completing past the limit changes nothing; a `NotWritable` outcome leaves every count unchanged; `CatalogueUnavailable` is emitted when seeding fails. Run `./gradlew :app:testDebugUnitTest`. **Expected: COMPILE FAILURE.**
 
-- [ ] T068 [US1] Create `app/src/main/java/com/giraffe/mizanapp/today/TodayViewModel.kt` exposing `val state: StateFlow<TodayUiState>` via `MutableStateFlow(...).asStateFlow()` and a single `fun onEvent(event: TodayEvent)`. **No mutable state may be exposed** (constitution). All work in `viewModelScope`. Run tests. **Expected: T067 passes.**
+- [X] T068 [US1] Create `app/src/main/java/com/giraffe/mizanapp/today/TodayViewModel.kt` exposing `val state: StateFlow<TodayUiState>` via `MutableStateFlow(...).asStateFlow()` and a single `fun onEvent(event: TodayEvent)`. **No mutable state may be exposed** (constitution). All work in `viewModelScope`. Run tests. **Expected: T067 passes.**
 
-- [ ] T069 [US1] Create `app/src/main/java/com/giraffe/mizanapp/today/TodayScreen.kt` — a Compose screen rendering the date header, the points header as `earned / available`, and the current section's task rows. Each row shows label, points, and for multi-occurrence tasks a `recordedCount/maxOccurrences` counter. Tapping records; a visible undo affordance reverses. **No red, no ✗, no "missed", no negative number, no add/edit/delete affordance anywhere.**
+- [X] T069 [US1] Create `app/src/main/java/com/giraffe/mizanapp/today/TodayScreen.kt` — a Compose screen rendering the date header, the points header as `earned / available`, and the current section's task rows. Each row shows label, points, and for multi-occurrence tasks a `recordedCount/maxOccurrences` counter. Tapping records; a visible undo affordance reverses. **No red, no ✗, no "missed", no negative number, no add/edit/delete affordance anywhere.**
 
-- [ ] T070 [US1] Apply Arabic content rendering to `TodayScreen.kt` (FR-025). Every **task label and section label** is Arabic content and must be rendered in an Arabic-appropriate typeface (IBM Plex Sans Arabic per `CLAUDE.md`'s Design section) with `LocalLayoutDirection provides LayoutDirection.Rtl` scoped to that text only, and `textAlign = TextAlign.Right`, so a mixed Arabic/Latin row never reflows the surrounding layout. Arabic rows use `lineHeight` 1.75em, headings 1.5em. **Interface chrome — buttons, headings, the points header — stays English and left-to-right.** Add the font to `app/src/main/res/font/` and reference it from the theme's typography.
+- [X] T070 [US1] Apply Arabic content rendering to `TodayScreen.kt` (FR-025). Every **task label and section label** is Arabic content and must be rendered in an Arabic-appropriate typeface (IBM Plex Sans Arabic per `CLAUDE.md`'s Design section) with `LocalLayoutDirection provides LayoutDirection.Rtl` scoped to that text only, and `textAlign = TextAlign.Right`, so a mixed Arabic/Latin row never reflows the surrounding layout. Arabic rows use `lineHeight` 1.75em, headings 1.5em. **Interface chrome — buttons, headings, the points header — stays English and left-to-right.** Add the font to `app/src/main/res/font/` and reference it from the theme's typography.
 
-- [ ] T071 [US1] Wire `TodayScreen` into `MainActivity` replacing the template content, collecting state with `collectAsStateWithLifecycle`.
+- [X] T071 [US1] Wire `TodayScreen` into `MainActivity` replacing the template content, collecting state with `collectAsStateWithLifecycle`.
 
 - [ ] T072 [US1] Run `./gradlew assembleDebug` then install and open on a device in **airplane mode**. **Expected**: today's tasks appear with Arabic labels rendered right-to-left, completing and undoing works, the score updates, nothing waits on a network.
 
@@ -264,19 +264,19 @@ the right available total; completing and undoing move the earned total by the r
 
 ## Phase 4: User Story 2 — Today's record stays true tomorrow (Priority: P2)
 
-- [ ] T073 [TEST] [US2] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/DayPlanImmutabilityTest.kt`. Seed catalogue v1, create a plan for a date, insert a v2 with different points and a different schedule, then re-read the original date. Assert its planned tasks, their points and its `availablePoints` are **identical**, while a plan built for a later date reflects v2. **This is the test the whole storage design exists for.** Run `./gradlew :data:connectedDebugAndroidTest`. **Expected: FAILS** if anything recomputes from the live catalogue.
+- [X] T073 [TEST] [US2] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/DayPlanImmutabilityTest.kt`. Seed catalogue v1, create a plan for a date, insert a v2 with different points and a different schedule, then re-read the original date. Assert its planned tasks, their points and its `availablePoints` are **identical**, while a plan built for a later date reflects v2. **This is the test the whole storage design exists for.** Run `./gradlew :data:connectedDebugAndroidTest`. **Expected: FAILS** if anything recomputes from the live catalogue.
 
-- [ ] T074 [US2] Fix whatever T073 exposes. If it already passes, record that in the task and move on — the test still has value as a regression guard.
+- [X] T074 [US2] Fix whatever T073 exposes. If it already passes, record that in the task and move on — the test still has value as a regression guard.
 
-- [ ] T075 [TEST] [US2] Add to the same file: a completion recorded under v1 still reports its original `pointsAwarded` after v2 changes that task's points. Run tests.
+- [X] T075 [TEST] [US2] Add to the same file: a completion recorded under v1 still reports its original `pointsAwarded` after v2 changes that task's points. Run tests.
 
-- [ ] T076 [TEST] [US2] Add to the same file the SC-005 durability test: write a plan and several completions, **close the database and reopen it** in the same test, then assert every plan field, every completion and the derived score are identical. This covers process death without needing to kill the app. Run tests.
+- [X] T076 [TEST] [US2] Add to the same file the SC-005 durability test: write a plan and several completions, **close the database and reopen it** in the same test, then assert every plan field, every completion and the derived score are identical. This covers process death without needing to kill the app. Run tests.
 
 - [X] T077 [TEST] [US2] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/RolloverTest.kt` using `FakeTimeProvider`: set the clock to 23:59:59 local, advance two seconds, and assert `today()` returns the next date. Assert the previously built plan object is unchanged. Run `./gradlew :domain:test`. **Expected: COMPILE FAILURE or FAIL.**
 
-- [ ] T078 [US2] Add rollover handling to `TodayViewModel`: observe the date from `TimeProvider` and, when it changes, call `ensurePlanFor` the new date and emit a fresh state (FR-023). Run tests.
+- [X] T078 [US2] Add rollover handling to `TodayViewModel`: observe the date from `TimeProvider` and, when it changes, call `ensurePlanFor` the new date and emit a fresh state (FR-023). Run tests.
 
-- [ ] T079 [TEST] [US2] Add a `:data` test asserting `seedIfNeeded` called twice leaves plans and completions untouched (FR-001). Run tests.
+- [X] T079 [TEST] [US2] Add a `:data` test asserting `seedIfNeeded` called twice leaves plans and completions untouched (FR-001). Run tests.
 
 - [ ] T080 [US2] Run `./gradlew :domain:test :data:connectedDebugAndroidTest`. **Expected**: all green.
 
@@ -290,11 +290,11 @@ the right available total; completing and undoing move the earned total by the r
 
 - [X] T082 [US3] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/LandingSection.kt` with `fun landingSectionIndex(sections: List<SectionProgress>): Int`. Pure, derived, never stored (FR-020b). Run tests. **Expected: T081 passes.**
 
-- [ ] T083 [US3] Use it in `TodayViewModel` to set `currentSectionIndex` on load and after rollover. Do **not** persist the position — recompute on every open.
+- [X] T083 [US3] Use it in `TodayViewModel` to set `currentSectionIndex` on load and after rollover. Do **not** persist the position — recompute on every open.
 
-- [ ] T084 [TEST] [US3] Add ViewModel tests: `NextSection` at the last index does nothing; `PreviousSection` at 0 does nothing; neither emits an error; records made in one section survive moving to another. Run `./gradlew :app:testDebugUnitTest`.
+- [X] T084 [TEST] [US3] Add ViewModel tests: `NextSection` at the last index does nothing; `PreviousSection` at 0 does nothing; neither emits an error; records made in one section survive moving to another. Run `./gradlew :app:testDebugUnitTest`.
 
-- [ ] T085 [US3] Update `TodayScreen` to render one section at a time with forward and back controls, keeping the day's overall totals visible at all times. Preserve the Arabic rendering rules from T070.
+- [X] T085 [US3] Update `TodayScreen` to render one section at a time with forward and back controls, keeping the day's overall totals visible at all times. Preserve the Arabic rendering rules from T070.
 
 - [ ] T086 [US3] Run `./gradlew :app:testDebugUnitTest` and open the app. **Expected**: opening lands on the earliest incomplete section.
 
@@ -320,9 +320,9 @@ the right available total; completing and undoing move the earned total by the r
 
 - [X] T092 [P] Confirm no test fixture ships: `ls domain/src/main/resources/catalogue/`. **Expected**: exactly one file, `valid-catalogue.json`. If `bad/` is there, T015 was done wrong and 18 corrupt fixtures are in your APK.
 
-- [ ] T093 Confirm `data/schemas/` contains the exported schema JSON and that it is committed, and that no destructive migration exists: `grep -rn "fallbackToDestructiveMigration" data/src app/src` returns empty.
+- [X] T093 Confirm `data/schemas/` contains the exported schema JSON and that it is committed, and that no destructive migration exists: `grep -rn "fallbackToDestructiveMigration" data/src app/src` returns empty.
 
-- [ ] T094 Confirm no authoring affordance reached the UI: `grep -rniE "add task|edit task|delete task|reorder|swipeToDismiss|FloatingActionButton" app/src/main`. **Expected**: empty, or justified in writing.
+- [X] T094 Confirm no authoring affordance reached the UI: `grep -rniE "add task|edit task|delete task|reorder|swipeToDismiss|FloatingActionButton" app/src/main`. **Expected**: empty, or justified in writing.
 
 - [ ] T095 Principle IX pass. Open the screen with nothing completed and read every visible element. **Expected**: no red, no ✗, no "missed", no negative number, no framing of zero as failure. Cross-check the audit list in `CLAUDE.md`'s Design section.
 
