@@ -1,0 +1,569 @@
+{
+    "versions":  [
+                     {
+                         "version":  1,
+                         "effectiveFrom":  "2026-01-01"
+                     }
+                 ],
+    "sections":  [
+                     {
+                         "id":  "fajr",
+                         "label":  "Fajr",
+                         "order":  1
+                     },
+                     {
+                         "id":  "dhuhr",
+                         "label":  "Dhuhr",
+                         "order":  2
+                     },
+                     {
+                         "id":  "asr",
+                         "label":  "Asr",
+                         "order":  3
+                     },
+                     {
+                         "id":  "maghrib",
+                         "label":  "Maghrib",
+                         "order":  4
+                     },
+                     {
+                         "id":  "isha",
+                         "label":  "Isha",
+                         "order":  5
+                     },
+                     {
+                         "id":  "qiyam-witr",
+                         "label":  "Qiyam Witr",
+                         "order":  6
+                     },
+                     {
+                         "id":  "quran",
+                         "label":  "Quran",
+                         "order":  7
+                     },
+                     {
+                         "id":  "adhkar",
+                         "label":  "Adhkar",
+                         "order":  8
+                     },
+                     {
+                         "id":  "fasting",
+                         "label":  "Fasting",
+                         "order":  9
+                     },
+                     {
+                         "id":  "friday",
+                         "label":  "Friday",
+                         "order":  10
+                     }
+                 ],
+    "tasks":  [
+                  {
+                      "slug":  "fajr-1",
+                      "sectionId":  "fajr",
+                      "displayPosition":  1,
+                      "label":  "Fajr 1"
+                  },
+                  {
+                      "slug":  "fajr-2",
+                      "sectionId":  "fajr",
+                      "displayPosition":  1,
+                      "label":  "Fajr 2"
+                  },
+                  {
+                      "slug":  "fajr-3",
+                      "sectionId":  "fajr",
+                      "displayPosition":  3,
+                      "label":  "Fajr 3"
+                  },
+                  {
+                      "slug":  "fajr-4",
+                      "sectionId":  "fajr",
+                      "displayPosition":  4,
+                      "label":  "Fajr 4"
+                  },
+                  {
+                      "slug":  "fajr-5",
+                      "sectionId":  "fajr",
+                      "displayPosition":  5,
+                      "label":  "Fajr 5"
+                  },
+                  {
+                      "slug":  "fajr-6",
+                      "sectionId":  "fajr",
+                      "displayPosition":  6,
+                      "label":  "Fajr 6"
+                  },
+                  {
+                      "slug":  "dhuhr-1",
+                      "sectionId":  "dhuhr",
+                      "displayPosition":  1,
+                      "label":  "Dhuhr 1"
+                  },
+                  {
+                      "slug":  "dhuhr-2",
+                      "sectionId":  "dhuhr",
+                      "displayPosition":  2,
+                      "label":  "Dhuhr 2"
+                  },
+                  {
+                      "slug":  "dhuhr-3",
+                      "sectionId":  "dhuhr",
+                      "displayPosition":  3,
+                      "label":  "Dhuhr 3"
+                  },
+                  {
+                      "slug":  "dhuhr-4",
+                      "sectionId":  "dhuhr",
+                      "displayPosition":  4,
+                      "label":  "Dhuhr 4"
+                  },
+                  {
+                      "slug":  "asr-1",
+                      "sectionId":  "asr",
+                      "displayPosition":  1,
+                      "label":  "Asr 1"
+                  },
+                  {
+                      "slug":  "asr-2",
+                      "sectionId":  "asr",
+                      "displayPosition":  2,
+                      "label":  "Asr 2"
+                  },
+                  {
+                      "slug":  "asr-3",
+                      "sectionId":  "asr",
+                      "displayPosition":  3,
+                      "label":  "Asr 3"
+                  },
+                  {
+                      "slug":  "maghrib-1",
+                      "sectionId":  "maghrib",
+                      "displayPosition":  1,
+                      "label":  "Maghrib 1"
+                  },
+                  {
+                      "slug":  "maghrib-2",
+                      "sectionId":  "maghrib",
+                      "displayPosition":  2,
+                      "label":  "Maghrib 2"
+                  },
+                  {
+                      "slug":  "maghrib-3",
+                      "sectionId":  "maghrib",
+                      "displayPosition":  3,
+                      "label":  "Maghrib 3"
+                  },
+                  {
+                      "slug":  "isha-1",
+                      "sectionId":  "isha",
+                      "displayPosition":  1,
+                      "label":  "Isha 1"
+                  },
+                  {
+                      "slug":  "isha-2",
+                      "sectionId":  "isha",
+                      "displayPosition":  2,
+                      "label":  "Isha 2"
+                  },
+                  {
+                      "slug":  "isha-3",
+                      "sectionId":  "isha",
+                      "displayPosition":  3,
+                      "label":  "Isha 3"
+                  },
+                  {
+                      "slug":  "qiyam",
+                      "sectionId":  "qiyam-witr",
+                      "displayPosition":  1,
+                      "label":  "Qiyam"
+                  },
+                  {
+                      "slug":  "witr",
+                      "sectionId":  "qiyam-witr",
+                      "displayPosition":  2,
+                      "label":  "Witr"
+                  },
+                  {
+                      "slug":  "quran-memorisation",
+                      "sectionId":  "quran",
+                      "displayPosition":  1,
+                      "label":  "Quran memorisation"
+                  },
+                  {
+                      "slug":  "quran-reading",
+                      "sectionId":  "quran",
+                      "displayPosition":  2,
+                      "label":  "Quran reading"
+                  },
+                  {
+                      "slug":  "adhkar",
+                      "sectionId":  "adhkar",
+                      "displayPosition":  1,
+                      "label":  "Adhkar"
+                  },
+                  {
+                      "slug":  "fast-voluntary",
+                      "sectionId":  "fasting",
+                      "displayPosition":  1,
+                      "label":  "Voluntary fast"
+                  },
+                  {
+                      "slug":  "friday-1",
+                      "sectionId":  "friday",
+                      "displayPosition":  1,
+                      "label":  "Friday 1"
+                  },
+                  {
+                      "slug":  "friday-2",
+                      "sectionId":  "friday",
+                      "displayPosition":  2,
+                      "label":  "Friday 2"
+                  },
+                  {
+                      "slug":  "friday-3",
+                      "sectionId":  "friday",
+                      "displayPosition":  3,
+                      "label":  "Friday 3"
+                  },
+                  {
+                      "slug":  "friday-4",
+                      "sectionId":  "friday",
+                      "displayPosition":  4,
+                      "label":  "Friday 4"
+                  },
+                  {
+                      "slug":  "friday-5",
+                      "sectionId":  "friday",
+                      "displayPosition":  5,
+                      "label":  "Friday 5"
+                  },
+                  {
+                      "slug":  "friday-6",
+                      "sectionId":  "friday",
+                      "displayPosition":  6,
+                      "label":  "Friday 6"
+                  },
+                  {
+                      "slug":  "friday-7",
+                      "sectionId":  "friday",
+                      "displayPosition":  7,
+                      "label":  "Friday 7"
+                  }
+              ],
+    "taskVersions":  [
+                         {
+                             "taskSlug":  "fajr-1",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "fajr-2",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "fajr-3",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "fajr-4",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "fajr-5",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "fajr-6",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "dhuhr-1",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "dhuhr-2",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "dhuhr-3",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "dhuhr-4",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "asr-1",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "asr-2",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "asr-3",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "maghrib-1",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "maghrib-2",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "maghrib-3",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "isha-1",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "isha-2",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "isha-3",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "qiyam",
+                             "catalogueVersion":  1,
+                             "points":  5,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "witr",
+                             "catalogueVersion":  1,
+                             "points":  4,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "quran-memorisation",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "quran-reading",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "adhkar",
+                             "catalogueVersion":  1,
+                             "points":  2,
+                             "maxOccurrencesPerDay":  9,
+                             "scheduleRule":  {
+                                                  "type":  "everyDay"
+                                              }
+                         },
+                         {
+                             "taskSlug":  "fast-voluntary",
+                             "catalogueVersion":  1,
+                             "points":  5,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "daysOfWeek",
+                                                  "days":  [
+                                                               "MONDAY",
+                                                               "THURSDAY"
+                                                           ]
+                                              }
+                         },
+                         {
+                             "taskSlug":  "friday-1",
+                             "catalogueVersion":  1,
+                             "points":  1,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "daysOfWeek",
+                                                  "days":  [
+                                                               "FRIDAY"
+                                                           ]
+                                              }
+                         },
+                         {
+                             "taskSlug":  "friday-2",
+                             "catalogueVersion":  1,
+                             "points":  1,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "daysOfWeek",
+                                                  "days":  [
+                                                               "FRIDAY"
+                                                           ]
+                                              }
+                         },
+                         {
+                             "taskSlug":  "friday-3",
+                             "catalogueVersion":  1,
+                             "points":  1,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "daysOfWeek",
+                                                  "days":  [
+                                                               "FRIDAY"
+                                                           ]
+                                              }
+                         },
+                         {
+                             "taskSlug":  "friday-4",
+                             "catalogueVersion":  1,
+                             "points":  1,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "daysOfWeek",
+                                                  "days":  [
+                                                               "FRIDAY"
+                                                           ]
+                                              }
+                         },
+                         {
+                             "taskSlug":  "friday-5",
+                             "catalogueVersion":  1,
+                             "points":  1,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "daysOfWeek",
+                                                  "days":  [
+                                                               "FRIDAY"
+                                                           ]
+                                              }
+                         },
+                         {
+                             "taskSlug":  "friday-6",
+                             "catalogueVersion":  1,
+                             "points":  1,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "daysOfWeek",
+                                                  "days":  [
+                                                               "FRIDAY"
+                                                           ]
+                                              }
+                         },
+                         {
+                             "taskSlug":  "friday-7",
+                             "catalogueVersion":  1,
+                             "points":  1,
+                             "maxOccurrencesPerDay":  1,
+                             "scheduleRule":  {
+                                                  "type":  "daysOfWeek",
+                                                  "days":  [
+                                                               "FRIDAY"
+                                                           ]
+                                              }
+                         }
+                     ]
+}
