@@ -184,15 +184,24 @@ private fun TaskRow(task: TaskRowUi, onEvent: (TodayEvent) -> Unit) {
                 modifier = Modifier.weight(1f),
             )
 
+            // Without this the Arabic label sits flush against the figures and
+            // the two read as one string.
+            Spacer(Modifier.width(16.dp))
+
             if (task.isMultiOccurrence) {
                 Text(
                     text = "${task.recordedCount}/${task.maxOccurrences}",
                     style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.width(12.dp))
             }
 
-            Text(text = "${task.points}", style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = "${task.points} pts",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             if (task.canUndo) {
                 Spacer(Modifier.width(8.dp))

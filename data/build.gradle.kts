@@ -44,6 +44,9 @@ dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     androidTestImplementation(libs.androidx.junit)
+    // The instrumentation runner itself. :app gets it transitively via Espresso;
+    // :data has no Espresso, so without this the test process cannot start.
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.kotlinx.coroutines.test)
 }

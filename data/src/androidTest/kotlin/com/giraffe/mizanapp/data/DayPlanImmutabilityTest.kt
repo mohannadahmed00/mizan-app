@@ -90,6 +90,23 @@ class DayPlanImmutabilityTest : DbTestBase() {
         )
     }
 
+    /** US4: the label is computed at creation, stored, and never recomputed. */
+    @Test
+    fun a_plan_carries_a_stable_hijri_label() = runTest {
+        seedAndPlanToday()
+        val today = time.today()
+        val label = dayPlans.planFor(today)!!.hijriLabel
+
+        assertTrue("a label must always be present", label.isNotBlank())
+        assertTrue("it must name a month, not a number", label.any { it.isLetter() })
+
+        db.close()
+        openDatabase(keepTime = true)
+        catalogue.seedIfNeeded()
+
+        assertEquals("the stored label must survive unchanged", label, dayPlans.planFor(today)!!.hijriLabel)
+    }
+
     @Test
     fun ensure_plan_returns_the_existing_plan_untouched() = runTest {
         seedAndPlanToday()

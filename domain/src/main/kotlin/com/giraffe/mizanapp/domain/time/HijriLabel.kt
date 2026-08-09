@@ -2,8 +2,7 @@ package com.giraffe.mizanapp.domain.time
 
 import java.time.LocalDate
 import java.time.chrono.HijrahChronology
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.time.temporal.ChronoField
 
 /**
  * Converts a civil date to its Hijri label.
@@ -20,9 +19,26 @@ import java.util.Locale
  */
 object HijriLabel {
 
-    private val formatter: DateTimeFormatter =
-        DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)
+    /**
+     * Month names are supplied here rather than left to a formatter.
+     *
+     * `DateTimeFormatter`'s `MMMM` pattern falls back to the month *number* for
+     * the Hijrah chronology on Android, which produced labels like "26 2 1448".
+     * These are calendar nomenclature, not task content, so they are not part
+     * of the catalogue.
+     */
+    private val monthNames = arrayOf(
+        "Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani",
+        "Jumada al-Ula", "Jumada al-Akhirah", "Rajab", "Sha'ban",
+        "Ramadan", "Shawwal", "Dhu al-Qi'dah", "Dhu al-Hijjah",
+    )
 
-    fun forDate(date: LocalDate): String =
-        HijrahChronology.INSTANCE.date(date).format(formatter)
+    fun forDate(date: LocalDate): String {
+        val hijri = HijrahChronology.INSTANCE.date(date)
+        val day = hijri.get(ChronoField.DAY_OF_MONTH)
+        val month = hijri.get(ChronoField.MONTH_OF_YEAR)
+        val year = hijri.get(ChronoField.YEAR)
+
+        return "$day ${monthNames[month - 1]} $year AH"
+    }
 }

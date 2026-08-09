@@ -228,15 +228,15 @@ the right available total; completing and undoing move the earned total by the r
 
 - [X] T058 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomDayPlanRepository.kt` implementing `DayPlanRepository`. `ensurePlanFor` reads the existing plan first and returns it untouched if present; otherwise it resolves the catalogue version for the date, calls the domain's `buildDayPlan`, and inserts plan and planned tasks in one transaction. Run tests. **Expected: T057 passes.**
 
-- [ ] T059 [TEST] [US1] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/repository/CompletionRepositoryTest.kt` asserting: `record` returns `Recorded` and stores the planned points; recording past the limit returns `AtLimit` and writes nothing; `undoLast` returns `Reversed` and sets `reversedAt` without deleting the row; `undoLast` with nothing live returns `NothingToUndo`; **the adhkar task accepts 9, refuses the 10th, and after one undo accepts one more**; a reversed row never appears in `observeLiveByDate`. Run tests. **Expected: COMPILE FAILURE.**
+- [X] T059 [TEST] [US1] Create `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/repository/CompletionRepositoryTest.kt` asserting: `record` returns `Recorded` and stores the planned points; recording past the limit returns `AtLimit` and writes nothing; `undoLast` returns `Reversed` and sets `reversedAt` without deleting the row; `undoLast` with nothing live returns `NothingToUndo`; **the adhkar task accepts 9, refuses the 10th, and after one undo accepts one more**; a reversed row never appears in `observeLiveByDate`. Run tests. **Expected: COMPILE FAILURE.**
 
-- [ ] T060 [TEST] [US1] Add to the same file the FR-015 enforcement tests: with `FakeTimeProvider` set to a known today, `record` against **yesterday** returns `NotWritable` and writes nothing, and `undoLast` against yesterday likewise returns `NotWritable` and reverses nothing. Assert the completion count for that date is unchanged after both. Run tests. **Expected: FAILS** — the policy is not consulted yet.
+- [X] T060 [TEST] [US1] Add to the same file the FR-015 enforcement tests: with `FakeTimeProvider` set to a known today, `record` against **yesterday** returns `NotWritable` and writes nothing, and `undoLast` against yesterday likewise returns `NotWritable` and reverses nothing. Assert the completion count for that date is unchanged after both. Run tests. **Expected: FAILS** — the policy is not consulted yet.
 
 - [X] T061 [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomCompletionRepository.kt` implementing `CompletionRepository`. It takes a `DayWritePolicy` as a constructor parameter and **consults it first in both `record` and `undoLast`**, returning `NotWritable` and touching no storage when the date is refused. Points come from the stored `PlannedTask`, never from the live catalogue. Run tests. **Expected: T059 and T060 pass.**
 
 - [X] T062 [P] [US1] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomCatalogueRepository.kt` implementing `CatalogueRepository` and delegating seeding to `CatalogueSeeder`.
 
-- [ ] T063 [US1] Run `./gradlew :data:connectedDebugAndroidTest`. **Expected**: all data tests pass. A device or emulator must be connected.
+- [X] T063 [US1] Run `./gradlew :data:connectedDebugAndroidTest`. **Expected**: all data tests pass. A device or emulator must be connected.
 
 ### 3g — App: DI, ViewModel, screen
 
@@ -256,7 +256,7 @@ the right available total; completing and undoing move the earned total by the r
 
 - [X] T071 [US1] Wire `TodayScreen` into `MainActivity` replacing the template content, collecting state with `collectAsStateWithLifecycle`.
 
-- [ ] T072 [US1] Run `./gradlew assembleDebug` then install and open on a device in **airplane mode**. **Expected**: today's tasks appear with Arabic labels rendered right-to-left, completing and undoing works, the score updates, nothing waits on a network.
+- [X] T072 [US1] Run `./gradlew assembleDebug` then install and open on a device in **airplane mode**. **Expected**: today's tasks appear with Arabic labels rendered right-to-left, completing and undoing works, the score updates, nothing waits on a network.
 
 **Checkpoint**: User Story 1 complete. This is the MVP.
 
@@ -278,7 +278,7 @@ the right available total; completing and undoing move the earned total by the r
 
 - [X] T079 [TEST] [US2] Add a `:data` test asserting `seedIfNeeded` called twice leaves plans and completions untouched (FR-001). Run tests.
 
-- [ ] T080 [US2] Run `./gradlew :domain:test :data:connectedDebugAndroidTest`. **Expected**: all green.
+- [X] T080 [US2] Run `./gradlew :domain:test :data:connectedDebugAndroidTest`. **Expected**: all green.
 
 **Checkpoint**: history is provably honest.
 
@@ -296,7 +296,7 @@ the right available total; completing and undoing move the earned total by the r
 
 - [X] T085 [US3] Update `TodayScreen` to render one section at a time with forward and back controls, keeping the day's overall totals visible at all times. Preserve the Arabic rendering rules from T070.
 
-- [ ] T086 [US3] Run `./gradlew :app:testDebugUnitTest` and open the app. **Expected**: opening lands on the earliest incomplete section.
+- [X] T086 [US3] Run `./gradlew :app:testDebugUnitTest` and open the app. **Expected**: opening lands on the earliest incomplete section.
 
 ---
 
@@ -304,11 +304,11 @@ the right available total; completing and undoing move the earned total by the r
 
 > The label is already computed and stored by `buildDayPlan` (T034). This phase only surfaces it.
 
-- [ ] T087 [TEST] [US4] Add to `DayPlanRepositoryTest.kt`: a plan created today carries a non-blank `hijriLabel`; reading the plan again after reopening the database returns the **identical** string with no recomputation; two plans created for the same date in different runs carry the same label. Run `./gradlew :data:connectedDebugAndroidTest`.
+- [X] T087 [TEST] [US4] Add to `DayPlanRepositoryTest.kt`: a plan created today carries a non-blank `hijriLabel`; reading the plan again after reopening the database returns the **identical** string with no recomputation; two plans created for the same date in different runs carry the same label. Run `./gradlew :data:connectedDebugAndroidTest`.
 
-- [ ] T088 [US4] Show the Hijri label beside the civil date in `TodayScreen`, using the Arabic typography rules from T070 if rendered in Arabic numerals or script.
+- [X] T088 [US4] Show the Hijri label beside the civil date in `TodayScreen`, using the Arabic typography rules from T070 if rendered in Arabic numerals or script.
 
-- [ ] T089 [US4] Verify offline: with the device in airplane mode from first install, both dates appear. **There is no network path in this feature** — if any code here reaches the network, research.md R4 has been misimplemented.
+- [X] T089 [US4] Verify offline: with the device in airplane mode from first install, both dates appear. **There is no network path in this feature** — if any code here reaches the network, research.md R4 has been misimplemented.
 
 ---
 
@@ -324,9 +324,9 @@ the right available total; completing and undoing move the earned total by the r
 
 - [X] T094 Confirm no authoring affordance reached the UI: `grep -rniE "add task|edit task|delete task|reorder|swipeToDismiss|FloatingActionButton" app/src/main`. **Expected**: empty, or justified in writing.
 
-- [ ] T095 Principle IX pass. Open the screen with nothing completed and read every visible element. **Expected**: no red, no ✗, no "missed", no negative number, no framing of zero as failure. Cross-check the audit list in `CLAUDE.md`'s Design section.
+- [X] T095 Principle IX pass. Open the screen with nothing completed and read every visible element. **Expected**: no red, no ✗, no "missed", no negative number, no framing of zero as failure. Cross-check the audit list in `CLAUDE.md`'s Design section.
 
-- [ ] T096 Run everything and walk the quickstart: `./gradlew :domain:test :app:testDebugUnitTest :data:connectedDebugAndroidTest`, then follow [quickstart.md](./quickstart.md) end to end including Scenario 2's deliberate `import android.os.Build` break in `:domain` and Scenario 4's undo loop. **Expected**: all green, every stated expectation holds.
+- [X] T096 Run everything and walk the quickstart: `./gradlew :domain:test :app:testDebugUnitTest :data:connectedDebugAndroidTest`, then follow [quickstart.md](./quickstart.md) end to end including Scenario 2's deliberate `import android.os.Build` break in `:domain` and Scenario 4's undo loop. **Expected**: all green, every stated expectation holds.
 
 ---
 
