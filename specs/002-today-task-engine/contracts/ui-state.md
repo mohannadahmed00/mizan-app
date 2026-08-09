@@ -13,7 +13,7 @@ One immutable state per screen, exposed as `StateFlow`. No mutable state leaves 
 data class TodayUiState(
     val status: Status = Status.Loading,
     val civilDate: LocalDate? = null,
-    val hijriLabel: String? = null,
+    val hijriLabel: String? = null,   // null only while Loading; non-null once Ready
     val sections: List<SectionUi> = emptyList(),
     val currentSectionIndex: Int = 0,
     val earnedPoints: Int = 0,
@@ -94,6 +94,13 @@ a task — Principle VI made structural rather than merely unimplemented.
    come from the domain, which enforces it; the UI does no arithmetic of its own beyond the fraction.
 8. **`recordedCount` counts live completions only.** Tombstones are invisible here, as everywhere
    (research.md R5).
+9. **`hijriLabel` is null only in `Loading`.** Once `Ready`, a plan always carries a label because it
+   is computed locally at creation (research.md R4). The screen never renders a placeholder or an
+   absence for it.
+10. **Completing or undoing a non-writable date is refused before any write.** The ViewModel surfaces
+    `NotWritable` without changing the state's counts. In this increment only today is writable, so
+    this cannot arise from the UI — it is the guard that keeps FR-015 true as Phase 5 widens the
+    policy.
 
 ---
 

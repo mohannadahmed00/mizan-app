@@ -126,8 +126,11 @@ domain/                                  # kotlin("jvm") — no Android on the c
     │   │       ├── DayPlanRepository.kt
     │   │       └── CompletionRepository.kt
     │   └── resources/catalogue/
-    │       └── catalogue-v1.json        # the seed, single source of truth
-    └── test/kotlin/…                    # JVM tests, incl. the 001 validator + fixtures
+    │       └── valid-catalogue.json     # the seed — the ONLY catalogue resource that ships
+    └── test/
+        ├── kotlin/…                     # JVM tests, incl. the 001 validator
+        └── resources/catalogue/bad/     # the 18 defect fixtures — test classpath only,
+                                         # never packaged into the APK
 
 data/                                    # Android library — Room lives here
 ├── build.gradle.kts
@@ -173,7 +176,7 @@ Design introduced four things absent at the first gate. Each re-checked:
 | Core library desugaring | Technology constraints | **Pass.** A build flag, not a dependency or a network surface. Mandatory rather than optional: `java.time` on `minSdk 24` would otherwise crash on API 24–25 (research.md R2). |
 | `:domain` as a JVM module | II | **Pass, and strengthens it.** Purity moves from convention to compile error. `001`'s text-scanning `DomainPurityTest` is replaced by an assertion on the module's build file — guarding the guarantee rather than its symptoms. |
 | Label snapshotting on `PlannedTask` | VIII (premature denormalisation) | **Pass.** FR-017 already requires available points to come from the plan; a day able to render its numbers but not its text would still depend on live content to be readable. Consistent with Principle III rather than extra. |
-| `attachHijriLabel` as the one mutating method on an immutable aggregate | III | **Pass, conditionally.** Permitted by FR-009a, writes only when null, touches no figure. **Under research.md R4 it becomes dead code** — a locally computed label is never null. It survives only until the author rules on R4's flag; if R4 is accepted the method and the nullable column should go. |
+| ~~`attachHijriLabel`~~ — **removed** | III | **Pass, and stronger for it.** R4 was accepted by the author on 2026-08-09: the Hijri label is computed locally and is present from the moment a plan exists, so the fill-once path had nothing to fill. The method, the nullable column, and FR-009a's fill-once wording are all gone. `DayPlan` is now immutable with **no exception at all**, which is the cleanest possible reading of Principle III. |
 
 **Gate result: PASS.** No new violations. Complexity Tracking carries one roadmap deviation, not a
 constitution violation.

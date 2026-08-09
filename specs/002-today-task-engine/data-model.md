@@ -24,14 +24,13 @@ The frozen record of one date. Written once.
 | `id` | `String` (UUID) | client-generated, stable |
 | `date` | `LocalDate` | unique; the accountability date |
 | `catalogueVersion` | `Int` | the version in effect when created |
-| `hijriLabel` | `String?` | nullable only to keep the fill-once path open — see note |
+| `hijriLabel` | `String` | non-null; computed from `date` at creation, never revised |
 | `availablePoints` | `Int` | sum over planned tasks of `points × maxOccurrences` |
 | `plannedTasks` | `List<PlannedTask>` | non-empty |
 
-**Invariant**: after creation, no field may change. The single exception permitted by FR-009a is
-writing `hijriLabel` when it is null. Under research.md R4 the label is computed locally and is
-therefore never null in practice; the nullable type and the exception survive only until the author
-decides on R4's flag.
+**Invariant**: after creation, **no field may change — without exception**. The label is computed
+locally (research.md R4), so it is present from the moment the plan exists and there is no
+fill-later path to keep open. No repository method, DAO method, or use case may update a day plan.
 
 ### PlannedTask
 
@@ -149,8 +148,7 @@ sync state beyond the four columns above.
 
 ```text
 (absent) --app start or rollover, no plan for date--> created (frozen)
-created --fill null hijriLabel, at most once--> created
-created --anything else--> FORBIDDEN
+created --any write whatsoever--> FORBIDDEN
 ```
 
 **Completion**

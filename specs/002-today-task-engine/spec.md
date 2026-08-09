@@ -38,6 +38,7 @@ content arrives it replaces one data file. That substitutability is Principle VI
 - Q: When the user opens the app partway through the day, which section should the stepped flow land on? → A: The earliest section containing an incomplete task; the first section if the day is fully complete. Derived on open, never persisted.
 - Q: What counts as "opening" a date, such that its plan is created and frozen? → A: App launch, plus any rollover while the app is running, creates the plan for the current date. Not tied to viewing a particular screen.
 - Q: After an undo, does the freed occurrence slot become available again? → A: Yes. Reversed records are excluded from the occurrence count, so undo always frees exactly one slot. The tombstone is bookkeeping for a future sync, never something the user feels.
+- Q: Is the Hijri date fetched from a network service or computed on the device? → A: Computed locally from the civil date. This supersedes the earlier fill-once answer: a label is always available at plan creation, so it is never absent and never needs filling in later. There is no network in this feature at all.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -148,29 +149,27 @@ moving between sections never alters the day's totals.
 
 ### User Story 4 - The day carries its Hijri label (Priority: P3)
 
-Alongside the civil date, the day shows its Hijri date. The label is attached to the day when the
-day is created and does not change afterwards.
+Alongside the civil date, the day shows its Hijri date. The label is computed from the civil date
+when the day is created, stored on it, and never changes afterwards.
 
-**Why this priority**: Meaningful to the user and cheap, but the app is fully usable without it. It
-is last because it is the only part of this increment that touches the network, and it must never
-be allowed to block anything.
+**Why this priority**: Meaningful to the user and cheap, but the app is fully usable without it.
+Last because it is the smallest slice, not because it is risky — the label is computed on the
+device, so there is nothing to wait for and nothing that can fail.
 
-**Independent Test**: On a device that has never had network access, the app opens, shows the day,
-and records completions normally, with the Hijri label absent or pending rather than blocking.
+**Independent Test**: On a device that has never had network access, the app opens and shows both
+the civil and Hijri dates for today.
 
 **Acceptance Scenarios**:
 
-1. **Given** a Hijri date is known for today, **When** the day is shown, **Then** both the civil and
-   Hijri dates appear.
-2. **Given** no Hijri date has ever been retrieved, **When** the app opens with no network, **Then**
-   the day, its tasks, and completion all work normally and the Hijri label is simply absent.
-3. **Given** a day was created offline with no Hijri label, **When** a value for that date first
-   becomes available, **Then** the day acquires that label and nothing else about the day changes.
-4. **Given** a day that already carries a Hijri label, **When** the source later reports a different
-   value for that date, **Then** the day continues to show the label it already had.
-5. **Given** a day that already carries a Hijri label, **When** the app is offline, **Then** the
-   label is still shown — it is stored on the day, not looked up.
-6. **Given** the network is unavailable, **When** the user completes a task, **Then** the completion
+1. **Given** any civil date, **When** the day's plan is created, **Then** it carries a non-blank
+   Hijri label derived from that date.
+2. **Given** a device that has never had network access, **When** the app opens on a fresh install,
+   **Then** both the civil and Hijri dates appear — no absence, no placeholder, no waiting.
+3. **Given** a day that carries a Hijri label, **When** the plan is read again on any later day,
+   **Then** the stored label is shown unchanged and is never recomputed at render time.
+4. **Given** the same civil date, **When** the label is derived twice, **Then** both derivations
+   produce the identical string.
+5. **Given** the network is unavailable, **When** the user completes a task, **Then** the completion
    is recorded immediately with no waiting.
 
 ---
@@ -236,11 +235,12 @@ and records completions normally, with the Hijri label absent or pending rather 
   MUST read the stored plan.
 - **FR-008**: A change to the task catalogue MUST affect only dates whose plans have not yet been
   created.
-- **FR-009**: Each date's plan MUST carry the Hijri label determined when it was created.
-- **FR-009a**: A plan created without a Hijri label MAY have one written once, the first time a
-  value becomes available for that date. This is filling missing data, not revising a record.
-- **FR-009b**: Once a plan carries a Hijri label, that label MUST NOT change — not on a later
-  lookup, not if the source reports a different value, not ever. Exactly one write per date.
+- **FR-009**: Each date's plan MUST carry a Hijri label, computed from the civil date at the moment
+  the plan is created and stored on it.
+- **FR-009a**: The label MUST be derived without any network call, so that it is always available —
+  on a fresh install, in airplane mode, on first launch.
+- **FR-009b**: Once written, a plan's Hijri label MUST NOT change. It is written exactly once, when
+  the plan is created, and never revised. Nothing may re-derive it at render time.
 
 **Recording completions**
 
@@ -298,9 +298,11 @@ and records completions normally, with the Hijri label absent or pending rather 
   work with no network, on a fresh install.
 - **FR-027**: No network result may be required before any of those four actions can be performed or
   displayed.
-- **FR-028**: Every record the user creates MUST carry a client-generated stable identifier, a
-  last-modified timestamp, a soft-delete marker, and a nullable user reference, so it can be
-  synchronised later without migrating existing data.
+- **FR-028**: Every **persisted row** the user's activity creates MUST carry a client-generated
+  stable identifier, a last-modified timestamp, a soft-delete marker, and a nullable user reference,
+  so it can be synchronised later without migrating existing data. This is a storage obligation: the
+  last-modified timestamp and user reference are sync bookkeeping with no domain meaning, and the
+  domain models deliberately do not carry them.
 
 **Time**
 
@@ -332,7 +334,8 @@ and records completions normally, with the Hijri label absent or pending rather 
 - **SC-002**: Available points read exactly 69 on Saturday, Sunday, Tuesday and Wednesday, 74 on
   Monday and Thursday, and 76 on Friday.
 - **SC-003**: After any sequence of completions and undos, earned points equal the sum of the
-  remaining records' points — verified across at least 20 mixed operations.
+  remaining records' points — verified by a seeded, reproducible sequence of at least 20 mixed
+  operations across several tasks, asserting the invariant after every single one.
 - **SC-004**: Changing a task's points and schedule leaves every previously opened day reporting its
   original tasks and totals, while the current day reflects the change.
 - **SC-005**: Closing and reopening the app preserves every record and total exactly.

@@ -72,7 +72,36 @@ reason. That is a destructive accident in a record the user is asked to trust, a
 Principle IX. FR-014 now states plainly that tombstones are storage bookkeeping and must be
 invisible in every count, score, and limit.
 
-Deliberately *not* asked, because a defensible default exists and is recorded in Assumptions:
+### Analyze remediation 2026-08-09
+
+Eleven findings raised by `/speckit-analyze`; ten resolved, one deliberately left.
+
+| ID | Severity | Resolution |
+|---|---|---|
+| G1 | HIGH | New T070 applies the Arabic typeface and per-string RTL direction. FR-025 had **zero** task coverage across all 92 tasks |
+| G2 | HIGH | `DayWritePolicy` now enforced inside `RoomCompletionRepository` (T061), with a failing test first (T060). `NotWritable` added to `UndoOutcome`; it was an unreachable branch |
+| I1 | HIGH | Fixture move split: only `valid-catalogue.json` ships (T014); all 18 defect fixtures go to `src/test/resources` (T015). T092 audits it |
+| C1 | HIGH | **Author accepted R4.** Hijri is computed locally; the fill-once machinery is removed from spec, contracts, data model and tasks rather than left dead |
+| U1 | MEDIUM | T017 reads `File("build.gradle.kts")` and states the working-directory assumption |
+| I2 | MEDIUM | FR-028 narrowed to persisted rows, saying explicitly that domain models do not carry sync bookkeeping |
+| G3 | MEDIUM | SC-003 now demands a seeded 20-operation sequence; T040 implements it with `Random(42)` |
+| G4 | MEDIUM | T076 closes and reopens the database in-test, covering SC-005 without killing the app |
+| G5 | LOW | Folded into G2 — T060 asserts a past date is refused |
+| I3 | LOW | Koin dropped from `:data` (T007); all modules stay in `:app` |
+| A1 | LOW | T021 and T022 name the exact file, test and expected values |
+| D1 | LOW | **Left as is.** Repeating the earned-never-exceeds-available invariant across spec, contract and UI is deliberate |
+
+**C1 was the one requiring a decision, not just an edit.** Accepting local computation made
+`DayPlan` immutable with *no* exception at all — previously the Hijri label was a permitted
+post-creation write, which was the single crack in Principle III's enforcement.
+
+**G2 was the most dangerous.** `DayWritePolicy` was created, tested and DI-bound but never called,
+so FR-015 was decoration. Nothing prevented a write to a past date.
+
+Tasks went 92 → 96.
+
+Deliberately *not* asked during clarification, because a defensible default exists and is recorded
+in Assumptions:
 
 | Question | Default taken | Authority |
 |---|---|---|

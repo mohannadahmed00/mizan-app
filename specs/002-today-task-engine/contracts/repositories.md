@@ -47,7 +47,6 @@ interface DayPlanRepository {
     suspend fun planFor(date: LocalDate): DayPlan?
     suspend fun ensurePlanFor(date: LocalDate): EnsureOutcome
     fun observePlan(date: LocalDate): Flow<DayPlan?>
-    suspend fun attachHijriLabel(date: LocalDate, label: String): Boolean
 }
 
 sealed interface EnsureOutcome {
@@ -63,11 +62,12 @@ sealed interface EnsureOutcome {
    returned untouched — never rebuilt, never reconciled against the current catalogue (FR-007).
 2. A created plan is **immutable** thereafter. There is deliberately no `update` method; the
    interface offers no way to express the forbidden operation.
-3. `attachHijriLabel` is the sole exception and writes **only when the stored label is null**. It
-   returns `false` if a label is already present, and must not overwrite (FR-009b). Idempotent.
-4. `ensurePlanFor` MUST NOT be callable for a date other than today in this increment. Enforced by
-   `DayWritePolicy` at the call site, not by the repository — Phase 3 legitimately needs to backfill
-   past dates through this same method.
+3. A created plan carries its Hijri label already, computed from the civil date (FR-009). There is
+   **no method to set or change it** — the interface offers no way to express a revision, and none
+   is needed.
+4. `ensurePlanFor` accepts any date and is not itself restricted, because roadmap Phase 3 must
+   backfill past dates through this same method. The restriction to the current date lives in
+   `DayWritePolicy`, consulted by `CompletionRepository` — see its guarantee 7.
 
 ---
 
@@ -90,6 +90,7 @@ sealed interface RecordOutcome {
 sealed interface UndoOutcome {
     data class Reversed(val completion: Completion, val liveCount: Int) : UndoOutcome
     data object NothingToUndo : UndoOutcome
+    data class NotWritable(val reason: String) : UndoOutcome
 }
 ```
 
@@ -107,6 +108,10 @@ sealed interface UndoOutcome {
    future sync path has any reason to see them.
 6. `record` followed by `undoLast` leaves `liveCount` exactly as it began, however many times it is
    repeated (SC-012).
+7. **Both `record` and `undoLast` consult `DayWritePolicy` before writing anything.** When the date
+   is not writable they return `NotWritable` and touch no storage. This is the only place FR-015 is
+   enforced; without it the policy is decoration and `NotWritable` is an unreachable branch. Phase 5
+   widens the policy and nothing else changes.
 
 ---
 

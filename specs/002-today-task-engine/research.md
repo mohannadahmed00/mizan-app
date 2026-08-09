@@ -107,11 +107,11 @@ never the thing that defines the day's boundaries", and no score or boundary dep
 **If agreement is later wanted, it is additive.** The label is already stored as a per-day snapshot,
 so a future increment can reconcile or override it without touching this design.
 
-**Effect on the spec**: US4 scenarios 2 and 3 — the day created with an absent label, and that label
-later being filled — become unreachable, because a label is always computed at creation. FR-009a
-becomes dead machinery. **Flagged for the author**: either accept the simplification and let the
-spec's US4 shrink accordingly, or reinstate the network path. The plan does not silently drop the
-requirement.
+**Effect on the spec — resolved 2026-08-09.** The author accepted the simplification. US4's
+offline-degradation scenarios and the fill-once machinery of FR-009a were removed rather than left
+dead: FR-009 now states the label is computed at creation, FR-009a that it needs no network, and
+FR-009b that it is written exactly once and never revised. `attachHijriLabel` and the nullable
+column are gone, which makes `DayPlan` immutable with no exception at all.
 
 **Alternatives considered**:
 
@@ -197,5 +197,6 @@ less than it appears to.
 | R6 | Day plan construction | Pure function in `:domain`; trigger on start and rollover |
 | R7 | Room testing | Instrumented, on device; JVM elsewhere |
 
-No `NEEDS CLARIFICATION` markers remain. One item — R4's effect on US4 — is flagged for the author
-rather than resolved unilaterally.
+No `NEEDS CLARIFICATION` markers remain. R4's effect on US4 was flagged for the author and
+**resolved on 2026-08-09**: the simplification was accepted and the dead machinery removed from the
+spec rather than left in place.
