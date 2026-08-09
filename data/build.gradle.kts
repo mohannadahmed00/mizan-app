@@ -1,29 +1,20 @@
-// BLOCKED: Room cannot be added yet.
-//
-// Room requires the KSP annotation processor. KSP 2.2.10-2.0.2 registers its
-// generated sources through the `kotlin.sourceSets` DSL, which AGP 9's built-in
-// Kotlin support rejects outright:
-//
-//   "Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with
-//    built-in Kotlin."
-//
-// Opting out via `android.builtInKotlin=false` and applying
-// org.jetbrains.kotlin.android 2.2.10 instead fails differently — that plugin
-// expects com.android.build.gradle.BaseExtension, which AGP 9 removed.
-//
-// Until that is resolved, this module holds only framework-free plumbing that
-// needs no annotation processing. See specs/002-today-task-engine/tasks.md,
-// Phase 3e, and the implementation report.
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+    }
 }
 
 android {
     namespace = "com.giraffe.mizanapp.data"
-
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 24
@@ -38,11 +29,21 @@ android {
     }
 }
 
+ksp {
+    // Exported schemas are committed; the constitution forbids destructive migration.
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     api(project(":domain"))
+
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.kotlinx.coroutines.test)
 }
