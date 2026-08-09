@@ -72,25 +72,25 @@ If you find yourself adding Retrofit, an API client, or a DTO, stop — you have
 
 ## Phase 1: Setup — modules and build files
 
-- [ ] T001 In `gradle/libs.versions.toml` under `[versions]` add: `room = "2.8.1"`, `koin = "4.1.0"`, `ksp = "2.2.10-2.0.2"`, `desugar = "2.1.5"`, `coroutines = "1.10.2"`. Do not change existing lines.
+- [X] T001 In `gradle/libs.versions.toml` under `[versions]` add: `room = "2.8.1"`, `koin = "4.1.0"`, `ksp = "2.2.10-2.0.2"`, `desugar = "2.1.5"`, `coroutines = "1.10.2"`. Do not change existing lines.
 
-- [ ] T002 In `gradle/libs.versions.toml` under `[libraries]` add: `room-runtime`, `room-ktx`, `room-compiler` (group `androidx.room`, names `room-runtime` / `room-ktx` / `room-compiler`, `version.ref = "room"`); `koin-android` and `koin-androidx-compose` (group `io.insert-koin`, `version.ref = "koin"`); `kotlinx-coroutines-core` and `kotlinx-coroutines-test` (group `org.jetbrains.kotlinx`, `version.ref = "coroutines"`); `desugar-jdk-libs` (group `com.android.tools`, name `desugar_jdk_libs`, `version.ref = "desugar"`); `androidx-room-testing` (group `androidx.room`, name `room-testing`, `version.ref = "room"`).
+- [X] T002 In `gradle/libs.versions.toml` under `[libraries]` add: `room-runtime`, `room-ktx`, `room-compiler` (group `androidx.room`, names `room-runtime` / `room-ktx` / `room-compiler`, `version.ref = "room"`); `koin-android` and `koin-androidx-compose` (group `io.insert-koin`, `version.ref = "koin"`); `kotlinx-coroutines-core` and `kotlinx-coroutines-test` (group `org.jetbrains.kotlinx`, `version.ref = "coroutines"`); `desugar-jdk-libs` (group `com.android.tools`, name `desugar_jdk_libs`, `version.ref = "desugar"`); `androidx-room-testing` (group `androidx.room`, name `room-testing`, `version.ref = "room"`).
 
-- [ ] T003 In `gradle/libs.versions.toml` under `[plugins]` add: `ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }`, `android-library = { id = "com.android.library", version.ref = "agp" }`, `kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }`.
+- [X] T003 In `gradle/libs.versions.toml` under `[plugins]` add: `ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }`, `android-library = { id = "com.android.library", version.ref = "agp" }`, `kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }`.
 
-- [ ] T004 In the root `build.gradle.kts`, add to the existing `plugins { }` block: `alias(libs.plugins.ksp) apply false`, `alias(libs.plugins.android.library) apply false`, `alias(libs.plugins.kotlin.jvm) apply false`. Keep the three existing lines.
+- [X] T004 In the root `build.gradle.kts`, add to the existing `plugins { }` block: `alias(libs.plugins.ksp) apply false`, `alias(libs.plugins.android.library) apply false`, `alias(libs.plugins.kotlin.jvm) apply false`. Keep the three existing lines.
 
-- [ ] T005 Replace `settings.gradle.kts`'s last line `include(":app")` with three lines: `include(":app")`, `include(":data")`, `include(":domain")`. Change nothing else in the file.
+- [X] T005 Replace `settings.gradle.kts`'s last line `include(":app")` with three lines: `include(":app")`, `include(":data")`, `include(":domain")`. Change nothing else in the file.
 
-- [ ] T006 Create `domain/build.gradle.kts`. It must apply **only** `alias(libs.plugins.kotlin.jvm)` and `alias(libs.plugins.kotlin.serialization)`. Add `kotlin { jvmToolchain(11) }`. Dependencies: `implementation(libs.kotlinx.serialization.json)`, `implementation(libs.kotlinx.coroutines.core)`, `testImplementation(libs.junit)`. **Do not apply any Android plugin here.** This module must never see the Android SDK.
+- [X] T006 Create `domain/build.gradle.kts`. It must apply **only** `alias(libs.plugins.kotlin.jvm)` and `alias(libs.plugins.kotlin.serialization)`. Add `kotlin { jvmToolchain(11) }`. Dependencies: `implementation(libs.kotlinx.serialization.json)`, `implementation(libs.kotlinx.coroutines.core)`, `testImplementation(libs.junit)`. **Do not apply any Android plugin here.** This module must never see the Android SDK.
 
 - [ ] T007 Create `data/build.gradle.kts` applying `alias(libs.plugins.android.library)` and `alias(libs.plugins.ksp)`. Set `namespace = "com.giraffe.mizanapp.data"`, `compileSdk { version = release(37) }`, `defaultConfig { minSdk = 24; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }`, `compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11; isCoreLibraryDesugaringEnabled = true }`. Add `ksp { arg("room.schemaLocation", "$projectDir/schemas") }`. Dependencies: `api(project(":domain"))`, `implementation(libs.room.runtime)`, `implementation(libs.room.ktx)`, `ksp(libs.room.compiler)`, `coreLibraryDesugaring(libs.desugar.jdk.libs)`, `androidTestImplementation(libs.androidx.junit)`, `androidTestImplementation(libs.androidx.room.testing)`, `androidTestImplementation(libs.kotlinx.coroutines.test)`. **Do not add Koin here** — all DI modules are declared in `:app`, so `:data` has no use for it.
 
-- [ ] T008 In `app/build.gradle.kts` add to `compileOptions`: `isCoreLibraryDesugaringEnabled = true`. Add to `dependencies`: `implementation(project(":data"))`, `implementation(project(":domain"))`, `implementation(libs.koin.android)`, `implementation(libs.koin.androidx.compose)`, `coreLibraryDesugaring(libs.desugar.jdk.libs)`, `testImplementation(libs.kotlinx.coroutines.test)`. **Desugaring is mandatory** — the domain model uses `java.time` and `minSdk` is 24, which would crash on API 24 and 25 without it.
+- [X] T008 In `app/build.gradle.kts` add to `compileOptions`: `isCoreLibraryDesugaringEnabled = true`. Add to `dependencies`: `implementation(project(":data"))`, `implementation(project(":domain"))`, `implementation(libs.koin.android)`, `implementation(libs.koin.androidx.compose)`, `coreLibraryDesugaring(libs.desugar.jdk.libs)`, `testImplementation(libs.kotlinx.coroutines.test)`. **Desugaring is mandatory** — the domain model uses `java.time` and `minSdk` is 24, which would crash on API 24 and 25 without it.
 
-- [ ] T009 Create the source directories: `domain/src/main/kotlin/com/giraffe/mizanapp/domain/`, `domain/src/main/resources/catalogue/`, `domain/src/test/kotlin/com/giraffe/mizanapp/domain/`, `domain/src/test/resources/catalogue/bad/`, `data/src/main/kotlin/com/giraffe/mizanapp/data/`, `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/`.
+- [X] T009 Create the source directories: `domain/src/main/kotlin/com/giraffe/mizanapp/domain/`, `domain/src/main/resources/catalogue/`, `domain/src/test/kotlin/com/giraffe/mizanapp/domain/`, `domain/src/test/resources/catalogue/bad/`, `data/src/main/kotlin/com/giraffe/mizanapp/data/`, `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/`.
 
-- [ ] T010 Run `./gradlew assembleDebug`. **Expected**: BUILD SUCCESSFUL. Three modules configure. If Gradle cannot resolve a dependency, fix T001–T003 before continuing.
+- [X] T010 Run `./gradlew assembleDebug`. **Expected**: BUILD SUCCESSFUL. Three modules configure. If Gradle cannot resolve a dependency, fix T001–T003 before continuing.
 
 **Checkpoint**: three modules exist and build. No feature code yet.
 
@@ -102,49 +102,49 @@ Everything in Phase 3 onward depends on this. Nothing here is optional.
 
 ### 2a — Move the catalogue model into `:domain`
 
-- [ ] T011 Move these six files from `app/src/test/java/com/giraffe/mizanapp/catalogue/model/` to `domain/src/main/kotlin/com/giraffe/mizanapp/domain/catalogue/`: `Catalogue.kt`, `CatalogueVersion.kt`, `Section.kt`, `TaskDefinition.kt`, `TaskVersion.kt`, `ScheduleRule.kt`. Change each file's `package` line to `com.giraffe.mizanapp.domain.catalogue`. Change no other code.
+- [X] T011 Move these six files from `app/src/test/java/com/giraffe/mizanapp/catalogue/model/` to `domain/src/main/kotlin/com/giraffe/mizanapp/domain/catalogue/`: `Catalogue.kt`, `CatalogueVersion.kt`, `Section.kt`, `TaskDefinition.kt`, `TaskVersion.kt`, `ScheduleRule.kt`. Change each file's `package` line to `com.giraffe.mizanapp.domain.catalogue`. Change no other code.
 
-- [ ] T012 Move `CatalogueDefect.kt`, `CatalogueValidator.kt` and `CatalogueJson.kt` from `app/src/test/java/com/giraffe/mizanapp/catalogue/` to `domain/src/main/kotlin/com/giraffe/mizanapp/domain/catalogue/`, changing the `package` line to `com.giraffe.mizanapp.domain.catalogue` and fixing imports of the model classes. Change no logic.
+- [X] T012 Move `CatalogueDefect.kt`, `CatalogueValidator.kt` and `CatalogueJson.kt` from `app/src/test/java/com/giraffe/mizanapp/catalogue/` to `domain/src/main/kotlin/com/giraffe/mizanapp/domain/catalogue/`, changing the `package` line to `com.giraffe.mizanapp.domain.catalogue` and fixing imports of the model classes. Change no logic.
 
-- [ ] T013 Move the test files `CatalogueJsonTest.kt`, `CatalogueValidatorTest.kt`, `CatalogueArithmeticTest.kt`, `CatalogueMutationTest.kt` and `Fixtures.kt` to `domain/src/test/kotlin/com/giraffe/mizanapp/domain/catalogue/`, updating package and imports. Change no assertions.
+- [X] T013 Move the test files `CatalogueJsonTest.kt`, `CatalogueValidatorTest.kt`, `CatalogueArithmeticTest.kt`, `CatalogueMutationTest.kt` and `Fixtures.kt` to `domain/src/test/kotlin/com/giraffe/mizanapp/domain/catalogue/`, updating package and imports. Change no assertions.
 
-- [ ] T014 Move **only** `app/src/test/resources/catalogue/good/valid-catalogue.json` to `domain/src/main/resources/catalogue/valid-catalogue.json` — note it moves up one level, out of the `good/` folder. This single file is the shipped seed.
+- [X] T014 Move **only** `app/src/test/resources/catalogue/good/valid-catalogue.json` to `domain/src/main/resources/catalogue/valid-catalogue.json` — note it moves up one level, out of the `good/` folder. This single file is the shipped seed.
 
-- [ ] T015 Move the **entire** `app/src/test/resources/catalogue/bad/` directory to `domain/src/test/resources/catalogue/bad/`. All 18 defect fixtures live on the test classpath only. **They must never be packaged into the APK.** Then update `Fixtures.kt`: `GOOD` becomes `"/catalogue/valid-catalogue.json"` and `bad(name)` reads `"/catalogue/bad/$name"`. Both resolve from the test classpath, which sees `main` and `test` resources both, so nothing breaks.
+- [X] T015 Move the **entire** `app/src/test/resources/catalogue/bad/` directory to `domain/src/test/resources/catalogue/bad/`. All 18 defect fixtures live on the test classpath only. **They must never be packaged into the APK.** Then update `Fixtures.kt`: `GOOD` becomes `"/catalogue/valid-catalogue.json"` and `bad(name)` reads `"/catalogue/bad/$name"`. Both resolve from the test classpath, which sees `main` and `test` resources both, so nothing breaks.
 
-- [ ] T016 Delete `app/src/test/java/com/giraffe/mizanapp/catalogue/DomainPurityTest.kt`. It scanned source text for `import android.`, which the module boundary now enforces at compile time. T017 replaces it.
+- [X] T016 Delete `app/src/test/java/com/giraffe/mizanapp/catalogue/DomainPurityTest.kt`. It scanned source text for `import android.`, which the module boundary now enforces at compile time. T017 replaces it.
 
-- [ ] T017 [TEST] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/ModuleBoundaryTest.kt`. **Gradle runs JVM unit tests with the module directory as the working directory**, so read `File("build.gradle.kts")` — not a path with `../`. Assert the file exists, that its text contains `kotlin.jvm`, and that it does **not** contain `com.android.library`, `com.android.application`, or `androidx.room`. Run `./gradlew :domain:test`. **Expected: this test passes and the moved `001` suite passes.**
+- [X] T017 [TEST] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/ModuleBoundaryTest.kt`. **Gradle runs JVM unit tests with the module directory as the working directory**, so read `File("build.gradle.kts")` — not a path with `../`. Assert the file exists, that its text contains `kotlin.jvm`, and that it does **not** contain `com.android.library`, `com.android.application`, or `androidx.room`. Run `./gradlew :domain:test`. **Expected: this test passes and the moved `001` suite passes.**
 
-- [ ] T018 Run `./gradlew :app:testDebugUnitTest :domain:test`. **Expected**: BUILD SUCCESSFUL. `:app` now has only `ExampleUnitTest`; `:domain` has the moved `001` tests. If `:app` fails to compile, a stale import to the old catalogue package remains — remove it.
+- [X] T018 Run `./gradlew :app:testDebugUnitTest :domain:test`. **Expected**: BUILD SUCCESSFUL. `:app` now has only `ExampleUnitTest`; `:domain` has the moved `001` tests. If `:app` fails to compile, a stale import to the old catalogue package remains — remove it.
 
 ### 2b — Correct the catalogue (Adhkar)
 
-- [ ] T019 Edit `domain/src/main/resources/catalogue/valid-catalogue.json`. In `tasks`, delete the nine entries `adhkar-1` … `adhkar-9` and replace them with exactly one: `{ "slug": "adhkar", "sectionId": "adhkar", "displayPosition": 1, "label": "Adhkar" }`. In `taskVersions`, delete the nine matching entries and replace them with exactly one: `{ "taskSlug": "adhkar", "catalogueVersion": 1, "points": 2, "maxOccurrencesPerDay": 9, "scheduleRule": { "type": "everyDay" } }`. Totals are unchanged: `2 x 9 = 18`, base day still 69.
+- [X] T019 Edit `domain/src/main/resources/catalogue/valid-catalogue.json`. In `tasks`, delete the nine entries `adhkar-1` … `adhkar-9` and replace them with exactly one: `{ "slug": "adhkar", "sectionId": "adhkar", "displayPosition": 1, "label": "Adhkar" }`. In `taskVersions`, delete the nine matching entries and replace them with exactly one: `{ "taskSlug": "adhkar", "catalogueVersion": 1, "points": 2, "maxOccurrencesPerDay": 9, "scheduleRule": { "type": "everyDay" } }`. Totals are unchanged: `2 x 9 = 18`, base day still 69.
 
-- [ ] T020 In `domain/src/test/kotlin/com/giraffe/mizanapp/domain/catalogue/CatalogueJsonTest.kt`, change the two count assertions from `40` tasks and `40` taskVersions to **32** and **32**. Change nothing else in that file.
+- [X] T020 In `domain/src/test/kotlin/com/giraffe/mizanapp/domain/catalogue/CatalogueJsonTest.kt`, change the two count assertions from `40` tasks and `40` taskVersions to **32** and **32**. Change nothing else in that file.
 
-- [ ] T021 Fix `domain/src/test/resources/catalogue/bad/duplicate-position-in-section.json`, which previously collided `adhkar-2` with `adhkar-1`. Set task `fajr-2`'s `displayPosition` to `1` instead, colliding with `fajr-1`. Then in `CatalogueValidatorTest.kt`, in the test named `rule 6 - duplicate display position within a section is rejected`, change the three expected values from `("adhkar", 1, listOf("adhkar-1", "adhkar-2"))` to `("fajr", 1, listOf("fajr-1", "fajr-2"))`.
+- [X] T021 Fix `domain/src/test/resources/catalogue/bad/duplicate-position-in-section.json`, which previously collided `adhkar-2` with `adhkar-1`. Set task `fajr-2`'s `displayPosition` to `1` instead, colliding with `fajr-1`. Then in `CatalogueValidatorTest.kt`, in the test named `rule 6 - duplicate display position within a section is rejected`, change the three expected values from `("adhkar", 1, listOf("adhkar-1", "adhkar-2"))` to `("fajr", 1, listOf("fajr-1", "fajr-2"))`.
 
-- [ ] T022 Fix `domain/src/test/resources/catalogue/bad/wrong-section-composition.json`, which previously deleted `adhkar-9`. Instead set the single `adhkar` task version's `maxOccurrencesPerDay` from `9` to `8`, making the section total 16. In `CatalogueValidatorTest.kt`, the test `rule 14 - wrong section composition is rejected` already expects `expected = 18` and `actual = 16`, so **its assertions need no change** — confirm they still pass.
+- [X] T022 Fix `domain/src/test/resources/catalogue/bad/wrong-section-composition.json`, which previously deleted `adhkar-9`. Instead set the single `adhkar` task version's `maxOccurrencesPerDay` from `9` to `8`, making the section total 16. In `CatalogueValidatorTest.kt`, the test `rule 14 - wrong section composition is rejected` already expects `expected = 18` and `actual = 16`, so **its assertions need no change** — confirm they still pass.
 
-- [ ] T023 Run `./gradlew :domain:test`. **Expected**: all tests pass. **The `001` validation contract itself must not be edited.** If a rule had to be weakened to accept the corrected catalogue, stop and report — that means the correction or the contract is wrong, and the arithmetic is never the thing to change.
+- [X] T023 Run `./gradlew :domain:test`. **Expected**: all tests pass. **The `001` validation contract itself must not be edited.** If a rule had to be weakened to accept the corrected catalogue, stop and report — that means the correction or the contract is wrong, and the arithmetic is never the thing to change.
 
 ### 2c — Time
 
-- [ ] T024 [TEST] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/time/DayBoundaryTest.kt` asserting: given an instant and a zone, `DayBoundary.dateAt(instant, zone)` returns the local civil date; one millisecond before local midnight belongs to the earlier date and one millisecond after to the later; the result changes when the zone changes. Run `./gradlew :domain:test`. **Expected: COMPILE FAILURE** — `DayBoundary` does not exist. Observe it.
+- [X] T024 [TEST] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/time/DayBoundaryTest.kt` asserting: given an instant and a zone, `DayBoundary.dateAt(instant, zone)` returns the local civil date; one millisecond before local midnight belongs to the earlier date and one millisecond after to the later; the result changes when the zone changes. Run `./gradlew :domain:test`. **Expected: COMPILE FAILURE** — `DayBoundary` does not exist. Observe it.
 
-- [ ] T025 Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/time/TimeProvider.kt`: `interface TimeProvider { fun now(): Instant; fun today(): LocalDate; fun zone(): ZoneId }`. In the same package create `DayBoundary.kt` with `object DayBoundary { fun dateAt(instant: Instant, zone: ZoneId): LocalDate }` implemented as `instant.atZone(zone).toLocalDate()`. **This is the only place the day boundary rule may exist** (FR-030). Run `./gradlew :domain:test`. **Expected: T024 passes.**
+- [X] T025 Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/time/TimeProvider.kt`: `interface TimeProvider { fun now(): Instant; fun today(): LocalDate; fun zone(): ZoneId }`. In the same package create `DayBoundary.kt` with `object DayBoundary { fun dateAt(instant: Instant, zone: ZoneId): LocalDate }` implemented as `instant.atZone(zone).toLocalDate()`. **This is the only place the day boundary rule may exist** (FR-030). Run `./gradlew :domain:test`. **Expected: T024 passes.**
 
-- [ ] T026 [P] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/time/FakeTimeProvider.kt`: a `TimeProvider` whose instant and zone are mutable `var`s, plus `fun advanceBy(duration: Duration)` and `fun setDate(date: LocalDate)`. Every domain test that needs time uses this. No test may read the real clock.
+- [X] T026 [P] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/time/FakeTimeProvider.kt`: a `TimeProvider` whose instant and zone are mutable `var`s, plus `fun advanceBy(duration: Duration)` and `fun setDate(date: LocalDate)`. Every domain test that needs time uses this. No test may read the real clock.
 
-- [ ] T027 Create `data/src/main/kotlin/com/giraffe/mizanapp/data/time/SystemTimeProvider.kt` implementing `TimeProvider` with `Instant.now()`, `ZoneId.systemDefault()`, and `today()` delegating to `DayBoundary.dateAt(now(), zone())`. **This is the only file in the entire project permitted to call `Instant.now()` or `ZoneId.systemDefault()`.**
+- [X] T027 Create `data/src/main/kotlin/com/giraffe/mizanapp/data/time/SystemTimeProvider.kt` implementing `TimeProvider` with `Instant.now()`, `ZoneId.systemDefault()`, and `today()` delegating to `DayBoundary.dateAt(now(), zone())`. **This is the only file in the entire project permitted to call `Instant.now()` or `ZoneId.systemDefault()`.**
 
 ### 2d — Hijri label (computed locally, no network)
 
-- [ ] T028 [TEST] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/time/HijriLabelTest.kt` asserting `HijriLabel.forDate(LocalDate.of(2026, 1, 1))` returns a non-blank string, that the same input always returns the identical string, and that two consecutive civil dates never produce the same label. Run tests. **Expected: COMPILE FAILURE.**
+- [X] T028 [TEST] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/time/HijriLabelTest.kt` asserting `HijriLabel.forDate(LocalDate.of(2026, 1, 1))` returns a non-blank string, that the same input always returns the identical string, and that two consecutive civil dates never produce the same label. Run tests. **Expected: COMPILE FAILURE.**
 
-- [ ] T029 Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/time/HijriLabel.kt` with `object HijriLabel { fun forDate(date: LocalDate): String }` using `java.time.chrono.HijrahChronology.INSTANCE.date(date)` and formatting as `"d MMMM yyyy"`. **No network, no I/O, no clock.** Run tests. **Expected: T028 passes.**
+- [X] T029 Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/time/HijriLabel.kt` with `object HijriLabel { fun forDate(date: LocalDate): String }` using `java.time.chrono.HijrahChronology.INSTANCE.date(date)` and formatting as `"d MMMM yyyy"`. **No network, no I/O, no clock.** Run tests. **Expected: T028 passes.**
 
 **Checkpoint**: `:domain` holds the catalogue, time, and Hijri label. Nothing Android-specific yet.
 
@@ -160,41 +160,41 @@ the right available total; completing and undoing move the earned total by the r
 
 ### 3a — Domain: applicability
 
-- [ ] T030 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/ResolveApplicableTasksTest.kt`. Load the good catalogue via the existing `Fixtures` helper. Assert: on Saturday the result excludes `fast-voluntary` and all `friday-*`; on Monday it includes `fast-voluntary` but no `friday-*`; on Friday it includes all seven `friday-*` but not `fast-voluntary`; the available totals of the resolved sets are 69, 74 and 76 respectively. Run `./gradlew :domain:test`. **Expected: COMPILE FAILURE.**
+- [X] T030 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/ResolveApplicableTasksTest.kt`. Load the good catalogue via the existing `Fixtures` helper. Assert: on Saturday the result excludes `fast-voluntary` and all `friday-*`; on Monday it includes `fast-voluntary` but no `friday-*`; on Friday it includes all seven `friday-*` but not `fast-voluntary`; the available totals of the resolved sets are 69, 74 and 76 respectively. Run `./gradlew :domain:test`. **Expected: COMPILE FAILURE.**
 
-- [ ] T031 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/ResolveApplicableTasks.kt` with `fun resolveApplicableTasks(catalogue: Catalogue, version: Int, date: LocalDate): List<TaskVersion>` filtering `taskVersions` by `catalogueVersion == version` and `scheduleRule.matches(date.dayOfWeek)`. Pure. Run tests. **Expected: T030 passes.**
+- [X] T031 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/ResolveApplicableTasks.kt` with `fun resolveApplicableTasks(catalogue: Catalogue, version: Int, date: LocalDate): List<TaskVersion>` filtering `taskVersions` by `catalogueVersion == version` and `scheduleRule.matches(date.dayOfWeek)`. Pure. Run tests. **Expected: T030 passes.**
 
 ### 3b — Domain: the day plan
 
-- [ ] T032 [P] [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/DayPlan.kt` and `PlannedTask.kt` as data classes with exactly the fields listed in [data-model.md](./data-model.md) Part 1. `DayPlan` has `id`, `date`, `catalogueVersion`, `hijriLabel: String` (**non-null**), `availablePoints`, `plannedTasks`. `PlannedTask` has `id`, `dayPlanId`, `taskSlug`, `sectionId`, `sectionLabel`, `sectionOrder`, `displayPosition`, `label`, `points`, `maxOccurrencesPerDay`. No logic in either.
+- [X] T032 [P] [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/DayPlan.kt` and `PlannedTask.kt` as data classes with exactly the fields listed in [data-model.md](./data-model.md) Part 1. `DayPlan` has `id`, `date`, `catalogueVersion`, `hijriLabel: String` (**non-null**), `availablePoints`, `plannedTasks`. `PlannedTask` has `id`, `dayPlanId`, `taskSlug`, `sectionId`, `sectionLabel`, `sectionOrder`, `displayPosition`, `label`, `points`, `maxOccurrencesPerDay`. No logic in either.
 
-- [ ] T033 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/BuildDayPlanTest.kt`. Assert: a plan built for a Saturday has `availablePoints == 69`; for a Monday 74; for a Friday 76; every planned task snapshots its label, points and limit from the catalogue; the adhkar planned task has `maxOccurrencesPerDay == 9` and contributes 18; the plan carries a non-blank `hijriLabel`; the plan's id and each planned task's id are non-blank and unique. Run tests. **Expected: COMPILE FAILURE.**
+- [X] T033 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/BuildDayPlanTest.kt`. Assert: a plan built for a Saturday has `availablePoints == 69`; for a Monday 74; for a Friday 76; every planned task snapshots its label, points and limit from the catalogue; the adhkar planned task has `maxOccurrencesPerDay == 9` and contributes 18; the plan carries a non-blank `hijriLabel`; the plan's id and each planned task's id are non-blank and unique. Run tests. **Expected: COMPILE FAILURE.**
 
-- [ ] T034 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/BuildDayPlan.kt` with `fun buildDayPlan(catalogue: Catalogue, version: Int, date: LocalDate, newId: () -> String): DayPlan`. It resolves applicable tasks, snapshots section label and order from the catalogue, computes `availablePoints` as the sum of `points * maxOccurrencesPerDay`, and sets `hijriLabel = HijriLabel.forDate(date)`. Pure — no clock, no I/O, ids supplied by the `newId` lambda so tests are deterministic. Run tests. **Expected: T033 passes.**
+- [X] T034 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/BuildDayPlan.kt` with `fun buildDayPlan(catalogue: Catalogue, version: Int, date: LocalDate, newId: () -> String): DayPlan`. It resolves applicable tasks, snapshots section label and order from the catalogue, computes `availablePoints` as the sum of `points * maxOccurrencesPerDay`, and sets `hijriLabel = HijriLabel.forDate(date)`. Pure — no clock, no I/O, ids supplied by the `newId` lambda so tests are deterministic. Run tests. **Expected: T033 passes.**
 
 ### 3c — Domain: completions, occurrences and scoring
 
-- [ ] T035 [P] [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/Completion.kt` with fields `id`, `dayPlanId`, `taskSlug`, `creditedDate`, `pointsAwarded`, `recordedAt: Instant`, `reversedAt: Instant?`. Add `val isLive: Boolean get() = reversedAt == null`.
+- [X] T035 [P] [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/Completion.kt` with fields `id`, `dayPlanId`, `taskSlug`, `creditedDate`, `pointsAwarded`, `recordedAt: Instant`, `reversedAt: Instant?`. Add `val isLive: Boolean get() = reversedAt == null`.
 
-- [ ] T036 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/OccurrenceTest.kt`. Assert with a list of completions: `liveCount` counts only rows whose `reversedAt` is null; a task at its limit reports `canRecord == false`; **after reversing one, `canRecord` is true again**; reversing does not change earlier live rows. Include the SC-012 loop — record to the limit, reverse, record again, ten times — and assert the live count and earned total each time equal the never-reversed case. Run tests. **Expected: COMPILE FAILURE.**
+- [X] T036 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/OccurrenceTest.kt`. Assert with a list of completions: `liveCount` counts only rows whose `reversedAt` is null; a task at its limit reports `canRecord == false`; **after reversing one, `canRecord` is true again**; reversing does not change earlier live rows. Include the SC-012 loop — record to the limit, reverse, record again, ten times — and assert the live count and earned total each time equal the never-reversed case. Run tests. **Expected: COMPILE FAILURE.**
 
-- [ ] T037 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/Occurrences.kt` with `fun liveCount(completions: List<Completion>, taskSlug: String): Int` and `fun canRecord(completions: List<Completion>, task: PlannedTask): Boolean`. Both filter on `isLive`. **This filter is the single most important line in the increment** — without it one mistaken tap locks a task at its limit forever. Run tests. **Expected: T036 passes.**
+- [X] T037 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/Occurrences.kt` with `fun liveCount(completions: List<Completion>, taskSlug: String): Int` and `fun canRecord(completions: List<Completion>, task: PlannedTask): Boolean`. Both filter on `isLive`. **This filter is the single most important line in the increment** — without it one mistaken tap locks a task at its limit forever. Run tests. **Expected: T036 passes.**
 
-- [ ] T038 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/ScoreDayTest.kt`. Assert: no completions gives `earned == 0` and `available == 69` on a Saturday; all tasks completed to their limits gives `earned == available`; reversed completions contribute nothing; `earned` is never negative and never exceeds `available`; `fraction` is 0 when available is 0. Run tests. **Expected: COMPILE FAILURE.**
+- [X] T038 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/ScoreDayTest.kt`. Assert: no completions gives `earned == 0` and `available == 69` on a Saturday; all tasks completed to their limits gives `earned == available`; reversed completions contribute nothing; `earned` is never negative and never exceeds `available`; `fraction` is 0 when available is 0. Run tests. **Expected: COMPILE FAILURE.**
 
-- [ ] T039 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/DailyScore.kt` (data class `earned`, `available`, with `fraction` a computed property) and `ScoreDay.kt` with `fun scoreDay(plan: DayPlan, completions: List<Completion>): DailyScore` summing `pointsAwarded` over live completions. Run tests. **Expected: T038 passes.**
+- [X] T039 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/DailyScore.kt` (data class `earned`, `available`, with `fraction` a computed property) and `ScoreDay.kt` with `fun scoreDay(plan: DayPlan, completions: List<Completion>): DailyScore` summing `pointsAwarded` over live completions. Run tests. **Expected: T038 passes.**
 
-- [ ] T040 [TEST] [US1] Add to `ScoreDayTest.kt` the SC-003 invariant test: build a Saturday plan, then run a **seeded** sequence (use `Random(42)` so it reproduces exactly) of **20 mixed operations** — each either a record on a randomly chosen task that is under its limit, or an undo on a randomly chosen task that has a live completion. After **every** operation assert `scoreDay(...).earned` equals the sum of `pointsAwarded` over the live completions, and that `earned` never exceeds `available`. Run tests.
+- [X] T040 [TEST] [US1] Add to `ScoreDayTest.kt` the SC-003 invariant test: build a Saturday plan, then run a **seeded** sequence (use `Random(42)` so it reproduces exactly) of **20 mixed operations** — each either a record on a randomly chosen task that is under its limit, or an undo on a randomly chosen task that has a live completion. After **every** operation assert `scoreDay(...).earned` equals the sum of `pointsAwarded` over the live completions, and that `earned` never exceeds `available`. Run tests.
 
 ### 3d — Domain: write policy and repository interfaces
 
-- [ ] T041 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/policy/DayWritePolicyTest.kt` asserting today is writable and yesterday and tomorrow are not, using `FakeTimeProvider`. Run tests. **Expected: COMPILE FAILURE.**
+- [X] T041 [TEST] [US1] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/policy/DayWritePolicyTest.kt` asserting today is writable and yesterday and tomorrow are not, using `FakeTimeProvider`. Run tests. **Expected: COMPILE FAILURE.**
 
-- [ ] T042 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/policy/DayWritePolicy.kt` with `class DayWritePolicy(private val time: TimeProvider) { fun isWritable(date: LocalDate): Boolean = date == time.today() }`. **Phase 5 widens this one file and nothing else.** Run tests. **Expected: T041 passes.**
+- [X] T042 [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/policy/DayWritePolicy.kt` with `class DayWritePolicy(private val time: TimeProvider) { fun isWritable(date: LocalDate): Boolean = date == time.today() }`. **Phase 5 widens this one file and nothing else.** Run tests. **Expected: T041 passes.**
 
-- [ ] T043 [P] [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/repository/CatalogueRepository.kt`, `DayPlanRepository.kt` and `CompletionRepository.kt` with **exactly** the interfaces and sealed result types given in [contracts/repositories.md](./contracts/repositories.md). Note `DayPlanRepository` has **no** method to set or change a Hijri label, and both `RecordOutcome` and `UndoOutcome` include a `NotWritable` case. Interfaces only — no implementations in `:domain`.
+- [X] T043 [P] [US1] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/repository/CatalogueRepository.kt`, `DayPlanRepository.kt` and `CompletionRepository.kt` with **exactly** the interfaces and sealed result types given in [contracts/repositories.md](./contracts/repositories.md). Note `DayPlanRepository` has **no** method to set or change a Hijri label, and both `RecordOutcome` and `UndoOutcome` include a `NotWritable` case. Interfaces only — no implementations in `:domain`.
 
-- [ ] T044 [US1] Run `./gradlew :domain:test`. **Expected**: BUILD SUCCESSFUL, all domain tests green. Domain is complete for US1.
+- [X] T044 [US1] Run `./gradlew :domain:test`. **Expected**: BUILD SUCCESSFUL, all domain tests green. Domain is complete for US1.
 
 ### 3e — Data: Room entities and DAOs
 
@@ -272,7 +272,7 @@ the right available total; completing and undoing move the earned total by the r
 
 - [ ] T076 [TEST] [US2] Add to the same file the SC-005 durability test: write a plan and several completions, **close the database and reopen it** in the same test, then assert every plan field, every completion and the derived score are identical. This covers process death without needing to kill the app. Run tests.
 
-- [ ] T077 [TEST] [US2] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/RolloverTest.kt` using `FakeTimeProvider`: set the clock to 23:59:59 local, advance two seconds, and assert `today()` returns the next date. Assert the previously built plan object is unchanged. Run `./gradlew :domain:test`. **Expected: COMPILE FAILURE or FAIL.**
+- [X] T077 [TEST] [US2] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/RolloverTest.kt` using `FakeTimeProvider`: set the clock to 23:59:59 local, advance two seconds, and assert `today()` returns the next date. Assert the previously built plan object is unchanged. Run `./gradlew :domain:test`. **Expected: COMPILE FAILURE or FAIL.**
 
 - [ ] T078 [US2] Add rollover handling to `TodayViewModel`: observe the date from `TimeProvider` and, when it changes, call `ensurePlanFor` the new date and emit a fresh state (FR-023). Run tests.
 
@@ -286,9 +286,9 @@ the right available total; completing and undoing move the earned total by the r
 
 ## Phase 5: User Story 3 — One block at a time (Priority: P3)
 
-- [ ] T081 [TEST] [US3] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/LandingSectionTest.kt`. Assert: with nothing complete the index is 0; with the first three sections complete it is 3; with everything complete it is 0; **a task at 3 of 9 leaves its section incomplete**. Run tests. **Expected: COMPILE FAILURE.**
+- [X] T081 [TEST] [US3] Create `domain/src/test/kotlin/com/giraffe/mizanapp/domain/day/LandingSectionTest.kt`. Assert: with nothing complete the index is 0; with the first three sections complete it is 3; with everything complete it is 0; **a task at 3 of 9 leaves its section incomplete**. Run tests. **Expected: COMPILE FAILURE.**
 
-- [ ] T082 [US3] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/LandingSection.kt` with `fun landingSectionIndex(sections: List<SectionProgress>): Int`. Pure, derived, never stored (FR-020b). Run tests. **Expected: T081 passes.**
+- [X] T082 [US3] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/day/LandingSection.kt` with `fun landingSectionIndex(sections: List<SectionProgress>): Int`. Pure, derived, never stored (FR-020b). Run tests. **Expected: T081 passes.**
 
 - [ ] T083 [US3] Use it in `TodayViewModel` to set `currentSectionIndex` on load and after rollover. Do **not** persist the position — recompute on every open.
 
@@ -314,11 +314,11 @@ the right available total; completing and undoing move the earned total by the r
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T090 [P] Run the clock audit: `grep -rn "LocalDate.now()\|Instant.now()\|System.currentTimeMillis()\|ZoneId.systemDefault()" domain/src data/src app/src`. **Expected**: hits only in `SystemTimeProvider.kt`. Any other hit violates Principle VII — fix it.
+- [X] T090 [P] Run the clock audit: `grep -rn "LocalDate.now()\|Instant.now()\|System.currentTimeMillis()\|ZoneId.systemDefault()" domain/src data/src app/src`. **Expected**: hits only in `SystemTimeProvider.kt`. Any other hit violates Principle VII — fix it.
 
-- [ ] T091 [P] Run the purity audit: `grep -rn "^import android\.\|^import androidx\." domain/src/main`. **Expected**: empty. The compiler should already prevent this; confirm the module type was not changed.
+- [X] T091 [P] Run the purity audit: `grep -rn "^import android\.\|^import androidx\." domain/src/main`. **Expected**: empty. The compiler should already prevent this; confirm the module type was not changed.
 
-- [ ] T092 [P] Confirm no test fixture ships: `ls domain/src/main/resources/catalogue/`. **Expected**: exactly one file, `valid-catalogue.json`. If `bad/` is there, T015 was done wrong and 18 corrupt fixtures are in your APK.
+- [X] T092 [P] Confirm no test fixture ships: `ls domain/src/main/resources/catalogue/`. **Expected**: exactly one file, `valid-catalogue.json`. If `bad/` is there, T015 was done wrong and 18 corrupt fixtures are in your APK.
 
 - [ ] T093 Confirm `data/schemas/` contains the exported schema JSON and that it is committed, and that no destructive migration exists: `grep -rn "fallbackToDestructiveMigration" data/src app/src` returns empty.
 
