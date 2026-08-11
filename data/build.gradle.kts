@@ -27,6 +27,12 @@ android {
         // java.time on minSdk 24 requires desugaring — the domain model uses it.
         isCoreLibraryDesugaringEnabled = true
     }
+
+    sourceSets {
+        // MigrationTestHelper needs the exported schemas bundled into the
+        // test APK to read a prior version's shape.
+        getByName("androidTest").assets.srcDirs("$projectDir/schemas")
+    }
 }
 
 ksp {

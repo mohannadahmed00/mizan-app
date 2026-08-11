@@ -29,7 +29,7 @@ import com.giraffe.mizanapp.data.db.entities.TaskVersionEntity
         PlannedTaskEntity::class,
         CompletionEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class MizanDatabase : RoomDatabase() {

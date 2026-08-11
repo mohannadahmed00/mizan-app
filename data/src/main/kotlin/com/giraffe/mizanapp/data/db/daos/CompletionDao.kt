@@ -57,4 +57,20 @@ interface CompletionDao {
     /** Includes tombstones. For durability tests and a future sync path only. */
     @Query("SELECT COUNT(*) FROM completions WHERE creditedDate = :date")
     suspend fun countAllRows(date: String): Int
+
+    /** Includes tombstones. For read-only-audit tests only — no UI path uses this. */
+    @Query("SELECT * FROM completions WHERE creditedDate BETWEEN :start AND :end ORDER BY creditedDate, recordedAt")
+    suspend fun allBetween(start: String, end: String): List<CompletionEntity>
+
+    /**
+     * The week's live completions. Filters tombstones exactly like every
+     * other read here — a range read that forgot this would inflate a past
+     * week's earned total.
+     */
+    @Query(
+        "SELECT * FROM completions " +
+            "WHERE creditedDate BETWEEN :start AND :end AND reversedAt IS NULL AND deletedAt IS NULL " +
+            "ORDER BY creditedDate, recordedAt"
+    )
+    suspend fun liveBetween(start: String, end: String): List<CompletionEntity>
 }
