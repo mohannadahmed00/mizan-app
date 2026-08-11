@@ -4,6 +4,7 @@ import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.mapper.toDomain
 import com.giraffe.mizanapp.data.mapper.toEntity
 import com.giraffe.mizanapp.domain.day.DayPlan
+import com.giraffe.mizanapp.domain.day.PlanOrigin
 import com.giraffe.mizanapp.domain.day.buildDayPlan
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
@@ -39,10 +40,16 @@ class RoomDayPlanRepository(
         val content = catalogue.catalogueAt(version)
             ?: return EnsureOutcome.NoCatalogue(date)
 
+        // The caller never chooses: the repository decides from the date and
+        // the injected clock, so two callers cannot label the same situation
+        // differently (contracts/repositories.md guarantee 5).
+        val origin = if (date == time.today()) PlanOrigin.OPENED else PlanOrigin.BACKFILLED
+
         val plan = buildDayPlan(
             catalogue = content,
             version = version,
             date = date,
+            origin = origin,
             newId = newId,
         )
 
@@ -57,4 +64,10 @@ class RoomDayPlanRepository(
 
     override fun observePlan(date: LocalDate): Flow<DayPlan?> =
         database.dayPlanDao().observePlanByDate(date.toString()).map { it?.toDomain() }
+
+    override suspend fun plansBetween(start: LocalDate, end: LocalDate): List<DayPlan> =
+        database.dayPlanDao().plansBetween(start.toString(), end.toString()).map { it.toDomain() }
+
+    override suspend fun earliestPlanDate(): LocalDate? =
+        database.dayPlanDao().earliestPlanDate()?.let { LocalDate.parse(it) }
 }

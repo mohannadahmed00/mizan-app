@@ -37,6 +37,15 @@ interface DayPlanDao {
     @Query("SELECT COUNT(*) FROM day_plans")
     suspend fun countPlans(): Int
 
+    /** The week's stored plans, in date order. Never fabricates a missing date. */
+    @Transaction
+    @Query("SELECT * FROM day_plans WHERE date BETWEEN :start AND :end AND deletedAt IS NULL ORDER BY date")
+    suspend fun plansBetween(start: String, end: String): List<DayPlanWithTasks>
+
+    /** The record start — the earliest date with a plan, or null before any exists. */
+    @Query("SELECT MIN(date) FROM day_plans WHERE deletedAt IS NULL")
+    suspend fun earliestPlanDate(): String?
+
     @Transaction
     suspend fun insertPlanWithTasks(plan: DayPlanEntity, tasks: List<PlannedTaskEntity>) {
         insertPlan(plan)

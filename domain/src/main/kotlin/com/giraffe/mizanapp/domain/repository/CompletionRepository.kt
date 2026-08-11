@@ -34,6 +34,14 @@ interface CompletionRepository {
     fun observeCompletions(date: LocalDate): Flow<List<Completion>>
 
     suspend fun liveCount(date: LocalDate, taskSlug: String): Int
+
+    /**
+     * The week's live completions, inclusive of both [start] and [end].
+     * Returns only records with a null tombstone — like every other read
+     * here, a range read that returned reversed records would inflate a past
+     * week's earned total.
+     */
+    suspend fun liveBetween(start: LocalDate, end: LocalDate): List<Completion>
 }
 
 sealed interface RecordOutcome {

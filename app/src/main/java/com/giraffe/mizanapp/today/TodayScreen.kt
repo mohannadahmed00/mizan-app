@@ -49,12 +49,13 @@ import androidx.compose.ui.unit.sp
 fun TodayScreen(
     state: TodayUiState,
     onEvent: (TodayEvent) -> Unit,
+    onOpenWeek: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (val status = state.status) {
         is TodayUiState.Status.Loading -> LoadingState(modifier)
         is TodayUiState.Status.CatalogueUnavailable -> CatalogueUnavailableState(status.detail, modifier)
-        is TodayUiState.Status.Ready -> ReadyState(state, onEvent, modifier)
+        is TodayUiState.Status.Ready -> ReadyState(state, onEvent, onOpenWeek, modifier)
     }
 }
 
@@ -90,10 +91,14 @@ private fun CatalogueUnavailableState(detail: String, modifier: Modifier = Modif
 private fun ReadyState(
     state: TodayUiState,
     onEvent: (TodayEvent) -> Unit,
+    onOpenWeek: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().padding(16.dp)) {
-        DayHeader(state)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            DayHeader(state)
+            TextButton(onClick = onOpenWeek) { Text("Week") }
+        }
         Spacer(Modifier.width(16.dp))
         PointsHeader(state)
         Spacer(Modifier.width(16.dp))

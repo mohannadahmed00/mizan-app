@@ -87,4 +87,7 @@ class RoomCompletionRepository(
 
     override suspend fun liveCount(date: LocalDate, taskSlug: String): Int =
         database.completionDao().liveCount(date.toString(), taskSlug)
+
+    override suspend fun liveBetween(start: LocalDate, end: LocalDate): List<Completion> =
+        database.completionDao().liveBetween(start.toString(), end.toString()).map { it.toDomain() }
 }

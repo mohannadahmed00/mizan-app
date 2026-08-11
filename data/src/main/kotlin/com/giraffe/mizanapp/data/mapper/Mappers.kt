@@ -9,6 +9,7 @@ import com.giraffe.mizanapp.domain.catalogue.ScheduleRule
 import com.giraffe.mizanapp.domain.catalogue.TaskVersion
 import com.giraffe.mizanapp.domain.day.Completion
 import com.giraffe.mizanapp.domain.day.DayPlan
+import com.giraffe.mizanapp.domain.day.PlanOrigin
 import com.giraffe.mizanapp.domain.day.PlannedTask
 import java.time.DayOfWeek
 import java.time.Instant
@@ -79,6 +80,7 @@ fun DayPlan.toEntity(updatedAt: Long): DayPlanEntity = DayPlanEntity(
     hijriLabel = hijriLabel,
     availablePoints = availablePoints,
     updatedAt = updatedAt,
+    origin = origin.name,
 )
 
 fun PlannedTask.toEntity(updatedAt: Long): PlannedTaskEntity = PlannedTaskEntity(
@@ -115,6 +117,7 @@ fun DayPlanWithTasks.toDomain(): DayPlan = DayPlan(
     hijriLabel = plan.hijriLabel,
     availablePoints = plan.availablePoints,
     plannedTasks = tasks.map { it.toDomain() },
+    origin = PlanOrigin.valueOf(plan.origin),
 )
 
 // --- completion ---------------------------------------------------------------

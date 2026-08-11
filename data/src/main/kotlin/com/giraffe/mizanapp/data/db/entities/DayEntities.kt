@@ -26,6 +26,7 @@ data class DayPlanEntity(
     val updatedAt: Long,
     val deletedAt: Long? = null,
     val userId: String? = null,
+    val origin: String = "OPENED",
 )
 
 @Entity(

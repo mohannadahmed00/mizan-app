@@ -1,6 +1,6 @@
 # Mizan Domain Glossary
 
-Twelve terms. Each means exactly one thing, everywhere — in a specification, a test name, and a type
+Sixteen terms. Each means exactly one thing, everywhere — in a specification, a test name, and a type
 name. Where two terms are easy to confuse, the difference is stated explicitly rather than left to
 inference.
 
@@ -49,6 +49,15 @@ A Day Plan is written once, the first time that date is opened, and never recomp
 makes a past day reproducible: if the catalogue changes afterwards, the Day Plan does not. Contrast
 [Planned Task](#planned-task), which is one entry inside it.
 
+## Plan Origin
+
+Whether a Day Plan exists because the date was actually opened, or because it was filled in
+afterwards for a date the app never saw.
+
+The two look identical to the person using the app — a date with nothing recorded reads the same
+either way. The distinction exists for consistency counting: opening a date is evidence the app was
+used that day; being filled in afterwards is not, and must never be read as if it were.
+
 ## Planned Task
 
 One task's entry within a single Day Plan — the task as it stood on that date, with the points it
@@ -81,10 +90,28 @@ Day Plan.
 Both halves matter. Earned points alone cannot be read, because what was achievable that day depends
 on which tasks applied to it.
 
+## Day Summary
+
+A read-only rendering of one date's Day Plan and its Completions — what applied, what was done, and
+the Daily Score that follows from them. It shows a date; it cannot change one.
+
+## Week Key
+
+A stable name for one week, derived from the date its Saturday falls on. The same week is recognised
+as the same week wherever it is referred to.
+
 ## Weekly Score
 
-The same measure across one week, running Saturday to Friday: points earned against points available
-over the seven days.
+The same measure as a Daily Score, extended across one week running Saturday to Friday — but with a
+week in progress, "available" splits in two. Points earned are read against what has *elapsed* so
+far, never against the full week; the full week's total is shown alongside as a separate figure, not
+as the denominator. For a week that has run its course, the two figures are the same number.
+
+## Record Start
+
+The earliest date for which any Day Plan exists. Dates before it are outside the record altogether —
+not days that read as zero, but days that were never being tracked at all. It is the floor beneath
+which nothing is filled in and no week can be visited.
 
 ## Consistency Day
 

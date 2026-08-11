@@ -32,10 +32,17 @@ interface CatalogueDao {
 
     /**
      * The version in effect on [date]: the greatest whose effective-from is on
-     * or before it. Null when the date precedes every version — never a guess.
+     * or before it. When every version starts later, the earliest version
+     * applies open-ended backwards — a catalogue applies until superseded,
+     * and the earliest one has nothing before it to defer to (FR-013b,
+     * research.md R1). Null only when no version exists at all, which is a
+     * genuine absence and never a guess.
      */
     @Query(
-        "SELECT MAX(version) FROM catalogue_versions WHERE effectiveFrom <= :date"
+        "SELECT COALESCE(" +
+            "(SELECT MAX(version) FROM catalogue_versions WHERE effectiveFrom <= :date), " +
+            "(SELECT MIN(version) FROM catalogue_versions)" +
+            ")"
     )
     suspend fun versionEffectiveOn(date: String): Int?
 

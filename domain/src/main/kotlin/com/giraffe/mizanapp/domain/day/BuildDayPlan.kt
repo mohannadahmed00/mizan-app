@@ -20,6 +20,7 @@ fun buildDayPlan(
     catalogue: Catalogue,
     version: Int,
     date: LocalDate,
+    origin: PlanOrigin,
     newId: () -> String,
 ): DayPlan {
     val planId = newId()
@@ -51,5 +52,6 @@ fun buildDayPlan(
         hijriLabel = HijriLabel.forDate(date),
         availablePoints = planned.sumOf { it.availablePoints },
         plannedTasks = planned,
+        origin = origin,
     )
 }

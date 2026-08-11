@@ -12,7 +12,12 @@ import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
+import com.giraffe.mizanapp.domain.usecase.GetDaySummary
+import com.giraffe.mizanapp.domain.usecase.GetWeekSummary
+import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
 import com.giraffe.mizanapp.today.TodayViewModel
+import com.giraffe.mizanapp.week.WeekViewModel
+import java.time.LocalDate
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -27,6 +32,8 @@ import org.koin.dsl.module
 val domainModule = module {
     single<TimeProvider> { SystemTimeProvider() }
     factory { DayWritePolicy(get()) }
+    factory { GetWeekSummary(get(), get(), get(), get()) }
+    factory { GetDaySummary(get(), get()) }
 }
 
 val dataModule = module {
@@ -41,6 +48,8 @@ val dataModule = module {
 
 val appModule = module {
     viewModel { TodayViewModel(get(), get(), get(), get()) }
+    viewModel { WeekViewModel(get(), get(), get(), get()) }
+    viewModel { (date: LocalDate) -> DaySummaryViewModel(get(), date) }
 }
 
 val mizanModules = listOf(domainModule, dataModule, appModule)

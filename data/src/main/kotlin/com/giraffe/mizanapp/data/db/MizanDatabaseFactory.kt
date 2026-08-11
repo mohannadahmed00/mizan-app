@@ -15,4 +15,6 @@ import androidx.room.Room
  * the one failure that cannot be repaired.
  */
 fun createMizanDatabase(context: Context): MizanDatabase =
-    Room.databaseBuilder(context, MizanDatabase::class.java, MizanDatabase.NAME).build()
+    Room.databaseBuilder(context, MizanDatabase::class.java, MizanDatabase.NAME)
+        .addMigrations(MIGRATION_1_2)
+        .build()

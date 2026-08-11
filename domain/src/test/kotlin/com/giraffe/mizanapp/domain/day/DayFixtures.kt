@@ -23,8 +23,8 @@ object DayFixtures {
         return { "id-${n++}" }
     }
 
-    fun planFor(day: DayOfWeek = DayOfWeek.SATURDAY): DayPlan =
-        buildDayPlan(catalogue, version = 1, date = dateFor(day), newId = sequentialIds())
+    fun planFor(day: DayOfWeek = DayOfWeek.SATURDAY, origin: PlanOrigin = PlanOrigin.OPENED): DayPlan =
+        buildDayPlan(catalogue, version = 1, date = dateFor(day), origin = origin, newId = sequentialIds())
 
     fun completion(
         plan: DayPlan,

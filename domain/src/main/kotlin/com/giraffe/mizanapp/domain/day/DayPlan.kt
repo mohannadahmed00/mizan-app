@@ -18,6 +18,7 @@ data class DayPlan(
     val hijriLabel: String,
     val availablePoints: Int,
     val plannedTasks: List<PlannedTask>,
+    val origin: PlanOrigin,
 ) {
     /** Sections in catalogue order, each with its tasks in display order. */
     fun sectionsInOrder(): List<Pair<String, List<PlannedTask>>> =

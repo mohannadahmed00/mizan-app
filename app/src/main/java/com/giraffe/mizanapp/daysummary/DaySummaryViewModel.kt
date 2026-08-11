@@ -1,0 +1,62 @@
+package com.giraffe.mizanapp.daysummary
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.giraffe.mizanapp.domain.usecase.GetDaySummary
+import java.time.LocalDate
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+/**
+ * One immutable state, exposed as [StateFlow]. No mutable state leaves this
+ * class (constitution, Technology Constraints).
+ *
+ * There is no write method here of any kind — this screen cannot record,
+ * undo, add, remove, or reorder anything (FR-024, Principle VI).
+ */
+class DaySummaryViewModel(
+    private val getDaySummary: GetDaySummary,
+    private val date: LocalDate,
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(DaySummaryUiState())
+    val state: StateFlow<DaySummaryUiState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val summary = getDaySummary(date)
+            _state.value = if (summary == null) {
+                DaySummaryUiState(status = DaySummaryUiState.Status.NoRecord, civilDate = date)
+            } else {
+                DaySummaryUiState(
+                    status = DaySummaryUiState.Status.Ready,
+                    civilDate = summary.date,
+                    hijriLabel = summary.hijriLabel,
+                    sections = summary.tasks
+                        .groupBy { it.task.sectionId }
+                        .toList()
+                        .sortedBy { (_, records) -> records.first().task.sectionOrder }
+                        .map { (sectionId, records) ->
+                            SummarySectionUi(
+                                id = sectionId,
+                                label = records.first().task.sectionLabel,
+                                tasks = records.map { record ->
+                                    SummaryTaskUi(
+                                        slug = record.task.taskSlug,
+                                        label = record.task.label,
+                                        points = record.task.points,
+                                        recordedCount = record.recordedCount,
+                                        maxOccurrences = record.task.maxOccurrencesPerDay,
+                                    )
+                                },
+                            )
+                        },
+                    earnedPoints = summary.score.earned,
+                    availablePoints = summary.score.available,
+                )
+            }
+        }
+    }
+}
