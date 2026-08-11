@@ -5,6 +5,7 @@ import com.giraffe.mizanapp.domain.catalogue.CatalogueDefect
 import com.giraffe.mizanapp.domain.catalogue.parseCatalogue
 import com.giraffe.mizanapp.domain.day.Completion
 import com.giraffe.mizanapp.domain.day.DayPlan
+import com.giraffe.mizanapp.domain.day.PlanOrigin
 import com.giraffe.mizanapp.domain.day.buildDayPlan
 import com.giraffe.mizanapp.domain.policy.DayWritePolicy
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
@@ -43,6 +44,7 @@ class FakeCatalogueRepository(
 
 class FakeDayPlanRepository(
     private val catalogue: Catalogue = loadSeedCatalogue(),
+    private val time: TimeProvider? = null,
 ) : DayPlanRepository {
 
     private val plans = mutableMapOf<LocalDate, MutableStateFlow<DayPlan?>>()
@@ -54,12 +56,23 @@ class FakeDayPlanRepository(
 
     override suspend fun ensurePlanFor(date: LocalDate): EnsureOutcome {
         flowFor(date).value?.let { return EnsureOutcome.AlreadyExists(it) }
-        val plan = buildDayPlan(catalogue, 1, date) { "id-${counter++}" }
+        // Mirrors RoomDayPlanRepository: the caller never chooses the origin.
+        val origin = if (time == null || date == time.today()) PlanOrigin.OPENED else PlanOrigin.BACKFILLED
+        val plan = buildDayPlan(catalogue, 1, date, origin) { "id-${counter++}" }
         flowFor(date).value = plan
         return EnsureOutcome.Created(plan)
     }
 
     override fun observePlan(date: LocalDate): Flow<DayPlan?> = flowFor(date)
+
+    override suspend fun plansBetween(start: LocalDate, end: LocalDate): List<DayPlan> =
+        plans.entries
+            .filter { (date, flow) -> !date.isBefore(start) && !date.isAfter(end) && flow.value != null }
+            .sortedBy { it.key }
+            .map { it.value.value!! }
+
+    override suspend fun earliestPlanDate(): LocalDate? =
+        plans.entries.filter { it.value.value != null }.minOfOrNull { it.key }
 }
 
 class FakeCompletionRepository(
@@ -109,6 +122,11 @@ class FakeCompletionRepository(
 
     override suspend fun liveCount(date: LocalDate, taskSlug: String): Int =
         rows.value.count { it.taskSlug == taskSlug && it.creditedDate == date && it.isLive }
+
+    override suspend fun liveBetween(start: LocalDate, end: LocalDate): List<Completion> =
+        rows.value
+            .filter { it.isLive && !it.creditedDate.isBefore(start) && !it.creditedDate.isAfter(end) }
+            .sortedWith(compareBy({ it.creditedDate }, { it.recordedAt }))
 }
 
 /**
