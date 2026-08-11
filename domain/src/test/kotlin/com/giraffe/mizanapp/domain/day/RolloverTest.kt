@@ -39,13 +39,13 @@ class RolloverTest {
     fun `a plan built before rollover is untouched by it`() {
         val clock = clockAt(LocalDate.of(2026, 3, 14), LocalTime.of(23, 0))
         val before = buildDayPlan(
-            DayFixtures.catalogue, version = 1, date = clock.today(), newId = DayFixtures.sequentialIds(),
+            DayFixtures.catalogue, version = 1, date = clock.today(), origin = PlanOrigin.OPENED, newId = DayFixtures.sequentialIds(),
         )
         val snapshot = before.copy()
 
         clock.advanceBy(Duration.ofHours(2))
         val after = buildDayPlan(
-            DayFixtures.catalogue, version = 1, date = clock.today(), newId = DayFixtures.sequentialIds(),
+            DayFixtures.catalogue, version = 1, date = clock.today(), origin = PlanOrigin.OPENED, newId = DayFixtures.sequentialIds(),
         )
 
         assertEquals("the earlier plan must be unchanged", snapshot, before)
@@ -56,12 +56,12 @@ class RolloverTest {
     fun `rollover from friday to saturday changes the available total`() {
         val clock = clockAt(LocalDate.of(2026, 3, 20), LocalTime.of(23, 30))
         val friday = buildDayPlan(
-            DayFixtures.catalogue, version = 1, date = clock.today(), newId = DayFixtures.sequentialIds(),
+            DayFixtures.catalogue, version = 1, date = clock.today(), origin = PlanOrigin.OPENED, newId = DayFixtures.sequentialIds(),
         )
 
         clock.advanceBy(Duration.ofHours(1))
         val saturday = buildDayPlan(
-            DayFixtures.catalogue, version = 1, date = clock.today(), newId = DayFixtures.sequentialIds(),
+            DayFixtures.catalogue, version = 1, date = clock.today(), origin = PlanOrigin.OPENED, newId = DayFixtures.sequentialIds(),
         )
 
         assertEquals(76, friday.availablePoints)
