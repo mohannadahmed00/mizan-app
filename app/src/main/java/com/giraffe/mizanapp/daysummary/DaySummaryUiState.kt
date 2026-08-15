@@ -27,6 +27,9 @@ data class DaySummaryUiState(
 
         /** A date with no stored plan — before the record start, or in the future. Not a failure. */
         data object NoRecord : Status
+
+        /** What applied on this date cannot be determined (FR-032). Never shown as an empty day. */
+        data class CatalogueUnavailable(val detail: String) : Status
     }
 }
 

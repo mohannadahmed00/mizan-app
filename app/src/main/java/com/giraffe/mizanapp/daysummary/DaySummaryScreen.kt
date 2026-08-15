@@ -22,6 +22,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -37,6 +38,7 @@ fun DaySummaryScreen(state: DaySummaryUiState, modifier: Modifier = Modifier) {
     when (val status = state.status) {
         is DaySummaryUiState.Status.Loading -> LoadingState(modifier)
         is DaySummaryUiState.Status.NoRecord -> NoRecordState(modifier)
+        is DaySummaryUiState.Status.CatalogueUnavailable -> CatalogueUnavailableState(status, modifier)
         is DaySummaryUiState.Status.Ready -> ReadyState(state, modifier)
     }
 }
@@ -56,6 +58,20 @@ private fun NoRecordState(modifier: Modifier = Modifier) {
     }
 }
 
+/** What applied on this date cannot be determined right now — the app's failure, not the user's (FR-032). */
+@Composable
+private fun CatalogueUnavailableState(status: DaySummaryUiState.Status.CatalogueUnavailable, modifier: Modifier = Modifier) {
+    Column(
+        modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("This day couldn't load right now.", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.width(8.dp))
+        Text(status.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 @Composable
 private fun ReadyState(state: DaySummaryUiState, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxSize().padding(16.dp)) {
@@ -70,6 +86,13 @@ private fun ReadyState(state: DaySummaryUiState, modifier: Modifier = Modifier) 
         Text(
             text = "${state.earnedPoints} of ${state.availablePoints} points",
             style = MaterialTheme.typography.headlineSmall,
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = "This day is a record. Recording happens on the current day.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.testTag("locked-day-notice"),
         )
         Spacer(Modifier.width(16.dp))
 

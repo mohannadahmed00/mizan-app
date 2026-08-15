@@ -1,6 +1,6 @@
 # Mizan Domain Glossary
 
-Eighteen terms. Each means exactly one thing, everywhere — in a specification, a test name, and a type
+Nineteen terms. Each means exactly one thing, everywhere — in a specification, a test name, and a type
 name. Where two terms are easy to confuse, the difference is stated explicitly rather than left to
 inference.
 
@@ -142,6 +142,15 @@ The point at which a run ends — an elapsed date, earlier than today, that is n
 
 A Streak Break is a boundary read out of the record, never a stored event. Nothing marks that it
 happened; it is simply the date after which the current Streak's length resets to zero.
+
+## Locked Day
+
+Any elapsed date. Viewable in full, writable never — the current date is the only one that accepts a
+Completion.
+
+The term names a fact about the write path, not a UI state: a Locked Day is not "disabled", it is a
+record. Where the interface explains this to the user, it does so plainly, without treating the
+lock as a loss.
 
 ---
 
