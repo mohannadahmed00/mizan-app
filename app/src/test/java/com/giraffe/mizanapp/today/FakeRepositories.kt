@@ -127,6 +127,9 @@ class FakeCompletionRepository(
         rows.value
             .filter { it.isLive && !it.creditedDate.isBefore(start) && !it.creditedDate.isAfter(end) }
             .sortedWith(compareBy({ it.creditedDate }, { it.recordedAt }))
+
+    override fun observeConsistencyDates(): Flow<List<LocalDate>> =
+        rows.map { all -> all.filter { it.isLive }.map { it.creditedDate }.distinct().sorted() }
 }
 
 /**

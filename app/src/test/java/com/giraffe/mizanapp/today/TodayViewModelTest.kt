@@ -2,6 +2,7 @@ package com.giraffe.mizanapp.today
 
 import com.giraffe.mizanapp.domain.catalogue.CatalogueDefect
 import com.giraffe.mizanapp.domain.policy.DayWritePolicy
+import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -38,11 +39,13 @@ class TodayViewModelTest {
     ): TodayViewModel {
         val plans = FakeDayPlanRepository()
         val policy = DayWritePolicy(clock)
+        val completions = FakeCompletionRepository(plans, policy, clock)
         return TodayViewModel(
             catalogue = catalogue,
             dayPlans = plans,
-            completions = FakeCompletionRepository(plans, policy, clock),
+            completions = completions,
             time = clock,
+            getStreakSummary = GetStreakSummary(completions, plans, clock),
         )
     }
 
