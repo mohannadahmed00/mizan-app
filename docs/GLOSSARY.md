@@ -152,6 +152,43 @@ The term names a fact about the write path, not a UI state: a Locked Day is not 
 record. Where the interface explains this to the user, it does so plainly, without treating the
 lock as a loss.
 
+## Aggregation Period
+
+A bounded span of recorded days — a week, a month, or the weekly trend's rolling window — over which
+completion figures are summarised for Insights.
+
+Always derived from already-persisted Day Plans and completions; it is never a new source of truth,
+and reading one never writes anything.
+
+## Trend
+
+An ordered, oldest-first sequence of per-week completion percentages, used to show whether
+consistency is rising, falling, or holding steady over time.
+
+The current, not-yet-elapsed week is always distinguishable from a completed one in a Trend — an
+unfinished week must never read as a low-consistency week.
+
+## Section Performance
+
+One section's own completion rate (occurrences completed against occurrences available) across an
+Aggregation Period.
+
+Listed only in catalogue order, never sorted by rate, never singling out the lowest section — a
+Section Performance list draws no conclusion on the user's behalf.
+
+## Completion Rate
+
+Completed occurrences divided by available occurrences for a given scope — a day, a section, or a
+period. The same earned/available shape used everywhere else in the app, expressed as a fraction.
+
+## Personal Best
+
+The single day, or single week, with the highest Completion Rate anywhere in the user's recorded
+history.
+
+There is deliberately no corresponding "worst" concept anywhere in the product — a Personal Best is
+an achievement to note, never a baseline the rest of the record is measured against.
+
 ---
 
 **A note on naming.** The specification for increment `001` refers to a **validation contract**: the rules deciding

@@ -25,6 +25,8 @@ import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
 import com.giraffe.mizanapp.history.HistoryEvent
 import com.giraffe.mizanapp.history.HistoryScreen
 import com.giraffe.mizanapp.history.HistoryViewModel
+import com.giraffe.mizanapp.insights.InsightsScreen
+import com.giraffe.mizanapp.insights.InsightsViewModel
 import com.giraffe.mizanapp.today.TodayScreen
 import com.giraffe.mizanapp.today.TodayViewModel
 import com.giraffe.mizanapp.ui.theme.MizanAppTheme
@@ -49,6 +51,7 @@ sealed interface Destination {
     data object Today : Destination
     data object Week : Destination
     data object History : Destination
+    data object Insights : Destination
     data class DaySummary(val date: LocalDate) : Destination
 }
 
@@ -64,6 +67,7 @@ private fun encode(destination: Destination): String = when (destination) {
     Destination.Today -> "TODAY"
     Destination.Week -> "WEEK"
     Destination.History -> "HISTORY"
+    Destination.Insights -> "INSIGHTS"
     is Destination.DaySummary -> "DAY:${destination.date}"
 }
 
@@ -71,6 +75,7 @@ private fun decode(encoded: String): Destination = when {
     encoded == "TODAY" -> Destination.Today
     encoded == "WEEK" -> Destination.Week
     encoded == "HISTORY" -> Destination.History
+    encoded == "INSIGHTS" -> Destination.Insights
     encoded.startsWith("DAY:") -> Destination.DaySummary(LocalDate.parse(encoded.removePrefix("DAY:")))
     else -> Destination.Today
 }
@@ -129,12 +134,14 @@ private fun AppRoute(modifier: Modifier = Modifier) {
         Destination.Week -> WeekRoute(
             onOpenDay = ::openDate,
             onOpenHistory = { push(Destination.History) },
+            onOpenInsights = { push(Destination.Insights) },
             modifier = modifier,
         )
         Destination.History -> HistoryRoute(
             onOpenDay = ::openDate,
             modifier = modifier,
         )
+        Destination.Insights -> InsightsRoute(modifier = modifier)
         is Destination.DaySummary -> DaySummaryRoute(date = current.date, modifier = modifier)
     }
 }
@@ -158,7 +165,12 @@ private fun TodayRoute(onOpenWeek: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun WeekRoute(onOpenDay: (LocalDate) -> Unit, onOpenHistory: () -> Unit, modifier: Modifier = Modifier) {
+private fun WeekRoute(
+    onOpenDay: (LocalDate) -> Unit,
+    onOpenHistory: () -> Unit,
+    onOpenInsights: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val viewModel: WeekViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -177,6 +189,7 @@ private fun WeekRoute(onOpenDay: (LocalDate) -> Unit, onOpenHistory: () -> Unit,
             when (event) {
                 is WeekEvent.OpenDay -> onOpenDay(event.date)
                 WeekEvent.OpenHistory -> onOpenHistory()
+                WeekEvent.OpenInsights -> onOpenInsights()
                 else -> viewModel.onEvent(event)
             }
         },
@@ -203,6 +216,14 @@ private fun HistoryRoute(onOpenDay: (LocalDate) -> Unit, modifier: Modifier = Mo
         },
         modifier = modifier,
     )
+}
+
+@Composable
+private fun InsightsRoute(modifier: Modifier = Modifier) {
+    val viewModel: InsightsViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    InsightsScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
 }
 
 @Composable
