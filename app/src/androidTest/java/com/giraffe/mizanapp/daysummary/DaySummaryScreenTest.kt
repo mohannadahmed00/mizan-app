@@ -5,6 +5,8 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
@@ -84,5 +86,49 @@ class DaySummaryScreenTest {
         compose.setContent { DaySummaryScreen(state = DaySummaryUiState(status = DaySummaryUiState.Status.NoRecord)) }
 
         compose.onNodeWithText("recorded", substring = true).assertExists()
+    }
+
+    /** `005` FR-024: this is where the read-only rule is stated, not just enforced. */
+    @Test
+    fun a_past_day_states_that_recording_happens_on_the_current_day() {
+        compose.setContent { DaySummaryScreen(state = readyState()) }
+
+        compose.onNodeWithTag("locked-day-notice").assertExists()
+        compose.onNodeWithText("current day", substring = true).assertExists()
+    }
+
+    /** A task never recorded shows its value and a zero with no fault language (FR-012). */
+    @Test
+    fun a_task_never_recorded_shows_its_value_and_a_zero_with_no_fault_language() {
+        val state = readyState().copy(
+            sections = listOf(
+                SummarySectionUi(
+                    id = "fajr",
+                    label = "Fajr",
+                    tasks = listOf(
+                        SummaryTaskUi("fajr-1", "Fajr One", points = 2, recordedCount = 0, maxOccurrences = 1),
+                    ),
+                ),
+            ),
+        )
+        compose.setContent { DaySummaryScreen(state = state) }
+
+        compose.onNodeWithText("2 pts", substring = true).assertExists()
+        listOf("missed", "failed", "skipped", "incomplete").forEach { forbidden ->
+            compose.onAllNodes(
+                SemanticsMatcher("contains '$forbidden'") { node ->
+                    node.config.getOrElse(SemanticsProperties.Text) { emptyList() }
+                        .joinToString().contains(forbidden, ignoreCase = true)
+                },
+            ).assertCountEquals(0)
+        }
+    }
+
+    @Test
+    fun no_element_uses_a_red_colour_or_a_cross_glyph() {
+        compose.setContent { DaySummaryScreen(state = readyState()) }
+
+        compose.onAllNodesWithText("✕").assertCountEquals(0) // cross glyph
+        compose.onAllNodesWithText("❌").assertCountEquals(0) // cross mark emoji
     }
 }
