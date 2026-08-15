@@ -12,10 +12,13 @@ import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
+import com.giraffe.mizanapp.domain.usecase.GetDayDetail
 import com.giraffe.mizanapp.domain.usecase.GetDaySummary
+import com.giraffe.mizanapp.domain.usecase.GetHistoryPage
 import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeekSummary
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
+import com.giraffe.mizanapp.history.HistoryViewModel
 import com.giraffe.mizanapp.today.TodayViewModel
 import com.giraffe.mizanapp.week.WeekViewModel
 import java.time.LocalDate
@@ -36,6 +39,8 @@ val domainModule = module {
     factory { GetWeekSummary(get(), get(), get(), get()) }
     factory { GetDaySummary(get(), get()) }
     factory { GetStreakSummary(get(), get(), get()) }
+    factory { GetHistoryPage(get(), get(), get(), get()) }
+    factory { GetDayDetail(get(), get(), get(), get()) }
 }
 
 val dataModule = module {
@@ -51,7 +56,8 @@ val dataModule = module {
 val appModule = module {
     viewModel { TodayViewModel(get(), get(), get(), get(), get()) }
     viewModel { WeekViewModel(get(), get(), get(), get()) }
-    viewModel { (date: LocalDate) -> DaySummaryViewModel(get(), date) }
+    viewModel { (date: LocalDate) -> DaySummaryViewModel(get<GetDayDetail>(), date) }
+    viewModel { HistoryViewModel(get(), get()) }
 }
 
 val mizanModules = listOf(domainModule, dataModule, appModule)

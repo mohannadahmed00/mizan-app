@@ -1,12 +1,9 @@
 package com.giraffe.mizanapp.domain.usecase
 
-import com.giraffe.mizanapp.domain.day.liveCount
-import com.giraffe.mizanapp.domain.day.scoreDay
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
-import com.giraffe.mizanapp.domain.week.DayCellState
 import com.giraffe.mizanapp.domain.week.DaySummary
-import com.giraffe.mizanapp.domain.week.PlannedTaskRecord
+import com.giraffe.mizanapp.domain.week.summariseDay
 import java.time.LocalDate
 
 /**
@@ -26,26 +23,6 @@ class GetDaySummary(
     suspend operator fun invoke(date: LocalDate): DaySummary? {
         val plan = plans.planFor(date) ?: return null
         val liveCompletions = completions.liveBetween(date, date)
-        val score = scoreDay(plan, liveCompletions)
-
-        val tasks = plan.sectionsInOrder().flatMap { (_, sectionTasks) ->
-            sectionTasks.map { task ->
-                PlannedTaskRecord(task = task, recordedCount = liveCount(liveCompletions, task.taskSlug))
-            }
-        }
-
-        val state = when {
-            score.earned == 0 -> DayCellState.NOTHING_RECORDED
-            score.earned >= score.available -> DayCellState.FULLY_RECORDED
-            else -> DayCellState.PARTLY_RECORDED
-        }
-
-        return DaySummary(
-            date = plan.date,
-            hijriLabel = plan.hijriLabel,
-            score = score,
-            state = state,
-            tasks = tasks,
-        )
+        return summariseDay(plan, liveCompletions)
     }
 }

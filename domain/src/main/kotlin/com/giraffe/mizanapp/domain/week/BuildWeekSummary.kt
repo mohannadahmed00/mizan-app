@@ -13,9 +13,12 @@ import java.time.LocalDate
  * has finished (or, for a week that needs none, without touching storage at
  * all).
  *
- * [projectedAvailable] MUST hold an entry for every date in [week] that is
- * after [today] — those dates are never persisted (FR-009d) and their
- * available points come only from this map.
+ * [projectedAvailable] MUST hold an entry for every date in [week] with no
+ * stored [plan] that is at or after [recordStart] — future dates (FR-009d)
+ * and, since `005`, elapsed dates history never backfilled (research.md R2).
+ * A stored plan's own `availablePoints` always wins over the projection,
+ * which is what stops a catalogue change from ever moving a recorded day
+ * (Principle III).
  */
 fun buildWeekSummary(
     week: Week,
@@ -42,9 +45,9 @@ fun buildWeekSummary(
         }
 
         val available = when {
-            date.isAfter(today) -> projectedAvailable[date] ?: 0
             state == DayCellState.OUTSIDE_RECORD -> 0
-            else -> plan?.availablePoints ?: 0
+            plan != null -> plan.availablePoints
+            else -> projectedAvailable[date] ?: 0
         }
 
         DayCell(

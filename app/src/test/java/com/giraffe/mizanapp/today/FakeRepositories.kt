@@ -45,10 +45,13 @@ class FakeCatalogueRepository(
 class FakeDayPlanRepository(
     private val catalogue: Catalogue = loadSeedCatalogue(),
     private val time: TimeProvider? = null,
+    private val failDates: Set<LocalDate> = emptySet(),
 ) : DayPlanRepository {
 
     private val plans = mutableMapOf<LocalDate, MutableStateFlow<DayPlan?>>()
     private var counter = 0
+    var creationCount = 0
+        private set
 
     private fun flowFor(date: LocalDate) = plans.getOrPut(date) { MutableStateFlow(null) }
 
@@ -56,10 +59,12 @@ class FakeDayPlanRepository(
 
     override suspend fun ensurePlanFor(date: LocalDate): EnsureOutcome {
         flowFor(date).value?.let { return EnsureOutcome.AlreadyExists(it) }
+        if (date in failDates) error("simulated storage failure for $date")
         // Mirrors RoomDayPlanRepository: the caller never chooses the origin.
         val origin = if (time == null || date == time.today()) PlanOrigin.OPENED else PlanOrigin.BACKFILLED
         val plan = buildDayPlan(catalogue, 1, date, origin) { "id-${counter++}" }
         flowFor(date).value = plan
+        creationCount++
         return EnsureOutcome.Created(plan)
     }
 
@@ -73,6 +78,11 @@ class FakeDayPlanRepository(
 
     override suspend fun earliestPlanDate(): LocalDate? =
         plans.entries.filter { it.value.value != null }.minOfOrNull { it.key }
+
+    /** Test-only seam: seeds a plan directly, bypassing the origin rule. */
+    fun seedPlan(plan: DayPlan) {
+        flowFor(plan.date).value = plan
+    }
 }
 
 class FakeCompletionRepository(
@@ -83,6 +93,11 @@ class FakeCompletionRepository(
 
     private val rows = MutableStateFlow<List<Completion>>(emptyList())
     private var counter = 0
+
+    /** Test-only seam: injects a completion directly, bypassing [DayWritePolicy]. */
+    fun seed(vararg completions: Completion) {
+        rows.value = rows.value + completions
+    }
 
     override suspend fun record(date: LocalDate, taskSlug: String): RecordOutcome {
         if (!policy.isWritable(date)) return RecordOutcome.NotWritable(policy.refusalReason(date))

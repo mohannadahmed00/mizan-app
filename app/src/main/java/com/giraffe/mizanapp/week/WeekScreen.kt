@@ -113,6 +113,12 @@ private fun ReadyState(
             DayRow(day, onEvent)
             Spacer(Modifier.width(8.dp))
         }
+
+        Spacer(Modifier.width(16.dp))
+        TextButton(
+            onClick = { onEvent(WeekEvent.OpenHistory) },
+            modifier = Modifier.testTag("open-history-button"),
+        ) { Text("View history") }
     }
 }
 

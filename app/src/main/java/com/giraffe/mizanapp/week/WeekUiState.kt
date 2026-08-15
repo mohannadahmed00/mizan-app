@@ -56,4 +56,7 @@ sealed interface WeekEvent {
     data object NextWeek : WeekEvent
     data class OpenDay(val date: LocalDate) : WeekEvent
     data object Retry : WeekEvent
+
+    /** Opens history (`005`, FR-001). Handled by the host navigating, like [OpenDay]. */
+    data object OpenHistory : WeekEvent
 }
