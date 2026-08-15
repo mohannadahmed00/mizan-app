@@ -13,6 +13,7 @@ import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.usecase.GetDaySummary
+import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeekSummary
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
 import com.giraffe.mizanapp.today.TodayViewModel
@@ -34,6 +35,7 @@ val domainModule = module {
     factory { DayWritePolicy(get()) }
     factory { GetWeekSummary(get(), get(), get(), get()) }
     factory { GetDaySummary(get(), get()) }
+    factory { GetStreakSummary(get(), get(), get()) }
 }
 
 val dataModule = module {
@@ -47,7 +49,7 @@ val dataModule = module {
 }
 
 val appModule = module {
-    viewModel { TodayViewModel(get(), get(), get(), get()) }
+    viewModel { TodayViewModel(get(), get(), get(), get(), get()) }
     viewModel { WeekViewModel(get(), get(), get(), get()) }
     viewModel { (date: LocalDate) -> DaySummaryViewModel(get(), date) }
 }

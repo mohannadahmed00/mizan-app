@@ -90,4 +90,7 @@ class RoomCompletionRepository(
 
     override suspend fun liveBetween(start: LocalDate, end: LocalDate): List<Completion> =
         database.completionDao().liveBetween(start.toString(), end.toString()).map { it.toDomain() }
+
+    override fun observeConsistencyDates(): Flow<List<LocalDate>> =
+        database.completionDao().observeLiveDates().map { dates -> dates.map(LocalDate::parse) }
 }

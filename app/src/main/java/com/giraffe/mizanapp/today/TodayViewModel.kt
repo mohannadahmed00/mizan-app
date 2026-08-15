@@ -13,12 +13,16 @@ import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
 import com.giraffe.mizanapp.domain.repository.EnsureOutcome
 import com.giraffe.mizanapp.domain.repository.SeedOutcome
+import com.giraffe.mizanapp.domain.streak.StreakSummary
 import com.giraffe.mizanapp.domain.time.TimeProvider
+import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import java.time.LocalDate
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -34,16 +38,19 @@ class TodayViewModel(
     private val dayPlans: DayPlanRepository,
     private val completions: CompletionRepository,
     private val time: TimeProvider,
+    private val getStreakSummary: GetStreakSummary,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TodayUiState())
     val state: StateFlow<TodayUiState> = _state.asStateFlow()
 
     private var observing: Job? = null
+    private var streakJob: Job? = null
     private var loadedDate: LocalDate? = null
 
     init {
         load()
+        observeStreak()
     }
 
     fun load() {
@@ -54,6 +61,7 @@ class TodayViewModel(
                         status = TodayUiState.Status.CatalogueUnavailable(
                             seeded.defects.joinToString { it.toString() },
                         ),
+                        streak = _state.value.streak,
                     )
                     return@launch
                 }
@@ -62,6 +70,44 @@ class TodayViewModel(
             openDate(time.today())
         }
     }
+
+    /**
+     * Subscribes independently of the day's task collector, so the tasks
+     * paint without waiting on the streak (FR-018c). A failed read is caught
+     * here — never in `GetStreakSummary` — because a zero produced by a
+     * failure would be indistinguishable from a real zero (FR-021b).
+     *
+     * Launched on [Dispatchers.Default] rather than the ViewModel's default
+     * Main dispatcher: `GetStreakSummary` re-schedules itself indefinitely to
+     * track the 20:00 and midnight boundaries (research.md R2), and that
+     * scheduling logic already has its own virtual-time coverage in
+     * `GetStreakSummaryTest`. Collecting it on the same dispatcher a test
+     * advances would make `advanceUntilIdle()` try to drain a queue that is
+     * unbounded by construction. Updating [_state] from a background thread
+     * is safe — `MutableStateFlow.value` is thread-safe, and Compose's
+     * `collectAsStateWithLifecycle` marshals back to Main on its own.
+     */
+    private fun observeStreak() {
+        streakJob?.cancel()
+        streakJob = viewModelScope.launch(Dispatchers.Default) {
+            getStreakSummary()
+                .catch { e ->
+                    _state.value = _state.value.copy(
+                        streak = StreakPanelUi.Unavailable(e.message ?: "could not read the record"),
+                    )
+                }
+                .collect { summary -> _state.value = _state.value.copy(streak = summary.toUi()) }
+        }
+    }
+
+    private fun StreakSummary.toUi() = StreakPanelUi.Ready(
+        current = current,
+        longest = longest,
+        todayCounted = todayCounted,
+        recentActivity = recentActivity.map { ActivityDayUi(it.date, it.state) },
+        showBreakNotice = showBreakNotice,
+        isAtRisk = isAtRisk,
+    )
 
     /**
      * Called when the app resumes or the date may have changed. Crossing local
@@ -79,6 +125,7 @@ class TodayViewModel(
             is EnsureOutcome.NoCatalogue -> {
                 _state.value = TodayUiState(
                     status = TodayUiState.Status.CatalogueUnavailable("no catalogue applies on $date"),
+                    streak = _state.value.streak,
                 )
                 return
             }
@@ -134,6 +181,7 @@ class TodayViewModel(
             },
             earnedPoints = score.earned,
             availablePoints = score.available,
+            streak = _state.value.streak,
         )
     }
 
@@ -144,6 +192,10 @@ class TodayViewModel(
             }
             is TodayEvent.UndoTask -> viewModelScope.launch {
                 loadedDate?.let { completions.undoLast(it, event.slug) }
+            }
+            TodayEvent.RetryStreak -> {
+                _state.value = _state.value.copy(streak = StreakPanelUi.Resolving)
+                observeStreak()
             }
             TodayEvent.NextSection -> move(+1)
             TodayEvent.PreviousSection -> move(-1)

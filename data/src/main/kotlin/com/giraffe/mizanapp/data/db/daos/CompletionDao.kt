@@ -73,4 +73,14 @@ interface CompletionDao {
             "ORDER BY creditedDate, recordedAt"
     )
     suspend fun liveBetween(start: String, end: String): List<CompletionEntity>
+
+    /**
+     * Every date carrying at least one live completion, ascending and distinct.
+     * Covered by the existing `creditedDate` index — no new index is added.
+     */
+    @Query(
+        "SELECT DISTINCT creditedDate FROM completions " +
+            "WHERE reversedAt IS NULL AND deletedAt IS NULL ORDER BY creditedDate"
+    )
+    fun observeLiveDates(): Flow<List<String>>
 }

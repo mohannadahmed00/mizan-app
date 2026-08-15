@@ -1,5 +1,6 @@
 package com.giraffe.mizanapp.today
 
+import com.giraffe.mizanapp.domain.streak.ActivityState
 import java.time.LocalDate
 
 /**
@@ -16,6 +17,7 @@ data class TodayUiState(
     val currentSectionIndex: Int = 0,
     val earnedPoints: Int = 0,
     val availablePoints: Int = 0,
+    val streak: StreakPanelUi = StreakPanelUi.Resolving,
 ) {
     val progressFraction: Float
         get() = if (availablePoints == 0) 0f else earnedPoints.toFloat() / availablePoints
@@ -65,4 +67,36 @@ sealed interface TodayEvent {
     data class UndoTask(val slug: String) : TodayEvent
     data object NextSection : TodayEvent
     data object PreviousSection : TodayEvent
+
+    /** Re-subscribes to the streak read. Can author nothing (Principle VI). */
+    data object RetryStreak : TodayEvent
 }
+
+/**
+ * The streak element's state, held separately from [TodayUiState.Status] so
+ * it can be `Ready` while the day has no catalogue (FR-018b) and `Resolving`
+ * while the day's tasks are already on screen (FR-018c).
+ */
+sealed interface StreakPanelUi {
+
+    /** Figures not yet available. Renders the element's space, never a number. */
+    data object Resolving : StreakPanelUi
+
+    /** A flat snapshot — no callback, nothing lazy — so it drives tests directly. */
+    data class Ready(
+        val current: Int,
+        val longest: Int,
+        val todayCounted: Boolean,
+        val recentActivity: List<ActivityDayUi> = emptyList(),
+        val showBreakNotice: Boolean = false,
+        val isAtRisk: Boolean = false,
+    ) : StreakPanelUi
+
+    /** The record could not be read (FR-021b). Never a 0, never a silent absence. */
+    data class Unavailable(val detail: String) : StreakPanelUi
+}
+
+data class ActivityDayUi(
+    val date: LocalDate,
+    val state: ActivityState,
+)
