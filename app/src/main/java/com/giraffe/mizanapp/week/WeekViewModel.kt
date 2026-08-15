@@ -113,6 +113,7 @@ class WeekViewModel(
             }
             is WeekEvent.OpenDay -> Unit // handled by the host navigating
             WeekEvent.OpenHistory -> Unit // handled by the host navigating
+            WeekEvent.OpenInsights -> Unit // handled by the host navigating
             WeekEvent.Retry -> viewModelScope.launch { loadWeek(viewedWeek) }
         }
     }

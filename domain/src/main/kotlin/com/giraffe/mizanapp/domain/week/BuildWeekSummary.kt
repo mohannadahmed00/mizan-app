@@ -28,10 +28,44 @@ fun buildWeekSummary(
     completions: List<Completion>,
     projectedAvailable: Map<LocalDate, Int>,
 ): WeekSummary {
+    val days = buildDayCells(week.dates, today, recordStart, plans, completions, projectedAvailable)
+
+    val elapsedAvailable = days.filter { !it.date.isAfter(today) }.sumOf { it.available }
+    val futureAvailable = days.filter { it.date.isAfter(today) }.sumOf { it.available }
+    val weekTarget = elapsedAvailable + futureAvailable
+    val earned = days.sumOf { it.earned }
+
+    return WeekSummary(
+        week = week,
+        score = WeeklyScore(earned = earned, elapsedAvailable = elapsedAvailable, weekTarget = weekTarget),
+        days = days,
+    )
+}
+
+/**
+ * Turns any list of dates plus stored/projected data into [DayCell]s.
+ *
+ * Extracted from [buildWeekSummary] (`006` research.md R2) so the monthly
+ * overview can reuse the exact same five-state derivation over a calendar
+ * month's dates without a second, drifting copy of this rule — Principle VII
+ * forbids a second opinion about what a date's state is.
+ *
+ * [projectedAvailable] MUST hold an entry for every date with no stored
+ * [plan] that is at or after [recordStart]. A stored plan's own
+ * `availablePoints` always wins over the projection (Principle III).
+ */
+fun buildDayCells(
+    dates: List<LocalDate>,
+    today: LocalDate,
+    recordStart: LocalDate?,
+    plans: List<DayPlan>,
+    completions: List<Completion>,
+    projectedAvailable: Map<LocalDate, Int>,
+): List<DayCell> {
     val plansByDate = plans.associateBy { it.date }
     val completionsByDate = completions.filter { it.isLive }.groupBy { it.creditedDate }
 
-    val days = week.dates.map { date ->
+    return dates.map { date ->
         val plan = plansByDate[date]
         val earned = completionsByDate[date].orEmpty().sumOf { it.pointsAwarded }
 
@@ -58,15 +92,4 @@ fun buildWeekSummary(
             state = state,
         )
     }
-
-    val elapsedAvailable = days.filter { !it.date.isAfter(today) }.sumOf { it.available }
-    val futureAvailable = days.filter { it.date.isAfter(today) }.sumOf { it.available }
-    val weekTarget = elapsedAvailable + futureAvailable
-    val earned = days.sumOf { it.earned }
-
-    return WeekSummary(
-        week = week,
-        score = WeeklyScore(earned = earned, elapsedAvailable = elapsedAvailable, weekTarget = weekTarget),
-        days = days,
-    )
 }

@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.giraffe.mizanapp.domain.week.DayCellState
+import com.giraffe.mizanapp.ui.containerColorFor
 
 /**
  * The Week screen.
@@ -119,6 +120,10 @@ private fun ReadyState(
             onClick = { onEvent(WeekEvent.OpenHistory) },
             modifier = Modifier.testTag("open-history-button"),
         ) { Text("View history") }
+        TextButton(
+            onClick = { onEvent(WeekEvent.OpenInsights) },
+            modifier = Modifier.testTag("open-insights-button"),
+        ) { Text("Insights") }
     }
 }
 
@@ -210,12 +215,4 @@ private fun pointsText(day: DayCellUi): String = when (day.state) {
     DayCellState.OUTSIDE_RECORD -> "Not recorded"
     DayCellState.NOT_YET_ELAPSED -> "Upcoming"
     else -> "${day.earnedPoints} of ${day.availablePoints}"
-}
-
-@Composable
-private fun containerColorFor(state: DayCellState) = when (state) {
-    DayCellState.FULLY_RECORDED -> MaterialTheme.colorScheme.secondaryContainer
-    DayCellState.PARTLY_RECORDED -> MaterialTheme.colorScheme.tertiaryContainer
-    DayCellState.NOTHING_RECORDED -> MaterialTheme.colorScheme.surfaceVariant
-    DayCellState.NOT_YET_ELAPSED, DayCellState.OUTSIDE_RECORD -> MaterialTheme.colorScheme.surface
 }

@@ -15,10 +15,15 @@ import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.usecase.GetDayDetail
 import com.giraffe.mizanapp.domain.usecase.GetDaySummary
 import com.giraffe.mizanapp.domain.usecase.GetHistoryPage
+import com.giraffe.mizanapp.domain.usecase.GetMonthOverview
+import com.giraffe.mizanapp.domain.usecase.GetPersonalBests
+import com.giraffe.mizanapp.domain.usecase.GetSectionBreakdown
 import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeekSummary
+import com.giraffe.mizanapp.domain.usecase.GetWeeklyTrend
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
 import com.giraffe.mizanapp.history.HistoryViewModel
+import com.giraffe.mizanapp.insights.InsightsViewModel
 import com.giraffe.mizanapp.today.TodayViewModel
 import com.giraffe.mizanapp.week.WeekViewModel
 import java.time.LocalDate
@@ -41,6 +46,10 @@ val domainModule = module {
     factory { GetStreakSummary(get(), get(), get()) }
     factory { GetHistoryPage(get(), get(), get(), get()) }
     factory { GetDayDetail(get(), get(), get(), get()) }
+    factory { GetWeeklyTrend(get()) }
+    factory { GetMonthOverview(get(), get(), get(), get()) }
+    factory { GetSectionBreakdown(get(), get(), get(), get()) }
+    factory { GetPersonalBests(get(), get(), get(), get()) }
 }
 
 val dataModule = module {
@@ -58,6 +67,7 @@ val appModule = module {
     viewModel { WeekViewModel(get(), get(), get(), get()) }
     viewModel { (date: LocalDate) -> DaySummaryViewModel(get<GetDayDetail>(), date) }
     viewModel { HistoryViewModel(get(), get()) }
+    viewModel { InsightsViewModel(get(), get(), get(), get(), get(), get()) }
 }
 
 val mizanModules = listOf(domainModule, dataModule, appModule)

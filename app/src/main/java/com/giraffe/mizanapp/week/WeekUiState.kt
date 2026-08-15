@@ -59,4 +59,7 @@ sealed interface WeekEvent {
 
     /** Opens history (`005`, FR-001). Handled by the host navigating, like [OpenDay]. */
     data object OpenHistory : WeekEvent
+
+    /** Opens Insights (`006`). Handled by the host navigating, like [OpenHistory]. */
+    data object OpenInsights : WeekEvent
 }
