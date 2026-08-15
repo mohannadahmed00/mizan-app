@@ -54,7 +54,8 @@ fun TodayScreen(
 ) {
     when (val status = state.status) {
         is TodayUiState.Status.Loading -> LoadingState(modifier)
-        is TodayUiState.Status.CatalogueUnavailable -> CatalogueUnavailableState(status.detail, modifier)
+        is TodayUiState.Status.CatalogueUnavailable ->
+            CatalogueUnavailableState(status.detail, state.streak, onEvent, modifier)
         is TodayUiState.Status.Ready -> ReadyState(state, onEvent, onOpenWeek, modifier)
     }
 }
@@ -71,19 +72,30 @@ private fun LoadingState(modifier: Modifier = Modifier) {
  * with nothing recorded must never look alike.
  */
 @Composable
-private fun CatalogueUnavailableState(detail: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text("The task list could not be loaded.", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.width(8.dp))
-        Text(
-            detail,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+private fun CatalogueUnavailableState(
+    detail: String,
+    streak: StreakPanelUi,
+    onEvent: (TodayEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxSize().padding(24.dp)) {
+        // The streak survives a missing catalogue (FR-018b): it reads
+        // completions, not the catalogue, so it is still true here.
+        StreakElement(panel = streak, onRetry = { onEvent(TodayEvent.RetryStreak) })
+        Spacer(Modifier.width(16.dp))
+        Column(
+            Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("The task list could not be loaded.", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -95,6 +107,10 @@ private fun ReadyState(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().padding(16.dp)) {
+        // Fixed position, outside the stepped flow (FR-018a): stepping
+        // between blocks below must never move or change this.
+        StreakElement(panel = state.streak, onRetry = { onEvent(TodayEvent.RetryStreak) })
+        Spacer(Modifier.width(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             DayHeader(state)
             TextButton(onClick = onOpenWeek) { Text("Week") }

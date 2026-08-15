@@ -42,6 +42,17 @@ interface CompletionRepository {
      * week's earned total.
      */
     suspend fun liveBetween(start: LocalDate, end: LocalDate): List<Completion>
+
+    /**
+     * Every date carrying at least one live completion, ascending and distinct.
+     *
+     * A date appears once however many completions it holds — this is what
+     * Streaks & Consistency (`004`) folds over to decide a Consistency Day.
+     * Reversed and tombstoned records are excluded, exactly like every other
+     * read here. Deliberately unbounded: the longest streak has no ceiling
+     * (FR-007), so no date-range parameter may be added to this method.
+     */
+    fun observeConsistencyDates(): Flow<List<LocalDate>>
 }
 
 sealed interface RecordOutcome {

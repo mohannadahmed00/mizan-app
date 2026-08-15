@@ -96,4 +96,7 @@ class FakeWeekCompletionRepository : CompletionRepository {
 
     override suspend fun liveBetween(start: LocalDate, end: LocalDate): List<Completion> =
         rows.filter { it.isLive && !it.creditedDate.isBefore(start) && !it.creditedDate.isAfter(end) }
+
+    override fun observeConsistencyDates(): Flow<List<LocalDate>> =
+        MutableStateFlow(rows.filter { it.isLive }.map { it.creditedDate }.distinct().sorted())
 }

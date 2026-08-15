@@ -1,6 +1,6 @@
 # Mizan Domain Glossary
 
-Sixteen terms. Each means exactly one thing, everywhere — in a specification, a test name, and a type
+Eighteen terms. Each means exactly one thing, everywhere — in a specification, a test name, and a type
 name. Where two terms are easy to confuse, the difference is stated explicitly rather than left to
 inference.
 
@@ -126,6 +126,22 @@ A run of consecutive Consistency Days.
 
 A streak is broken by a day with no completions, never by a day with few. When one ends, what was
 recorded before it stands unchanged — the count restarts, the history does not.
+
+## Longest Streak
+
+The longest Streak anywhere in the record, including the current run when it is the longest.
+
+It never decreases as a consequence of a run ending — only if the records it was computed from are
+themselves reversed. On screen it may be called the best streak; Longest Streak is the name it has
+everywhere else, per this glossary's own rule that a term means one thing in a specification, a test
+name, and a type name.
+
+## Streak Break
+
+The point at which a run ends — an elapsed date, earlier than today, that is not a Consistency Day.
+
+A Streak Break is a boundary read out of the record, never a stored event. Nothing marks that it
+happened; it is simply the date after which the current Streak's length resets to zero.
 
 ---
 
