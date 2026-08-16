@@ -68,7 +68,7 @@ interface DayPlanDao {
     @Query("UPDATE day_plans SET syncedAt = :at WHERE date IN (:dates)")
     suspend fun markSynced(dates: List<String>, at: Long)
 
-    @Query("SELECT * FROM day_plans WHERE syncedAt IS NULL")
+    @Query("SELECT * FROM day_plans WHERE syncedAt IS NULL ORDER BY date")
     suspend fun unsynced(): List<DayPlanEntity>
 
     @Query("DELETE FROM day_plans")

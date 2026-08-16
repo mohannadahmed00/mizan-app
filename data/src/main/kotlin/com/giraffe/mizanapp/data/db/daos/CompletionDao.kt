@@ -102,7 +102,7 @@ interface CompletionDao {
     @Query("SELECT COUNT(*) FROM completions")
     suspend fun countAll(): Int
 
-    @Query("SELECT * FROM completions WHERE syncedAt IS NULL")
+    @Query("SELECT * FROM completions WHERE syncedAt IS NULL ORDER BY creditedDate")
     suspend fun unsynced(): List<CompletionEntity>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)

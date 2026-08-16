@@ -1,10 +1,15 @@
 package com.giraffe.mizanapp.data.sync
 
+import androidx.room.withTransaction
 import com.giraffe.mizanapp.data.db.MizanDatabase
+import com.giraffe.mizanapp.data.sync.dto.RemoteCompletion
+import com.giraffe.mizanapp.data.sync.dto.RemoteDayRecord
 import com.giraffe.mizanapp.domain.time.TimeProvider
+import java.time.Instant
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.json.Json
 
 /**
  * The four responsibilities of sync — claim, enqueue, drain, and the sequence
@@ -29,12 +34,52 @@ class SyncEngine(
 
     /** Attributes every unclaimed local row to [userId], inside one transaction. Deletes nothing (FR-010). */
     suspend fun claimLocalRecords(userId: String) {
-        TODO("T063")
+        val at = time.now().toEpochMilli()
+        db.withTransaction {
+            db.dayPlanDao().claimPlansForUser(userId, at)
+            db.dayPlanDao().claimPlannedTasksForUser(userId, at)
+            db.completionDao().claimForUser(userId, at)
+        }
     }
 
     /** Enqueues every not-yet-synced local row, oldest date first. Idempotent by [OutboxEntry.id]. */
     suspend fun enqueueUnsynced() {
-        TODO("T064")
+        for (plan in db.dayPlanDao().unsynced()) {
+            val userId = plan.userId ?: continue
+            val payload = Json.encodeToString(
+                RemoteDayRecord(userId = userId, date = plan.date, catalogueVersion = plan.catalogueVersion),
+            )
+            outbox.enqueue(
+                OutboxEntry(
+                    entityType = OutboxEntry.EntityType.DAY_RECORD,
+                    entityId = plan.date,
+                    operation = OutboxEntry.Operation.UPSERT,
+                    payload = payload,
+                ),
+            )
+        }
+        for (completion in db.completionDao().unsynced()) {
+            val userId = completion.userId ?: continue
+            val payload = Json.encodeToString(
+                RemoteCompletion(
+                    id = completion.id,
+                    userId = userId,
+                    creditedDate = completion.creditedDate,
+                    taskSlug = completion.taskSlug,
+                    pointsAwarded = completion.pointsAwarded,
+                    recordedAt = Instant.ofEpochMilli(completion.recordedAt).toString(),
+                    reversedAt = completion.reversedAt?.let { Instant.ofEpochMilli(it).toString() },
+                ),
+            )
+            outbox.enqueue(
+                OutboxEntry(
+                    entityType = OutboxEntry.EntityType.COMPLETION,
+                    entityId = completion.id,
+                    operation = OutboxEntry.Operation.UPSERT,
+                    payload = payload,
+                ),
+            )
+        }
     }
 
     /** Sends every due outbox entry, per `contracts/sync-engine.md` §2. */
