@@ -20,6 +20,8 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.giraffe.mizanapp.auth.SignInScreen
+import com.giraffe.mizanapp.auth.SignInViewModel
 import com.giraffe.mizanapp.daysummary.DaySummaryScreen
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
 import com.giraffe.mizanapp.history.HistoryEvent
@@ -53,6 +55,7 @@ sealed interface Destination {
     data object History : Destination
     data object Insights : Destination
     data class DaySummary(val date: LocalDate) : Destination
+    data object SignIn : Destination
 }
 
 /**
@@ -69,6 +72,7 @@ internal fun encode(destination: Destination): String = when (destination) {
     Destination.History -> "HISTORY"
     Destination.Insights -> "INSIGHTS"
     is Destination.DaySummary -> "DAY:${destination.date}"
+    Destination.SignIn -> "SIGNIN"
 }
 
 internal fun decode(encoded: String): Destination = when {
@@ -76,6 +80,7 @@ internal fun decode(encoded: String): Destination = when {
     encoded == "WEEK" -> Destination.Week
     encoded == "HISTORY" -> Destination.History
     encoded == "INSIGHTS" -> Destination.Insights
+    encoded == "SIGNIN" -> Destination.SignIn
     encoded.startsWith("DAY:") -> Destination.DaySummary(LocalDate.parse(encoded.removePrefix("DAY:")))
     else -> Destination.Today
 }
@@ -129,6 +134,7 @@ private fun AppRoute(modifier: Modifier = Modifier) {
     when (val current = stack.last()) {
         Destination.Today -> TodayRoute(
             onOpenWeek = { push(Destination.Week) },
+            onOpenAccount = { push(Destination.SignIn) },
             modifier = modifier,
         )
         Destination.Week -> WeekRoute(
@@ -143,11 +149,12 @@ private fun AppRoute(modifier: Modifier = Modifier) {
         )
         Destination.Insights -> InsightsRoute(modifier = modifier)
         is Destination.DaySummary -> DaySummaryRoute(date = current.date, modifier = modifier)
+        Destination.SignIn -> SignInRoute(modifier = modifier)
     }
 }
 
 @Composable
-private fun TodayRoute(onOpenWeek: () -> Unit, modifier: Modifier = Modifier) {
+private fun TodayRoute(onOpenWeek: () -> Unit, onOpenAccount: () -> Unit = {}, modifier: Modifier = Modifier) {
     val viewModel: TodayViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -161,7 +168,21 @@ private fun TodayRoute(onOpenWeek: () -> Unit, modifier: Modifier = Modifier) {
         }
     }
 
-    TodayScreen(state = state, onEvent = viewModel::onEvent, onOpenWeek = onOpenWeek, modifier = modifier)
+    TodayScreen(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onOpenWeek = onOpenWeek,
+        onOpenAccount = onOpenAccount,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun SignInRoute(modifier: Modifier = Modifier) {
+    val viewModel: SignInViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    SignInScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
 }
 
 @Composable

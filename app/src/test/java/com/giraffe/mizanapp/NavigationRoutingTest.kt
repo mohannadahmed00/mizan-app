@@ -92,8 +92,8 @@ class NavigationRoutingTest {
     fun `a stack containing SignIn survives the StackSaver save and restore cycle`() {
         val stack = listOf<Destination>(Destination.Today, Destination.SignIn)
         val scope = SaverScope { true }
-        val saved = requireNotNull(with(scope) { StackSaver.save(stack) })
-        val restored = StackSaver.restore(saved)
+        val saved = with(StackSaver) { scope.save(stack) }
+        val restored = StackSaver.restore(requireNotNull(saved))
         assertEquals(stack, restored)
     }
 
