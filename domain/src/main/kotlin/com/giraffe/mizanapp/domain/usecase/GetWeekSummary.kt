@@ -29,13 +29,16 @@ class GetWeekSummary(
     suspend operator fun invoke(week: Week): WeekOutcome {
         val currentVersion = catalogue.currentVersion() ?: return WeekOutcome.NoCatalogue(week)
         val today = time.today()
+        val coverage = recordCoverage.coverage()
 
         // The floor is a snapshot taken before this invocation writes
         // anything — it must never be affected by the backfill this same
         // call performs (FR-012).
         val recordStart = plans.earliestPlanDate()
         if (recordStart != null) {
-            val toBackfill = week.dates.filter { it.isBefore(today) && !it.isBefore(recordStart) }
+            val toBackfill = week.dates.filter {
+                it.isBefore(today) && !it.isBefore(recordStart) && coverage.isKnown(it)
+            }
             for (date in toBackfill) {
                 if (plans.planFor(date) != null) continue
                 val backfilled = try {
@@ -65,6 +68,7 @@ class GetWeekSummary(
             plans = storedPlans,
             completions = liveCompletions,
             projectedAvailable = projected,
+            coverage = coverage,
         )
         return WeekOutcome.Ready(summary)
     }

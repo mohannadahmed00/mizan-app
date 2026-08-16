@@ -7,7 +7,6 @@ import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
 import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
-import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.week.buildDayCells
 import com.giraffe.mizanapp.domain.week.projectAvailablePoints
@@ -31,6 +30,7 @@ class GetPersonalBests(
         val recordStart = plans.earliestPlanDate() ?: return PersonalBestsOutcome.NoHistory
         catalogue.currentVersion() ?: return PersonalBestsOutcome.CatalogueUnavailable("no catalogue is available")
 
+        val coverage = recordCoverage.coverage()
         val today = time.today()
         val storedPlans = plans.plansBetween(recordStart, today)
         val liveCompletions = completions.liveBetween(recordStart, today)
@@ -67,10 +67,7 @@ class GetPersonalBests(
             projected[date] = projectAvailablePoints(content, version, date)
         }
 
-        val cells = buildDayCells(
-            dates, today, recordStart, storedPlans, liveCompletions, projected,
-            RecordCoverage.completeFrom(recordStart),
-        )
+        val cells = buildDayCells(dates, today, recordStart, storedPlans, liveCompletions, projected, coverage)
         return PersonalBestsOutcome.Ready(buildPersonalBests(cells, today))
     }
 }

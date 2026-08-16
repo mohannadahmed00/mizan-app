@@ -32,6 +32,7 @@ class GetMonthOverview(
         val currentVersion = catalogue.currentVersion()
             ?: return MonthOverviewOutcome.CatalogueUnavailable("no catalogue is available")
 
+        val coverage = recordCoverage.coverage()
         val today = time.today()
         val recordStart = plans.earliestPlanDate()
         val start = month.atDay(1)
@@ -79,7 +80,7 @@ class GetMonthOverview(
             }
         }
 
-        val overview = buildMonthOverview(month, today, recordStart, storedPlans, liveCompletions, projected)
+        val overview = buildMonthOverview(month, today, recordStart, storedPlans, liveCompletions, projected, coverage)
         return MonthOverviewOutcome.Ready(overview)
     }
 }

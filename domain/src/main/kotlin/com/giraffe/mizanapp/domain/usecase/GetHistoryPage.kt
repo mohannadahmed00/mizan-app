@@ -40,6 +40,7 @@ class GetHistoryPage(
         val currentVersion = catalogue.currentVersion()
             ?: return HistoryOutcome.CatalogueUnavailable("no catalogue is available")
 
+        val coverage = recordCoverage.coverage()
         val today = time.today()
         val currentWeek = WeekBoundary.weekContaining(today)
         val recordStartWeek = WeekBoundary.weekContaining(recordStart)
@@ -109,6 +110,7 @@ class GetHistoryPage(
                 plans = storedPlans.filter { !it.date.isBefore(week.start) && !it.date.isAfter(week.end) },
                 completions = liveCompletions.filter { !it.creditedDate.isBefore(week.start) && !it.creditedDate.isAfter(week.end) },
                 projectedAvailable = projected,
+                coverage = coverage,
             )
         }
 

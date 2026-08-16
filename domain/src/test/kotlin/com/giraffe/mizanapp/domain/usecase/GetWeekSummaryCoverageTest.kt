@@ -36,7 +36,10 @@ class GetWeekSummaryCoverageTest {
         assertTrue(outcome is WeekOutcome.Ready)
         val summary = (outcome as WeekOutcome.Ready).summary
 
-        val belowFloor = summary.days.filter { it.date.isBefore(floor) }
+        // Restricted to elapsed dates: a future date is NOT_YET_ELAPSED
+        // regardless of coverage (BuildDayCellsCoverageTest), so it is out of
+        // scope for this assertion even when it also falls below the floor.
+        val belowFloor = summary.days.filter { it.date.isBefore(floor) && !it.date.isAfter(time.today()) }
         assertTrue(belowFloor.isNotEmpty())
         assertTrue(belowFloor.all { it.state == DayCellState.NOT_YET_KNOWN })
         assertEquals(0, plans.creationCount)

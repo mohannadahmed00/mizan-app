@@ -32,6 +32,7 @@ class GetSectionBreakdown(
     suspend operator fun invoke(period: InsightsPeriod): SectionBreakdownOutcome {
         catalogue.currentVersion() ?: return SectionBreakdownOutcome.CatalogueUnavailable("no catalogue is available")
 
+        val coverage = recordCoverage.coverage()
         val today = time.today()
         val (rangeStart, rangeEnd) = when (period) {
             is InsightsPeriod.ForWeek -> period.week.start to period.week.end
@@ -48,6 +49,7 @@ class GetSectionBreakdown(
         val derived = mutableListOf<DayPlan>()
         for (date in dates) {
             if (date in plannedDates) continue
+            if (!coverage.isKnown(date)) continue
             val version = try {
                 catalogue.versionEffectiveOn(date)
             } catch (e: Exception) {
