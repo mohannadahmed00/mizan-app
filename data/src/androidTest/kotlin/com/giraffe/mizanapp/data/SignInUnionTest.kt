@@ -25,7 +25,7 @@ class SignInUnionTest : DbTestBase() {
         val fake = FakeRemoteDataSource().apply { currentUserId = userId }
         val outbox = Outbox(db, time)
         val accountScope = AccountScope(db.accountScopeDao(), time)
-        val engine = SyncEngine(db, outbox, accountScope, fake, time)
+        val engine = SyncEngine(db, outbox, accountScope, fake, catalogue, time)
 
         // The account already holds these — dates this device has never opened.
         val remoteOnlyDate = LocalDate.of(2026, 5, 1)

@@ -98,7 +98,7 @@ val dataModule = module {
     single { Outbox(get(), get(), get()) }
     single { AccountScope(get(), get()) }
     single<RemoteDataSource> { createRemoteDataSource() }
-    single { SyncEngine(get(), get(), get(), get(), get(), ::endSupabaseSession) }
+    single { SyncEngine(get(), get(), get(), get(), get(), get(), ::endSupabaseSession) }
     single<SyncRepository> { OutboxSyncRepository(get(), get(), get(), scheduler = get()) }
     single<AccountRepository> { createAccountRepository(get(), get(), get(), get()) }
     single<CataloguePublicationRepository> { NoOpCataloguePublicationRepository() }

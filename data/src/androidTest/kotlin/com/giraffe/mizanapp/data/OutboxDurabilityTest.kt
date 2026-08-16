@@ -62,7 +62,7 @@ class OutboxDurabilityTest : DbTestBase() {
         // Reachable again: the whole queue drains.
         val fake = FakeRemoteDataSource().apply { currentUserId = userId }
         val accountScope = AccountScope(rebuiltDb.accountScopeDao(), time)
-        val engine = SyncEngine(rebuiltDb, rebuiltOutbox, accountScope, fake, time)
+        val engine = SyncEngine(rebuiltDb, rebuiltOutbox, accountScope, fake, catalogue, time)
         var guard = 0
         while (rebuiltOutbox.due(time.now(), limit = 1).isNotEmpty() && guard < entryCount / 200 + 5) {
             engine.drain()

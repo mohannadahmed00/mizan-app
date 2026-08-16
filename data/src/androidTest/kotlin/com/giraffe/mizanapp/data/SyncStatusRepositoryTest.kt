@@ -27,7 +27,7 @@ class SyncStatusRepositoryTest : DbTestBase() {
     private fun buildRepository(fake: FakeRemoteDataSource, scope: CoroutineScope): Pair<OutboxSyncRepository, Outbox> {
         val outbox = Outbox(db, time)
         val accountScope = AccountScope(db.accountScopeDao(), time)
-        val engine = SyncEngine(db, outbox, accountScope, fake, time)
+        val engine = SyncEngine(db, outbox, accountScope, fake, catalogue, time)
         return OutboxSyncRepository(db, accountScope, engine, scope) to outbox
     }
 
@@ -85,7 +85,7 @@ class SyncStatusRepositoryTest : DbTestBase() {
         val fake = FakeRemoteDataSource().apply { currentUserId = userId; unreachable = true }
         val outbox = Outbox(db, time)
         val accountScope = AccountScope(db.accountScopeDao(), time)
-        val engine = SyncEngine(db, outbox, accountScope, fake, time)
+        val engine = SyncEngine(db, outbox, accountScope, fake, catalogue, time)
         val repository = OutboxSyncRepository(db, accountScope, engine, this)
         accountScope.set(userId, "user@example.test", null)
         enqueueOne(outbox)

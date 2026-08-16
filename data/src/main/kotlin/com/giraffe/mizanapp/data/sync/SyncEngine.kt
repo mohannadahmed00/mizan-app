@@ -2,13 +2,19 @@ package com.giraffe.mizanapp.data.sync
 
 import androidx.room.withTransaction
 import com.giraffe.mizanapp.data.db.MizanDatabase
+import com.giraffe.mizanapp.data.db.entities.CompletionEntity
+import com.giraffe.mizanapp.data.mapper.toEntity
 import com.giraffe.mizanapp.data.sync.dto.RemoteCompletion
 import com.giraffe.mizanapp.data.sync.dto.RemoteDayRecord
 import com.giraffe.mizanapp.data.sync.dto.RemoteProfile
+import com.giraffe.mizanapp.domain.day.PlanOrigin
+import com.giraffe.mizanapp.domain.day.buildDayPlan
 import com.giraffe.mizanapp.domain.identity.AccountSession
+import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.sync.RetrySchedule
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.Instant
+import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +33,7 @@ class SyncEngine(
     private val outbox: Outbox,
     private val accountScope: AccountScope,
     private val remote: RemoteDataSource,
+    private val catalogue: CatalogueRepository,
     private val time: TimeProvider,
     private val onSessionExpired: suspend () -> Unit = {},
 ) {
@@ -250,6 +257,66 @@ class SyncEngine(
     /** No-op until T104 wires the real pull. Called by [SyncWorker] so its shape is stable from T083 on. */
     suspend fun pull() {
         // T104 fills this in.
+    }
+
+    /**
+     * Ingests remote changes — `contracts/sync-engine.md` §6 — in one
+     * transaction. Day records have exactly two outcomes: a local plan already
+     * held for that date is left completely alone (FR-024a, Conventions §4),
+     * otherwise a fresh plan is built at the incoming version. When that
+     * version is not held locally the date is left `NOT_YET_KNOWN` rather than
+     * guessed or dropped — a future catalogue pull is what resolves it.
+     * Completions insert if absent and only ever apply a tombstone, never
+     * rewriting `pointsAwarded`, `recordedAt`, `creditedDate` or `taskSlug`.
+     */
+    suspend fun applyRemote(changes: RemoteChanges) {
+        db.withTransaction {
+            for (row in changes.dayRecords) applyDayRecord(row)
+            for (row in changes.completions) applyCompletionRow(row)
+        }
+    }
+
+    private suspend fun applyDayRecord(row: RemoteDayRecord) {
+        if (db.dayPlanDao().planByDate(row.date) != null) return // FR-024a: never touch an existing local day
+
+        val version = row.catalogueVersion
+        val content = catalogue.catalogueAt(version) ?: return // not held locally: stays NOT_YET_KNOWN
+
+        val plan = buildDayPlan(
+            content,
+            version = version,
+            date = LocalDate.parse(row.date),
+            origin = PlanOrigin.BACKFILLED,
+        ) { java.util.UUID.randomUUID().toString() }
+        val now = time.now().toEpochMilli()
+        db.dayPlanDao().insertPlanWithTasks(
+            plan = plan.toEntity(now).copy(userId = row.userId, syncedAt = now),
+            tasks = plan.plannedTasks.map { it.toEntity(now).copy(userId = row.userId) },
+        )
+    }
+
+    private suspend fun applyCompletionRow(row: RemoteCompletion) {
+        // dayPlanId is bound locally from creditedDate (research R4) — a
+        // remote row carries none. If the date has not materialised locally
+        // yet (its catalogue version is still unknown), the completion waits
+        // for a later pull rather than binding to nothing.
+        val localPlan = db.dayPlanDao().planByDate(row.creditedDate) ?: return
+
+        val now = time.now().toEpochMilli()
+        val entity = CompletionEntity(
+            id = row.id,
+            dayPlanId = localPlan.plan.id,
+            taskSlug = row.taskSlug,
+            creditedDate = row.creditedDate,
+            pointsAwarded = row.pointsAwarded,
+            recordedAt = Instant.parse(row.recordedAt).toEpochMilli(),
+            reversedAt = row.reversedAt?.let { Instant.parse(it).toEpochMilli() },
+            updatedAt = now,
+            userId = row.userId,
+            syncedAt = now,
+        )
+        db.completionDao().insertIgnoring(entity) // no-op if this id already exists locally
+        entity.reversedAt?.let { db.completionDao().applyTombstone(entity.id, it) }
     }
 
     private companion object {

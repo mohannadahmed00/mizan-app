@@ -37,7 +37,7 @@ class SessionExpiryTest : DbTestBase() {
         val expectedScore = scoreDay(plan, completions.liveBetween(time.today(), time.today()))
 
         var sessionEndedCalls = 0
-        val engine = SyncEngine(db, outbox, accountScope, fake, time) { sessionEndedCalls++ }
+        val engine = SyncEngine(db, outbox, accountScope, fake, catalogue, time) { sessionEndedCalls++ }
 
         engine.claimLocalRecords(userId)
         engine.enqueueUnsynced()

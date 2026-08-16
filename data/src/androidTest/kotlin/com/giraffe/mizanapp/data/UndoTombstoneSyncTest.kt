@@ -28,7 +28,7 @@ class UndoTombstoneSyncTest : DbTestBase() {
         val outbox = Outbox(db, time)
         val accountScope = AccountScope(db.accountScopeDao(), time)
         accountScope.set(userId, "user@example.test", null)
-        val engine = SyncEngine(db, outbox, accountScope, fake, time)
+        val engine = SyncEngine(db, outbox, accountScope, fake, catalogue, time)
         val syncing = SyncingCompletionRepository(completions, outbox, accountScope, db)
 
         val recorded = syncing.record(time.today(), "fajr-1")

@@ -35,7 +35,7 @@ class SignInMigrationResumeTest : DbTestBase() {
     private fun engineOver(fake: FakeRemoteDataSource): SyncEngine {
         val outbox = Outbox(db, time)
         val accountScope = AccountScope(db.accountScopeDao(), time)
-        return SyncEngine(db, outbox, accountScope, fake, time)
+        return SyncEngine(db, outbox, accountScope, fake, catalogue, time)
     }
 
     private fun assertSingleCopyOfEverythingAndLocalRowsIntact(fake: FakeRemoteDataSource) = runBlocking {

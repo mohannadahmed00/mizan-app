@@ -27,7 +27,7 @@ class SignInMigrationTest : DbTestBase() {
         fake = FakeRemoteDataSource().apply { currentUserId = userId }
         val outbox = Outbox(db, time)
         val accountScope = AccountScope(db.accountScopeDao(), time)
-        engine = SyncEngine(db, outbox, accountScope, fake, time)
+        engine = SyncEngine(db, outbox, accountScope, fake, catalogue, time)
     }
 
     private val startDate: LocalDate = LocalDate.of(2026, 7, 27)

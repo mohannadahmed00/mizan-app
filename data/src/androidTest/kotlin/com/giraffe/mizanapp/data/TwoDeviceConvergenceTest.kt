@@ -57,7 +57,7 @@ class TwoDeviceConvergenceTest {
         val completions = SyncingCompletionRepository(completionRoom, outbox, accountScope, db)
 
         suspend fun open(remote: com.giraffe.mizanapp.data.sync.RemoteDataSource) {
-            engine = SyncEngine(db, outbox, accountScope, remote, time)
+            engine = SyncEngine(db, outbox, accountScope, remote, catalogueRepo, time)
             catalogueRepo.seedIfNeeded()
             engine.migrateOnSignIn(userId)
         }

@@ -14,6 +14,8 @@ import androidx.work.testing.SynchronousExecutor
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.repository.NoOpCataloguePublicationRepository
+import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
+import com.giraffe.mizanapp.data.seed.CatalogueSeeder
 import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.data.sync.Outbox
 import com.giraffe.mizanapp.data.sync.OutboxEntry
@@ -60,7 +62,8 @@ class BackgroundSyncSchedulingTest {
         fake = FakeRemoteDataSource().apply { currentUserId = userId; unreachable = true }
         outbox = Outbox(db, time)
         accountScope = AccountScope(db.accountScopeDao(), time)
-        engine = SyncEngine(db, outbox, accountScope, fake, time)
+        val catalogue = RoomCatalogueRepository(db, CatalogueSeeder(db, time))
+        engine = SyncEngine(db, outbox, accountScope, fake, catalogue, time)
 
         val workerFactory = object : WorkerFactory() {
             override fun createWorker(
