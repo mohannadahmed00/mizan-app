@@ -40,23 +40,40 @@ class Outbox(private val db: MizanDatabase, private val time: TimeProvider) {
 
     /** Called inside the caller's transaction. Deterministic id, so this is idempotent (R6). */
     suspend fun enqueue(entry: OutboxEntry) {
-        TODO("T048")
+        val now = time.now().toEpochMilli()
+        db.outboxDao().upsert(
+            OutboxEntity(
+                id = entry.id,
+                entityType = entry.entityType.wire,
+                entityId = entry.entityId,
+                operation = entry.operation.wire,
+                payload = entry.payload,
+                createdAt = now,
+                attempts = entry.attempts,
+                nextAttemptAt = now,
+            ),
+        )
     }
 
-    suspend fun due(now: Instant, limit: Int): List<OutboxEntry> {
-        TODO("T048")
-    }
+    suspend fun due(now: Instant, limit: Int): List<OutboxEntry> =
+        db.outboxDao().due(now.toEpochMilli(), limit).map { it.toEntry() }
 
     /** The only path that removes an entry — a change reaches this once the account has it. */
     suspend fun accepted(ids: List<String>) {
-        TODO("T048")
+        db.outboxDao().remove(ids)
     }
 
     suspend fun deferred(ids: List<String>, at: Instant) {
-        TODO("T048")
+        db.outboxDao().defer(ids, at.toEpochMilli())
     }
 
-    fun observePendingCount(): Flow<Int> {
-        TODO("T048")
-    }
+    fun observePendingCount(): Flow<Int> = db.outboxDao().observeCount()
+
+    private fun OutboxEntity.toEntry() = OutboxEntry(
+        entityType = OutboxEntry.EntityType.entries.first { it.wire == entityType },
+        entityId = entityId,
+        operation = OutboxEntry.Operation.entries.first { it.wire == operation },
+        payload = payload,
+        attempts = attempts,
+    )
 }
