@@ -159,4 +159,5 @@ class FakeClock(
     override fun today(): LocalDate = com.giraffe.mizanapp.domain.time.DayBoundary.dateAt(instant, zone)
     override fun zone(): java.time.ZoneId = zone
     fun setDate(date: LocalDate) { instant = date.atTime(9, 0).atZone(zone).toInstant() }
+    fun advanceBy(duration: java.time.Duration) { instant = instant.plus(duration) }
 }
