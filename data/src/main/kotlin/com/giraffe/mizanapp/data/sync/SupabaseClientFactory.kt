@@ -28,3 +28,13 @@ fun createSupabaseClient(): SupabaseClient? {
         install(Postgrest)
     }
 }
+
+/**
+ * The Koin-facing factory. Its return type names only [RemoteDataSource], so
+ * `:app`'s DI wiring can call it without `:data`'s `implementation`-scoped
+ * Supabase and Ktor dependencies ever needing to be visible from `:app` — the
+ * module boundary the constitution draws around Supabase stays intact one
+ * layer further out than the file boundary alone would manage.
+ */
+fun createRemoteDataSource(): RemoteDataSource =
+    createSupabaseClient()?.let { SupabaseRemoteDataSource(it) } ?: NoOpRemoteDataSource()

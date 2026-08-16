@@ -6,6 +6,10 @@ import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
 import com.giraffe.mizanapp.data.repository.RoomCompletionRepository
 import com.giraffe.mizanapp.data.repository.RoomDayPlanRepository
 import com.giraffe.mizanapp.data.seed.CatalogueSeeder
+import com.giraffe.mizanapp.data.sync.AccountScope
+import com.giraffe.mizanapp.data.sync.Outbox
+import com.giraffe.mizanapp.data.sync.RemoteDataSource
+import com.giraffe.mizanapp.data.sync.createRemoteDataSource
 import com.giraffe.mizanapp.data.time.SystemTimeProvider
 import com.giraffe.mizanapp.domain.policy.DayWritePolicy
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
@@ -60,6 +64,12 @@ val dataModule = module {
     single<CatalogueRepository> { RoomCatalogueRepository(get(), get()) }
     single<DayPlanRepository> { RoomDayPlanRepository(get(), get(), get()) }
     single<CompletionRepository> { RoomCompletionRepository(get(), get(), get(), get()) }
+
+    // spec 007. The binding is never nullable: a build with no Supabase configuration
+    // still gets a real RemoteDataSource, just one that reports Unreachable (FR-003).
+    single { Outbox(get(), get()) }
+    single { AccountScope(get(), get()) }
+    single<RemoteDataSource> { createRemoteDataSource() }
 }
 
 val appModule = module {
