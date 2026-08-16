@@ -3,6 +3,7 @@ package com.giraffe.mizanapp.data.sync
 import com.giraffe.mizanapp.data.BuildConfig
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.ktor.client.engine.okhttp.OkHttp
@@ -56,3 +57,12 @@ fun createRemoteDataSource(): RemoteDataSource =
  */
 fun isSupabaseConfigured(): Boolean =
     BuildConfig.SUPABASE_URL.isNotBlank() && BuildConfig.SUPABASE_ANON_KEY.isNotBlank()
+
+/**
+ * Ends the live Supabase session, called by [SyncEngine] when a token could
+ * not be renewed. Never touches [AccountScope], a record, or the outbox
+ * (FR-006) — those are the caller's business, not this function's.
+ */
+suspend fun endSupabaseSession() {
+    createSupabaseClient()?.auth?.signOut()
+}

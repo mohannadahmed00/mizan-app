@@ -18,6 +18,7 @@ import com.giraffe.mizanapp.data.sync.SyncEngine
 import com.giraffe.mizanapp.data.sync.SyncScheduler
 import com.giraffe.mizanapp.data.sync.SyncWorker
 import com.giraffe.mizanapp.data.sync.createRemoteDataSource
+import com.giraffe.mizanapp.data.sync.endSupabaseSession
 import com.giraffe.mizanapp.data.sync.isSupabaseConfigured
 import com.giraffe.mizanapp.domain.repository.CataloguePublicationRepository
 import com.giraffe.mizanapp.data.time.SystemTimeProvider
@@ -93,7 +94,7 @@ val dataModule = module {
     single { Outbox(get(), get(), get()) }
     single { AccountScope(get(), get()) }
     single<RemoteDataSource> { createRemoteDataSource() }
-    single { SyncEngine(get(), get(), get(), get(), get()) }
+    single { SyncEngine(get(), get(), get(), get(), get(), ::endSupabaseSession) }
     single<SyncRepository> { OutboxSyncRepository(get(), get(), get(), scheduler = get()) }
     single<AccountRepository> { createAccountRepository(get(), get(), get(), get()) }
     single<CataloguePublicationRepository> { NoOpCataloguePublicationRepository() }

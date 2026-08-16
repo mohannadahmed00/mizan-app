@@ -99,21 +99,30 @@ class SyncEngine(
             if (dayRecords.isNotEmpty()) {
                 when (val outcome = sendDayRecords(dayRecords)) {
                     BatchOutcome.Unreachable -> return DrainOutcome.StoppedUnreachable
-                    BatchOutcome.NotAuthenticated -> return DrainOutcome.StoppedUnauthenticated
+                    BatchOutcome.NotAuthenticated -> {
+                        onSessionExpired()
+                        return DrainOutcome.StoppedUnauthenticated
+                    }
                     BatchOutcome.Continue -> Unit
                 }
             }
             if (completions.isNotEmpty()) {
                 when (val outcome = sendCompletions(completions)) {
                     BatchOutcome.Unreachable -> return DrainOutcome.StoppedUnreachable
-                    BatchOutcome.NotAuthenticated -> return DrainOutcome.StoppedUnauthenticated
+                    BatchOutcome.NotAuthenticated -> {
+                        onSessionExpired()
+                        return DrainOutcome.StoppedUnauthenticated
+                    }
                     BatchOutcome.Continue -> Unit
                 }
             }
             if (profiles.isNotEmpty()) {
                 when (val outcome = sendProfiles(profiles)) {
                     BatchOutcome.Unreachable -> return DrainOutcome.StoppedUnreachable
-                    BatchOutcome.NotAuthenticated -> return DrainOutcome.StoppedUnauthenticated
+                    BatchOutcome.NotAuthenticated -> {
+                        onSessionExpired()
+                        return DrainOutcome.StoppedUnauthenticated
+                    }
                     BatchOutcome.Continue -> Unit
                 }
             }
