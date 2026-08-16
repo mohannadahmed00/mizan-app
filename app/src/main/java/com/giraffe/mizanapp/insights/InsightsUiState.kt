@@ -19,6 +19,8 @@ data class InsightsUiState(
     val isLoadingEarlierTrend: Boolean = false,
     val month: MonthOverviewUi? = null,
     val sections: List<SectionRowUi> = emptyList(),
+    /** True while this device's coverage over the sections period is incomplete (FR-023d). */
+    val sectionsProvisional: Boolean = false,
     val personalBests: PersonalBestsUi? = null,
 ) {
     sealed interface Status {
@@ -48,6 +50,8 @@ data class MonthOverviewUi(
     val days: List<DayCellUi>, // reused from week/WeekUiState.kt — same type WeekScreen renders
     val canGoEarlier: Boolean,
     val canGoLater: Boolean,
+    /** True while this device's coverage over the month is incomplete (FR-023d). */
+    val provisional: Boolean = false,
 )
 
 data class SectionRowUi(
@@ -58,6 +62,8 @@ data class SectionRowUi(
 data class PersonalBestsUi(
     val bestDay: BestDayUi?,
     val bestWeek: BestWeekUi?,
+    /** True while this device's coverage over the full record is incomplete (FR-023d). */
+    val provisional: Boolean = false,
 )
 
 data class BestDayUi(val date: LocalDate, val hijriLabel: String?, val percentage: Int)

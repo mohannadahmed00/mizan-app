@@ -195,6 +195,27 @@ class InsightsScreenTest {
         compose.onNodeWithTag("month-day-${days[1].date}-nothing-recorded").assertExists()
     }
 
+    /** FR-023b/d: an unfetched date renders distinctly, and the month is labelled still-loading rather than final. */
+    @Test
+    fun not_yet_known_cells_render_distinctly_and_the_month_is_marked_still_loading() {
+        val month = YearMonth.of(2026, 8)
+        val days = listOf(
+            monthDayCell(month.atDay(1), DayCellState.NOT_YET_KNOWN),
+            monthDayCell(month.atDay(2), DayCellState.NOTHING_RECORDED),
+        )
+        val state = InsightsUiState(
+            status = InsightsUiState.Status.Ready,
+            selectedView = InsightsView.MONTH,
+            month = MonthOverviewUi(month = month, days = days, canGoEarlier = false, canGoLater = false, provisional = true),
+        )
+
+        compose.setContent { InsightsScreen(state = state, onEvent = {}) }
+
+        compose.onNodeWithTag("month-day-${days[0].date}-not-yet-known").assertExists()
+        compose.onNodeWithTag("month-day-${days[1].date}-nothing-recorded").assertExists()
+        compose.onNodeWithTag("month-provisional-notice").assertExists()
+    }
+
     @Test
     fun previous_and_next_month_controls_emit_navigation_events() {
         val month = YearMonth.of(2026, 8)

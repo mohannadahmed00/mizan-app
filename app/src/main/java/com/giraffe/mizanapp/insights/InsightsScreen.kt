@@ -133,7 +133,7 @@ private fun ReadyState(
         when (state.selectedView) {
             InsightsView.TREND -> TrendChart(state, onEvent)
             InsightsView.MONTH -> MonthGrid(state.month, onEvent)
-            InsightsView.SECTIONS -> SectionsList(state.sections, onEvent)
+            InsightsView.SECTIONS -> SectionsList(state.sections, state.sectionsProvisional, onEvent)
         }
     }
 }
@@ -150,6 +150,14 @@ private fun PersonalBestsCard(bests: PersonalBestsUi?) {
 
     Column(Modifier.fillMaxWidth().testTag("personal-bests-card")) {
         Text("Personal bests", style = MaterialTheme.typography.titleSmall)
+        if (bests.provisional) {
+            Text(
+                "Still loading — may change once more history arrives",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag("personal-bests-provisional-notice"),
+            )
+        }
         bests.bestDay?.let { day ->
             Text(
                 "Best day: ${day.date} — ${day.percentage}%",
@@ -173,8 +181,16 @@ private fun PersonalBestsCard(bests: PersonalBestsUi?) {
  * FR-003, FR-010).
  */
 @Composable
-private fun SectionsList(sections: List<SectionRowUi>, onEvent: (InsightsEvent) -> Unit) {
+private fun SectionsList(sections: List<SectionRowUi>, provisional: Boolean, onEvent: (InsightsEvent) -> Unit) {
     Column(Modifier.fillMaxWidth().testTag("sections-list")) {
+        if (provisional) {
+            Text(
+                "Still loading — percentages may change once more history arrives",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag("sections-provisional-notice").padding(bottom = 8.dp),
+            )
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             TextButton(
                 onClick = { onEvent(InsightsEvent.SwitchSectionPeriod(toMonth = false)) },
@@ -306,6 +322,15 @@ private fun MonthGrid(month: MonthOverviewUi?, onEvent: (InsightsEvent) -> Unit)
                 enabled = month.canGoLater,
                 modifier = Modifier.testTag("next-month-button"),
             ) { Text("Next") }
+        }
+
+        if (month.provisional) {
+            Text(
+                "Still loading — some days below aren't fetched yet",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag("month-provisional-notice"),
+            )
         }
 
         Spacer(Modifier.width(8.dp))

@@ -146,6 +146,36 @@ class HistoryScreenTest {
         distinctCount.forEach { it.assertCountEquals(1) }
     }
 
+    /** FR-023b: an unfetched date reads "Still loading", never "Not recorded" and never absent. */
+    @Test
+    fun not_yet_known_renders_as_still_loading_never_as_not_recorded() {
+        val weekStart = LocalDate.parse("2026-08-08")
+        val week = WeekRowUi(
+            weekKey = WeekKey(weekStart.toString()),
+            startDate = weekStart,
+            endDate = weekStart.plusDays(1),
+            earnedPoints = 0,
+            availablePoints = 69 * 2,
+            days = listOf(
+                dayCell(0, DayCellState.NOT_YET_KNOWN, weekStart),
+                dayCell(1, DayCellState.NOTHING_RECORDED, weekStart),
+            ),
+        )
+        val state = HistoryUiState(status = HistoryUiState.Status.Ready, weeks = listOf(week), hasMore = false)
+
+        compose.setContent { HistoryScreen(state = state, onEvent = {}) }
+
+        fun descriptionCount(desc: String) = compose.onAllNodes(
+            SemanticsMatcher("has content description '$desc'") { node ->
+                node.config.getOrElse(SemanticsProperties.ContentDescription) { emptyList() }.contains(desc)
+            },
+            useUnmergedTree = true,
+        )
+
+        descriptionCount("Still loading").assertCountEquals(1)
+        descriptionCount("Not recorded").assertCountEquals(1) // only the other, NOTHING_RECORDED day
+    }
+
     /** FR-032: weeks already loaded still render, and what cannot be built is named. */
     @Test
     fun partial_catalogue_shows_the_weeks_that_exist_and_names_what_cannot_be_built() {
