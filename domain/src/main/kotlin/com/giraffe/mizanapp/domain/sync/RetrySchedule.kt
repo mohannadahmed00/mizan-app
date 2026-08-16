@@ -21,6 +21,9 @@ object RetrySchedule {
     val CEILING: Duration = Duration.ofHours(6)
 
     fun nextAttemptAt(attempt: Int, from: Instant): Instant {
-        TODO("T022")
+        val safeAttempt = attempt.coerceAtMost(32)
+        val scaled = INITIAL.multipliedBy(1L shl safeAttempt)
+        val delay = if (scaled > CEILING) CEILING else scaled
+        return from.plus(delay)
     }
 }
