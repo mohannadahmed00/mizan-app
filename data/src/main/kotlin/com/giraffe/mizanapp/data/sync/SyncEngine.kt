@@ -2,6 +2,9 @@ package com.giraffe.mizanapp.data.sync
 
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.domain.time.TimeProvider
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * The four responsibilities of sync — claim, enqueue, drain, and the sequence
@@ -18,6 +21,11 @@ class SyncEngine(
     private val remote: RemoteDataSource,
     private val time: TimeProvider,
 ) {
+
+    private val _reachable = MutableStateFlow(true)
+
+    /** The last-observed reachability of the account, updated by every [drain] attempt. */
+    val reachable: StateFlow<Boolean> = _reachable.asStateFlow()
 
     /** Attributes every unclaimed local row to [userId], inside one transaction. Deletes nothing (FR-010). */
     suspend fun claimLocalRecords(userId: String) {
