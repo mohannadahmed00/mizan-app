@@ -17,5 +17,8 @@ import com.giraffe.mizanapp.domain.day.Completion
  * made, and no merge, pull, or publication is an input to it (Principle III).
  */
 fun mergeCompletion(local: Completion?, remote: Completion?): Completion {
-    TODO("T020")
+    require(local != null || remote != null) { "mergeCompletion requires at least one non-null side" }
+    if (local == null) return remote!!
+    if (remote == null) return local
+    return local.copy(reversedAt = local.reversedAt ?: remote.reversedAt)
 }
