@@ -5,6 +5,7 @@ import com.giraffe.mizanapp.domain.day.DayFixtures
 import com.giraffe.mizanapp.domain.day.DayPlan
 import com.giraffe.mizanapp.domain.day.PlanOrigin
 import com.giraffe.mizanapp.domain.day.buildDayPlan
+import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -51,6 +52,7 @@ class BuildDayCellsTest {
             plans = emptyList(),
             completions = emptyList(),
             projectedAvailable = emptyMap(),
+            coverage = RecordCoverage.completeFrom(today),
         )
 
         assertEquals(DayCellState.NOT_YET_ELAPSED, cells.single().state)
@@ -68,6 +70,7 @@ class BuildDayCellsTest {
             plans = emptyList(),
             completions = emptyList(),
             projectedAvailable = emptyMap(),
+            coverage = RecordCoverage.completeFrom(recordStart),
         )
 
         assertEquals(DayCellState.OUTSIDE_RECORD, cells.single().state)
@@ -84,6 +87,7 @@ class BuildDayCellsTest {
             plans = emptyList(),
             completions = emptyList(),
             projectedAvailable = emptyMap(),
+            coverage = RecordCoverage.completeFrom(null),
         )
 
         assertEquals(DayCellState.OUTSIDE_RECORD, cells.single().state)
@@ -101,6 +105,7 @@ class BuildDayCellsTest {
             plans = listOf(plan),
             completions = emptyList(),
             projectedAvailable = emptyMap(),
+            coverage = RecordCoverage.completeFrom(date),
         )
 
         assertEquals(DayCellState.NOTHING_RECORDED, cells.single().state)
@@ -120,6 +125,7 @@ class BuildDayCellsTest {
             plans = listOf(plan),
             completions = completions,
             projectedAvailable = emptyMap(),
+            coverage = RecordCoverage.completeFrom(date),
         )
 
         assertEquals(DayCellState.FULLY_RECORDED, cells.single().state)
@@ -149,6 +155,7 @@ class BuildDayCellsTest {
             plans = listOf(plan),
             completions = oneCompletion,
             projectedAvailable = emptyMap(),
+            coverage = RecordCoverage.completeFrom(date),
         )
 
         assertEquals(DayCellState.PARTLY_RECORDED, cells.single().state)
@@ -166,6 +173,7 @@ class BuildDayCellsTest {
             plans = emptyList(),
             completions = emptyList(),
             projectedAvailable = mapOf(date to projected),
+            coverage = RecordCoverage.completeFrom(date),
         )
 
         assertEquals(DayCellState.NOTHING_RECORDED, cells.single().state)
@@ -187,6 +195,7 @@ class BuildDayCellsTest {
             plans = emptyList(),
             completions = emptyList(),
             projectedAvailable = dates.associateWith { 0 },
+            coverage = RecordCoverage.completeFrom(LocalDate.parse("2026-08-01")),
         )
 
         assertEquals(dates, cells.map { it.date })

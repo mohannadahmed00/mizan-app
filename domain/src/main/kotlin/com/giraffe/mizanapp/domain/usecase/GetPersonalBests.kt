@@ -6,6 +6,7 @@ import com.giraffe.mizanapp.domain.insights.buildPersonalBests
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.week.buildDayCells
 import com.giraffe.mizanapp.domain.week.projectAvailablePoints
@@ -64,7 +65,10 @@ class GetPersonalBests(
             projected[date] = projectAvailablePoints(content, version, date)
         }
 
-        val cells = buildDayCells(dates, today, recordStart, storedPlans, liveCompletions, projected)
+        val cells = buildDayCells(
+            dates, today, recordStart, storedPlans, liveCompletions, projected,
+            RecordCoverage.completeFrom(recordStart),
+        )
         return PersonalBestsOutcome.Ready(buildPersonalBests(cells, today))
     }
 }

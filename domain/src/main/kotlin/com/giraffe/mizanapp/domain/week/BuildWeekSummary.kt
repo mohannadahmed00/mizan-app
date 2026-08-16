@@ -2,6 +2,7 @@ package com.giraffe.mizanapp.domain.week
 
 import com.giraffe.mizanapp.domain.day.Completion
 import com.giraffe.mizanapp.domain.day.DayPlan
+import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import java.time.LocalDate
 
 /**
@@ -28,7 +29,10 @@ fun buildWeekSummary(
     completions: List<Completion>,
     projectedAvailable: Map<LocalDate, Int>,
 ): WeekSummary {
-    val days = buildDayCells(week.dates, today, recordStart, plans, completions, projectedAvailable)
+    val days = buildDayCells(
+        week.dates, today, recordStart, plans, completions, projectedAvailable,
+        RecordCoverage.completeFrom(recordStart),
+    )
 
     val elapsedAvailable = days.filter { !it.date.isAfter(today) }.sumOf { it.available }
     val futureAvailable = days.filter { it.date.isAfter(today) }.sumOf { it.available }
@@ -61,6 +65,7 @@ fun buildDayCells(
     plans: List<DayPlan>,
     completions: List<Completion>,
     projectedAvailable: Map<LocalDate, Int>,
+    coverage: RecordCoverage,
 ): List<DayCell> {
     val plansByDate = plans.associateBy { it.date }
     val completionsByDate = completions.filter { it.isLive }.groupBy { it.creditedDate }
