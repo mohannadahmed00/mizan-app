@@ -27,6 +27,7 @@ data class DayPlanEntity(
     val deletedAt: Long? = null,
     val userId: String? = null,
     val origin: String = "OPENED",
+    val syncedAt: Long? = null,
 )
 
 @Entity(
@@ -77,6 +78,7 @@ data class CompletionEntity(
     val updatedAt: Long,
     val deletedAt: Long? = null,
     val userId: String? = null,
+    val syncedAt: Long? = null,
 )
 
 /** A day plan with its planned tasks, read in one query. */
