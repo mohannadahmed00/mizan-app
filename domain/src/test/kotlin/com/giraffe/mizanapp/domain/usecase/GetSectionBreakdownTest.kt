@@ -29,7 +29,7 @@ class GetSectionBreakdownTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, weekStart, PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetSectionBreakdown(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetSectionBreakdown(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(InsightsPeriod.ForWeek(week))
 
@@ -43,7 +43,7 @@ class GetSectionBreakdownTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-01"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetSectionBreakdown(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetSectionBreakdown(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(InsightsPeriod.ForMonth(YearMonth.of(2026, 8)))
 
@@ -59,7 +59,7 @@ class GetSectionBreakdownTest {
         val plans = FakeWeekDayPlanRepository(time = time, failDates = span).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-01"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetSectionBreakdown(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetSectionBreakdown(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         // No exception means ensurePlanFor was never called on any poisoned date.
         val outcome = useCase(InsightsPeriod.ForMonth(YearMonth.of(2026, 8)))
@@ -70,7 +70,7 @@ class GetSectionBreakdownTest {
     fun `missing catalogue surfaces CatalogueUnavailable`() = runBlocking {
         val time = timeAt(LocalDate.parse("2026-08-10"))
         val plans = FakeWeekDayPlanRepository(time = time)
-        val useCase = GetSectionBreakdown(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(available = false), time)
+        val useCase = GetSectionBreakdown(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(available = false), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(InsightsPeriod.ForMonth(YearMonth.of(2026, 8)))
 

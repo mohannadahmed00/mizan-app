@@ -27,7 +27,7 @@ class GetMonthOverviewTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-05"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(YearMonth.of(2026, 8)) as MonthOverviewOutcome.Ready
 
@@ -41,7 +41,7 @@ class GetMonthOverviewTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-01"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(YearMonth.of(2026, 8)) as MonthOverviewOutcome.Ready
 
@@ -55,7 +55,7 @@ class GetMonthOverviewTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-01"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(YearMonth.of(2026, 8)) as MonthOverviewOutcome.Ready
 
@@ -70,7 +70,7 @@ class GetMonthOverviewTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-15"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(YearMonth.of(2026, 8)) as MonthOverviewOutcome.Ready
 
@@ -87,7 +87,7 @@ class GetMonthOverviewTest {
         val plans = FakeWeekDayPlanRepository(time = time, failDates = span).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-01"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         // No exception means ensurePlanFor was never called on any poisoned date.
         useCase(YearMonth.of(2026, 8))
@@ -98,7 +98,7 @@ class GetMonthOverviewTest {
     fun `missing catalogue version surfaces CatalogueUnavailable`() = runBlocking {
         val time = timeAt(LocalDate.parse("2026-08-10"))
         val plans = FakeWeekDayPlanRepository(time = time)
-        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(available = false), time)
+        val useCase = GetMonthOverview(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(available = false), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(YearMonth.of(2026, 8))
 

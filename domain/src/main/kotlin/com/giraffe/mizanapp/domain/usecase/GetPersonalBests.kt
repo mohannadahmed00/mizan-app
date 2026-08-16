@@ -6,6 +6,7 @@ import com.giraffe.mizanapp.domain.insights.buildPersonalBests
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.week.buildDayCells
@@ -24,6 +25,7 @@ class GetPersonalBests(
     private val completions: CompletionRepository,
     private val catalogue: CatalogueRepository,
     private val time: TimeProvider,
+    private val recordCoverage: RecordCoverageRepository,
 ) {
     suspend operator fun invoke(): PersonalBestsOutcome {
         val recordStart = plans.earliestPlanDate() ?: return PersonalBestsOutcome.NoHistory

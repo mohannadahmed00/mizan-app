@@ -10,9 +10,11 @@ import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
 import com.giraffe.mizanapp.domain.repository.EnsureOutcome
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.repository.RecordOutcome
 import com.giraffe.mizanapp.domain.repository.SeedOutcome
 import com.giraffe.mizanapp.domain.repository.UndoOutcome
+import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
@@ -99,4 +101,23 @@ class FakeWeekCompletionRepository : CompletionRepository {
 
     override fun observeConsistencyDates(): Flow<List<LocalDate>> =
         MutableStateFlow(rows.filter { it.isLive }.map { it.creditedDate }.distinct().sorted())
+}
+
+/** Complete by default — matches the signed-out / backfill-finished product unchanged. */
+class FakeRecordCoverageRepository(private var value: RecordCoverage = RecordCoverage.completeFrom(null)) :
+    RecordCoverageRepository {
+
+    var callCount = 0
+        private set
+
+    fun setCoverage(coverage: RecordCoverage) {
+        value = coverage
+    }
+
+    override fun observeCoverage(): Flow<RecordCoverage> = MutableStateFlow(value)
+
+    override suspend fun coverage(): RecordCoverage {
+        callCount++
+        return value
+    }
 }

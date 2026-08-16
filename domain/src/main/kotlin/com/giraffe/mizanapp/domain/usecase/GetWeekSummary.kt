@@ -4,6 +4,8 @@ import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
 import com.giraffe.mizanapp.domain.repository.EnsureOutcome
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
+import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.week.Week
 import com.giraffe.mizanapp.domain.week.WeekSummary
@@ -22,6 +24,7 @@ class GetWeekSummary(
     private val completions: CompletionRepository,
     private val catalogue: CatalogueRepository,
     private val time: TimeProvider,
+    private val recordCoverage: RecordCoverageRepository,
 ) {
     suspend operator fun invoke(week: Week): WeekOutcome {
         val currentVersion = catalogue.currentVersion() ?: return WeekOutcome.NoCatalogue(week)

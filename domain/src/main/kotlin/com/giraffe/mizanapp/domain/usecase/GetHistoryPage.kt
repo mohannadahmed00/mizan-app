@@ -5,6 +5,7 @@ import com.giraffe.mizanapp.domain.history.HistoryPage
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.time.WeekBoundary
 import com.giraffe.mizanapp.domain.week.Week
@@ -27,6 +28,7 @@ class GetHistoryPage(
     private val completions: CompletionRepository,
     private val catalogue: CatalogueRepository,
     private val time: TimeProvider,
+    private val recordCoverage: RecordCoverageRepository,
 ) {
 
     suspend operator fun invoke(before: WeekKey? = null, weeksPerPage: Int = 8): HistoryOutcome {

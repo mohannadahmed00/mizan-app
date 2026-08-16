@@ -38,6 +38,7 @@ class GetWeeklyTrendTest {
             FakeWeekCompletionRepository(),
             FakeWeekCatalogueRepository(available = catalogueAvailable),
             time,
+            FakeRecordCoverageRepository(),
         )
         return GetWeeklyTrend(historyPage)
     }

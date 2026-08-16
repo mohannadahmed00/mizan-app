@@ -28,11 +28,9 @@ fun buildWeekSummary(
     plans: List<DayPlan>,
     completions: List<Completion>,
     projectedAvailable: Map<LocalDate, Int>,
+    coverage: RecordCoverage = RecordCoverage.completeFrom(recordStart),
 ): WeekSummary {
-    val days = buildDayCells(
-        week.dates, today, recordStart, plans, completions, projectedAvailable,
-        RecordCoverage.completeFrom(recordStart),
-    )
+    val days = buildDayCells(week.dates, today, recordStart, plans, completions, projectedAvailable, coverage)
 
     val elapsedAvailable = days.filter { !it.date.isAfter(today) }.sumOf { it.available }
     val futureAvailable = days.filter { it.date.isAfter(today) }.sumOf { it.available }

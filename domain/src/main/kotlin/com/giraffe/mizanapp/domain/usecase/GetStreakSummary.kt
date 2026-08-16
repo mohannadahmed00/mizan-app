@@ -2,6 +2,7 @@ package com.giraffe.mizanapp.domain.usecase
 
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.streak.StreakClock
 import com.giraffe.mizanapp.domain.streak.StreakSummary
 import com.giraffe.mizanapp.domain.streak.buildStreakSummary
@@ -32,6 +33,7 @@ class GetStreakSummary(
     private val completions: CompletionRepository,
     private val dayPlans: DayPlanRepository,
     private val time: TimeProvider,
+    private val recordCoverage: RecordCoverageRepository,
 ) {
     operator fun invoke(): Flow<StreakSummary> =
         combine(

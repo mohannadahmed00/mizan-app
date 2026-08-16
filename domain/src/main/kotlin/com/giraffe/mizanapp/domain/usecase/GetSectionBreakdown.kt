@@ -8,6 +8,7 @@ import com.giraffe.mizanapp.domain.insights.buildSectionBreakdown
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.LocalDate
 
@@ -26,6 +27,7 @@ class GetSectionBreakdown(
     private val completions: CompletionRepository,
     private val catalogue: CatalogueRepository,
     private val time: TimeProvider,
+    private val recordCoverage: RecordCoverageRepository,
 ) {
     suspend operator fun invoke(period: InsightsPeriod): SectionBreakdownOutcome {
         catalogue.currentVersion() ?: return SectionBreakdownOutcome.CatalogueUnavailable("no catalogue is available")
