@@ -83,4 +83,39 @@ interface CompletionDao {
             "WHERE reversedAt IS NULL AND deletedAt IS NULL ORDER BY creditedDate"
     )
     fun observeLiveDates(): Flow<List<String>>
+
+    /**
+     * Attributes every unclaimed local completion to [userId] on sign-in.
+     *
+     * The `IS NULL` guard is what makes this idempotent and what stops a
+     * record ever changing accounts once claimed (FR-013): re-running it after
+     * the first sign-in touches nothing, and it can never move a row from one
+     * user to another.
+     */
+    @Query("UPDATE completions SET userId = :userId, updatedAt = :at WHERE userId IS NULL")
+    suspend fun claimForUser(userId: String, at: Long): Int
+
+    @Query("UPDATE completions SET syncedAt = :at WHERE id IN (:ids)")
+    suspend fun markSynced(ids: List<String>, at: Long)
+
+    @Query("SELECT * FROM completions WHERE syncedAt IS NULL")
+    suspend fun unsynced(): List<CompletionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIgnoring(row: CompletionEntity): Long
+
+    /**
+     * Applies an incoming tombstone. Can only ever *set* [CompletionEntity.reversedAt] —
+     * the `reversedAt IS NULL` guard means a live local copy can be tombstoned by
+     * a remote one, but a remote row can never clear a tombstone already applied
+     * locally (FR-018).
+     */
+    @Query(
+        "UPDATE completions SET reversedAt = :at, updatedAt = :at " +
+            "WHERE id = :id AND reversedAt IS NULL"
+    )
+    suspend fun applyTombstone(id: String, at: Long)
+
+    @Query("DELETE FROM completions")
+    suspend fun clear()
 }
