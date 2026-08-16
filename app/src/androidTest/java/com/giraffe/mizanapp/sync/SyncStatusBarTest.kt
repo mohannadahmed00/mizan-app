@@ -1,5 +1,6 @@
 package com.giraffe.mizanapp.sync
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertCountEquals
@@ -32,8 +33,11 @@ class SyncStatusBarTest {
             SyncStatus.NotSyncing to "Not syncing right now",
             SyncStatus.LoadingEarlierDays(LocalDate.of(2026, 6, 1)) to "Still loading earlier days",
         )
+        val current = mutableStateOf<SyncStatus>(cases.first().first)
+        compose.setContent { SyncStatusBar(current.value) }
+
         for ((status, expected) in cases) {
-            compose.setContent { SyncStatusBar(status) }
+            compose.runOnIdle { current.value = status }
             compose.onNodeWithText(expected).assertExists()
         }
     }

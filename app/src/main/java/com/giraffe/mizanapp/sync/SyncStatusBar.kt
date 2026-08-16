@@ -13,8 +13,12 @@ import com.giraffe.mizanapp.domain.sync.SyncStatus
  * at all (FR-004). Every other line is a fact about the queue, never a
  * warning (Principle IX).
  */
-fun syncStatusText(status: SyncStatus): String? {
-    TODO("T087")
+fun syncStatusText(status: SyncStatus): String? = when (status) {
+    SyncStatus.NotSignedIn -> null
+    SyncStatus.UpToDate -> "Backed up"
+    is SyncStatus.Pending -> "${status.count} changes waiting to be sent"
+    SyncStatus.NotSyncing -> "Not syncing right now"
+    is SyncStatus.LoadingEarlierDays -> "Still loading earlier days"
 }
 
 /**
