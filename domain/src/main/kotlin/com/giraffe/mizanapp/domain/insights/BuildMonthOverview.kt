@@ -25,5 +25,5 @@ fun buildMonthOverview(
 ): MonthOverview {
     val dates = generateSequence(month.atDay(1)) { it.plusDays(1) }.takeWhile { !it.isAfter(month.atEndOfMonth()) }.toList()
     val days = buildDayCells(dates, today, recordStart, plans, completions, projectedAvailable, coverage)
-    return MonthOverview(month = month, days = days)
+    return MonthOverview(month = month, days = days, provisional = !coverage.complete)
 }

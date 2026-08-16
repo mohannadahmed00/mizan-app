@@ -64,7 +64,7 @@ class GetSectionBreakdown(
         }
 
         val sections: List<SectionPerformance> = buildSectionBreakdown(storedPlans + derived, liveCompletions)
-        return SectionBreakdownOutcome.Ready(sections)
+        return SectionBreakdownOutcome.Ready(sections, provisional = !coverage.complete)
     }
 }
 

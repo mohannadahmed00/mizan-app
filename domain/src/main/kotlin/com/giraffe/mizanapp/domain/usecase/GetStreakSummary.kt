@@ -41,7 +41,9 @@ class GetStreakSummary(
             boundaryTicks(),
         ) { dates, _ -> dates }
             .map { dates ->
+                val coverage = recordCoverage.coverage()
                 buildStreakSummary(dates, time.today(), time.now(), time.zone(), dayPlans.earliestPlanDate())
+                    .copy(provisional = !coverage.complete)
             }
             .distinctUntilChanged()
 

@@ -68,7 +68,7 @@ class GetPersonalBests(
         }
 
         val cells = buildDayCells(dates, today, recordStart, storedPlans, liveCompletions, projected, coverage)
-        return PersonalBestsOutcome.Ready(buildPersonalBests(cells, today))
+        return PersonalBestsOutcome.Ready(buildPersonalBests(cells, today).copy(provisional = !coverage.complete))
     }
 }
 
