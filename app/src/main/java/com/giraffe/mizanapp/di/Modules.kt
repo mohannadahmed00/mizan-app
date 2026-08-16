@@ -2,20 +2,27 @@ package com.giraffe.mizanapp.di
 
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.db.createMizanDatabase
+import com.giraffe.mizanapp.data.repository.OutboxSyncRepository
 import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
 import com.giraffe.mizanapp.data.repository.RoomCompletionRepository
 import com.giraffe.mizanapp.data.repository.RoomDayPlanRepository
+import com.giraffe.mizanapp.data.repository.createAccountRepository
 import com.giraffe.mizanapp.data.seed.CatalogueSeeder
 import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.data.sync.Outbox
 import com.giraffe.mizanapp.data.sync.RemoteDataSource
+import com.giraffe.mizanapp.data.sync.SyncEngine
 import com.giraffe.mizanapp.data.sync.createRemoteDataSource
+import com.giraffe.mizanapp.data.sync.isSupabaseConfigured
 import com.giraffe.mizanapp.data.time.SystemTimeProvider
 import com.giraffe.mizanapp.domain.policy.DayWritePolicy
+import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
+import com.giraffe.mizanapp.domain.usecase.ConfirmSignInCode
 import com.giraffe.mizanapp.domain.usecase.GetDayDetail
 import com.giraffe.mizanapp.domain.usecase.GetDaySummary
 import com.giraffe.mizanapp.domain.usecase.GetHistoryPage
@@ -25,6 +32,8 @@ import com.giraffe.mizanapp.domain.usecase.GetSectionBreakdown
 import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeekSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeeklyTrend
+import com.giraffe.mizanapp.domain.usecase.RequestSignInCode
+import com.giraffe.mizanapp.auth.SignInViewModel
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
 import com.giraffe.mizanapp.history.HistoryViewModel
 import com.giraffe.mizanapp.insights.InsightsViewModel
@@ -70,6 +79,11 @@ val dataModule = module {
     single { Outbox(get(), get()) }
     single { AccountScope(get(), get()) }
     single<RemoteDataSource> { createRemoteDataSource() }
+    single { SyncEngine(get(), get(), get(), get(), get()) }
+    single<SyncRepository> { OutboxSyncRepository(get(), get(), get()) }
+    single<AccountRepository> { createAccountRepository(get(), get(), get(), get()) }
+    factory { RequestSignInCode(get()) }
+    factory { ConfirmSignInCode(get(), get()) }
 }
 
 val appModule = module {
@@ -78,6 +92,7 @@ val appModule = module {
     viewModel { (date: LocalDate) -> DaySummaryViewModel(get<GetDayDetail>(), date) }
     viewModel { HistoryViewModel(get(), get()) }
     viewModel { InsightsViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { SignInViewModel(get(), get(), get(), isSupabaseConfigured()) }
 }
 
 val mizanModules = listOf(domainModule, dataModule, appModule)
