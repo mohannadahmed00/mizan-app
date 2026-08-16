@@ -3,6 +3,7 @@ package com.giraffe.mizanapp.data.repository
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.data.sync.SyncEngine
+import com.giraffe.mizanapp.data.sync.SyncScheduler
 import com.giraffe.mizanapp.domain.identity.AccountSession
 import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.sync.RecordCoverage
@@ -33,6 +34,7 @@ class OutboxSyncRepository(
     private val accountScope: AccountScope,
     private val engine: SyncEngine,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    private val scheduler: SyncScheduler? = null,
 ) : SyncRepository {
 
     override fun observeStatus(): Flow<SyncStatus> =
@@ -46,6 +48,7 @@ class OutboxSyncRepository(
     override fun observePendingCount(): Flow<Int> = db.outboxDao().observeCount()
 
     override fun syncNow() {
+        scheduler?.schedule()
         scope.launch {
             val session = accountScope.current()
             if (session is AccountSession.SignedIn) engine.migrateOnSignIn(session.userId)

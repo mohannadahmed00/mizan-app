@@ -36,7 +36,11 @@ data class OutboxEntry(
  * or evicts an entry** — a queued change is the only copy of a fact the user
  * believes is recorded (FR-021a).
  */
-class Outbox(private val db: MizanDatabase, private val time: TimeProvider) {
+class Outbox(
+    private val db: MizanDatabase,
+    private val time: TimeProvider,
+    private val scheduler: SyncScheduler? = null,
+) {
 
     /** Called inside the caller's transaction. Deterministic id, so this is idempotent (R6). */
     suspend fun enqueue(entry: OutboxEntry) {
@@ -53,6 +57,7 @@ class Outbox(private val db: MizanDatabase, private val time: TimeProvider) {
                 nextAttemptAt = now,
             ),
         )
+        scheduler?.schedule()
     }
 
     suspend fun due(now: Instant, limit: Int): List<OutboxEntry> =
