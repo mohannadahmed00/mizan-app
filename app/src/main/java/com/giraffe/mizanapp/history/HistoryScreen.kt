@@ -216,6 +216,8 @@ private fun descriptionFor(state: DayCellState): String = when (state) {
     DayCellState.NOTHING_RECORDED -> "Not recorded"
     DayCellState.NOT_YET_ELAPSED -> "Upcoming"
     DayCellState.OUTSIDE_RECORD -> "Outside the record"
+    // Never 0%, never absent (FR-023b) — this device just hasn't fetched it yet.
+    DayCellState.NOT_YET_KNOWN -> "Still loading"
 }
 
 @Composable
@@ -224,4 +226,6 @@ private fun containerColorFor(state: DayCellState) = when (state) {
     DayCellState.PARTLY_RECORDED -> MaterialTheme.colorScheme.tertiaryContainer
     DayCellState.NOTHING_RECORDED -> MaterialTheme.colorScheme.surfaceVariant
     DayCellState.NOT_YET_ELAPSED, DayCellState.OUTSIDE_RECORD -> MaterialTheme.colorScheme.surface
+    // Placeholder — T106 gives this its own distinct container.
+    DayCellState.NOT_YET_KNOWN -> MaterialTheme.colorScheme.surface
 }

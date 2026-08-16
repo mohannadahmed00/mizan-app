@@ -327,6 +327,7 @@ private fun MonthDayCell(day: DayCellUi) {
         DayCellState.NOTHING_RECORDED -> "nothing-recorded"
         DayCellState.PARTLY_RECORDED -> "partly-recorded"
         DayCellState.FULLY_RECORDED -> "fully-recorded"
+        DayCellState.NOT_YET_KNOWN -> "not-yet-known"
     }
     Box(
         modifier = Modifier

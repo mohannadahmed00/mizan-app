@@ -7,6 +7,7 @@ import com.giraffe.mizanapp.data.repository.OutboxSyncRepository
 import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
 import com.giraffe.mizanapp.data.repository.RoomCompletionRepository
 import com.giraffe.mizanapp.data.repository.RoomDayPlanRepository
+import com.giraffe.mizanapp.data.repository.RoomRecordCoverageRepository
 import com.giraffe.mizanapp.data.repository.SyncingCompletionRepository
 import com.giraffe.mizanapp.data.repository.SyncingDayPlanRepository
 import com.giraffe.mizanapp.data.repository.createAccountRepository
@@ -27,6 +28,7 @@ import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.usecase.ConfirmSignInCode
@@ -63,15 +65,15 @@ import org.koin.dsl.module
 val domainModule = module {
     single<TimeProvider> { SystemTimeProvider() }
     factory { DayWritePolicy(get()) }
-    factory { GetWeekSummary(get(), get(), get(), get()) }
+    factory { GetWeekSummary(get(), get(), get(), get(), get()) }
     factory { GetDaySummary(get(), get()) }
-    factory { GetStreakSummary(get(), get(), get()) }
-    factory { GetHistoryPage(get(), get(), get(), get()) }
+    factory { GetStreakSummary(get(), get(), get(), get()) }
+    factory { GetHistoryPage(get(), get(), get(), get(), get()) }
     factory { GetDayDetail(get(), get(), get(), get()) }
     factory { GetWeeklyTrend(get()) }
-    factory { GetMonthOverview(get(), get(), get(), get()) }
-    factory { GetSectionBreakdown(get(), get(), get(), get()) }
-    factory { GetPersonalBests(get(), get(), get(), get()) }
+    factory { GetMonthOverview(get(), get(), get(), get(), get()) }
+    factory { GetSectionBreakdown(get(), get(), get(), get(), get()) }
+    factory { GetPersonalBests(get(), get(), get(), get(), get()) }
 }
 
 val dataModule = module {
@@ -80,6 +82,7 @@ val dataModule = module {
 
     single { CatalogueSeeder(get(), get()) }
     single<CatalogueRepository> { RoomCatalogueRepository(get(), get()) }
+    single<RecordCoverageRepository> { RoomRecordCoverageRepository(get(), get()) }
 
     // Room implementations stay registered by concrete type; CompletionRepository and
     // DayPlanRepository resolve to the sync-decorated wrappers so every existing use

@@ -12,9 +12,11 @@ import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
 import com.giraffe.mizanapp.domain.repository.EnsureOutcome
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.repository.RecordOutcome
 import com.giraffe.mizanapp.domain.repository.SeedOutcome
 import com.giraffe.mizanapp.domain.repository.UndoOutcome
+import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.Instant
 import java.time.LocalDate
@@ -160,4 +162,14 @@ class FakeClock(
     override fun zone(): java.time.ZoneId = zone
     fun setDate(date: LocalDate) { instant = date.atTime(9, 0).atZone(zone).toInstant() }
     fun advanceBy(duration: java.time.Duration) { instant = instant.plus(duration) }
+}
+
+/** Complete by default — matches the signed-out / backfill-finished product unchanged. */
+class FakeRecordCoverageRepository(private var value: RecordCoverage = RecordCoverage.completeFrom(null)) :
+    RecordCoverageRepository {
+    fun setCoverage(coverage: RecordCoverage) {
+        value = coverage
+    }
+    override fun observeCoverage(): Flow<RecordCoverage> = MutableStateFlow(value)
+    override suspend fun coverage(): RecordCoverage = value
 }
