@@ -74,6 +74,7 @@ fun buildDayCells(
 
         val state = when {
             date.isAfter(today) -> DayCellState.NOT_YET_ELAPSED
+            !coverage.isKnown(date) -> DayCellState.NOT_YET_KNOWN
             recordStart == null || date.isBefore(recordStart) -> DayCellState.OUTSIDE_RECORD
             plan == null -> DayCellState.NOTHING_RECORDED
             earned == 0 -> DayCellState.NOTHING_RECORDED

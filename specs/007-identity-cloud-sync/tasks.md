@@ -313,7 +313,7 @@ scores for every affected day.
 
 ### Implementation for User Story 3
 
-- [ ] T099 [US3] Implement the coverage branch in `buildDayCells` in `domain/src/main/kotlin/com/giraffe/mizanapp/domain/week/BuildWeekSummary.kt`: a date for which `coverage.isKnown(date)` is false becomes `NOT_YET_KNOWN`, evaluated **before** the empty/partial/full decision. Re-run T090.
+- [X] T099 [US3] Implement the coverage branch in `buildDayCells` in `domain/src/main/kotlin/com/giraffe/mizanapp/domain/week/BuildWeekSummary.kt`: a date for which `coverage.isKnown(date)` is false becomes `NOT_YET_KNOWN`, evaluated **before** the empty/partial/full decision. Re-run T090.
 - [ ] T100 [US3] Add a `RecordCoverageRepository` constructor parameter to `GetWeekSummary`, `GetHistoryPage`, `GetStreakSummary`, `GetMonthOverview`, `GetSectionBreakdown` and `GetPersonalBests` in `domain/src/main/kotlin/com/giraffe/mizanapp/domain/usecase/`. Each reads coverage once per invocation and passes it to `buildDayCells`. `GetWeekSummary` additionally skips `ensurePlanFor` for any date where `isKnown` is false. Re-run T091 and T092.
 - [ ] T101 [US3] Add a `provisional: Boolean` field to the results of `GetStreakSummary`, `GetSectionBreakdown` and `GetPersonalBests`, set when coverage over their range is incomplete (FR-023d). Re-run T093 and T094.
 - [ ] T102 [US3] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomRecordCoverageRepository.kt` implementing `RecordCoverageRepository`: signed out, or `backfill_complete` set, return `RecordCoverage.completeFrom(earliestPlanDate())`; otherwise `RecordCoverage(knownFrom = backfill_floor, complete = false)`. Read both cursors through `SyncCursorDao`. Re-run T095.
