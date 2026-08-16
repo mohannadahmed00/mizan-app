@@ -2,18 +2,24 @@ package com.giraffe.mizanapp.di
 
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.db.createMizanDatabase
+import com.giraffe.mizanapp.data.repository.NoOpCataloguePublicationRepository
 import com.giraffe.mizanapp.data.repository.OutboxSyncRepository
 import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
 import com.giraffe.mizanapp.data.repository.RoomCompletionRepository
 import com.giraffe.mizanapp.data.repository.RoomDayPlanRepository
+import com.giraffe.mizanapp.data.repository.SyncingCompletionRepository
+import com.giraffe.mizanapp.data.repository.SyncingDayPlanRepository
 import com.giraffe.mizanapp.data.repository.createAccountRepository
 import com.giraffe.mizanapp.data.seed.CatalogueSeeder
 import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.data.sync.Outbox
 import com.giraffe.mizanapp.data.sync.RemoteDataSource
 import com.giraffe.mizanapp.data.sync.SyncEngine
+import com.giraffe.mizanapp.data.sync.SyncScheduler
+import com.giraffe.mizanapp.data.sync.SyncWorker
 import com.giraffe.mizanapp.data.sync.createRemoteDataSource
 import com.giraffe.mizanapp.data.sync.isSupabaseConfigured
+import com.giraffe.mizanapp.domain.repository.CataloguePublicationRepository
 import com.giraffe.mizanapp.data.time.SystemTimeProvider
 import com.giraffe.mizanapp.domain.policy.DayWritePolicy
 import com.giraffe.mizanapp.domain.repository.AccountRepository
@@ -41,6 +47,7 @@ import com.giraffe.mizanapp.today.TodayViewModel
 import com.giraffe.mizanapp.week.WeekViewModel
 import java.time.LocalDate
 import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -71,19 +78,28 @@ val dataModule = module {
 
     single { CatalogueSeeder(get(), get()) }
     single<CatalogueRepository> { RoomCatalogueRepository(get(), get()) }
-    single<DayPlanRepository> { RoomDayPlanRepository(get(), get(), get()) }
-    single<CompletionRepository> { RoomCompletionRepository(get(), get(), get(), get()) }
+
+    // Room implementations stay registered by concrete type; CompletionRepository and
+    // DayPlanRepository resolve to the sync-decorated wrappers so every existing use
+    // case keeps working through the same interfaces (spec 007 T082).
+    single { RoomDayPlanRepository(get(), get(), get()) }
+    single { RoomCompletionRepository(get(), get(), get(), get()) }
+    single<DayPlanRepository> { SyncingDayPlanRepository(get(), get(), get(), get()) }
+    single<CompletionRepository> { SyncingCompletionRepository(get(), get(), get(), get()) }
 
     // spec 007. The binding is never nullable: a build with no Supabase configuration
     // still gets a real RemoteDataSource, just one that reports Unreachable (FR-003).
-    single { Outbox(get(), get()) }
+    single { SyncScheduler(androidContext()) }
+    single { Outbox(get(), get(), get()) }
     single { AccountScope(get(), get()) }
     single<RemoteDataSource> { createRemoteDataSource() }
     single { SyncEngine(get(), get(), get(), get(), get()) }
-    single<SyncRepository> { OutboxSyncRepository(get(), get(), get()) }
+    single<SyncRepository> { OutboxSyncRepository(get(), get(), get(), scheduler = get()) }
     single<AccountRepository> { createAccountRepository(get(), get(), get(), get()) }
+    single<CataloguePublicationRepository> { NoOpCataloguePublicationRepository() }
     factory { RequestSignInCode(get()) }
     factory { ConfirmSignInCode(get(), get()) }
+    worker { SyncWorker(get(), get(), get(), get()) }
 }
 
 val appModule = module {
