@@ -29,6 +29,7 @@ import com.giraffe.mizanapp.history.HistoryScreen
 import com.giraffe.mizanapp.history.HistoryViewModel
 import com.giraffe.mizanapp.insights.InsightsScreen
 import com.giraffe.mizanapp.insights.InsightsViewModel
+import com.giraffe.mizanapp.sync.SyncStatusViewModel
 import com.giraffe.mizanapp.today.TodayScreen
 import com.giraffe.mizanapp.today.TodayViewModel
 import com.giraffe.mizanapp.ui.theme.MizanAppTheme
@@ -168,11 +169,15 @@ private fun TodayRoute(onOpenWeek: () -> Unit, onOpenAccount: () -> Unit = {}, m
         }
     }
 
+    val syncViewModel: SyncStatusViewModel = koinViewModel()
+    val syncStatus by syncViewModel.status.collectAsStateWithLifecycle()
+
     TodayScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onOpenWeek = onOpenWeek,
         onOpenAccount = onOpenAccount,
+        syncStatus = syncStatus,
         modifier = modifier,
     )
 }
@@ -204,6 +209,9 @@ private fun WeekRoute(
         }
     }
 
+    val syncViewModel: SyncStatusViewModel = koinViewModel()
+    val syncStatus by syncViewModel.status.collectAsStateWithLifecycle()
+
     WeekScreen(
         state = state,
         onEvent = { event ->
@@ -214,6 +222,7 @@ private fun WeekRoute(
                 else -> viewModel.onEvent(event)
             }
         },
+        syncStatus = syncStatus,
         modifier = modifier,
     )
 }

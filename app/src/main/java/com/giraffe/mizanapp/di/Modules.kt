@@ -44,6 +44,7 @@ import com.giraffe.mizanapp.auth.SignInViewModel
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
 import com.giraffe.mizanapp.history.HistoryViewModel
 import com.giraffe.mizanapp.insights.InsightsViewModel
+import com.giraffe.mizanapp.sync.SyncStatusViewModel
 import com.giraffe.mizanapp.today.TodayViewModel
 import com.giraffe.mizanapp.week.WeekViewModel
 import java.time.LocalDate
@@ -110,6 +111,7 @@ val appModule = module {
     viewModel { HistoryViewModel(get(), get()) }
     viewModel { InsightsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get(), get(), get(), isSupabaseConfigured()) }
+    viewModel { SyncStatusViewModel(get()) }
 }
 
 val mizanModules = listOf(domainModule, dataModule, appModule)
