@@ -13,6 +13,7 @@ import com.giraffe.mizanapp.data.repository.SyncingDayPlanRepository
 import com.giraffe.mizanapp.data.repository.createAccountRepository
 import com.giraffe.mizanapp.data.seed.CatalogueSeeder
 import com.giraffe.mizanapp.data.sync.AccountScope
+import com.giraffe.mizanapp.data.sync.Backfill
 import com.giraffe.mizanapp.data.sync.Outbox
 import com.giraffe.mizanapp.data.sync.RemoteDataSource
 import com.giraffe.mizanapp.data.sync.SyncEngine
@@ -99,12 +100,13 @@ val dataModule = module {
     single { AccountScope(get(), get()) }
     single<RemoteDataSource> { createRemoteDataSource() }
     single { SyncEngine(get(), get(), get(), get(), get(), get(), ::endSupabaseSession) }
+    single { Backfill(get(), get(), get(), get()) }
     single<SyncRepository> { OutboxSyncRepository(get(), get(), get(), scheduler = get()) }
     single<AccountRepository> { createAccountRepository(get(), get(), get(), get()) }
     single<CataloguePublicationRepository> { NoOpCataloguePublicationRepository() }
     factory { RequestSignInCode(get()) }
     factory { ConfirmSignInCode(get(), get()) }
-    worker { SyncWorker(get(), get(), get(), get()) }
+    worker { SyncWorker(get(), get(), get(), get(), get()) }
 }
 
 val appModule = module {

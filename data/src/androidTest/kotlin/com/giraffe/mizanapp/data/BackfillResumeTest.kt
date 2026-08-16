@@ -1,7 +1,10 @@
 package com.giraffe.mizanapp.data
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.data.sync.Backfill
+import com.giraffe.mizanapp.data.sync.Outbox
+import com.giraffe.mizanapp.data.sync.SyncEngine
 import com.giraffe.mizanapp.data.sync.dto.RemoteDayRecord
 import com.giraffe.mizanapp.domain.time.WeekBoundary
 import java.time.LocalDate
@@ -36,12 +39,16 @@ class BackfillResumeTest : DbTestBase() {
             )
         }
 
-        fun backfill() = Backfill(db, fake, time)
+        val engine = SyncEngine(db, Outbox(db, time), AccountScope(db.accountScopeDao(), time), fake, catalogue, time)
+        fun backfill() = Backfill(db, engine, fake, time)
 
         backfill().headPull()
 
+        // Only the elapsed part of the current week has any account record to
+        // pull yet — a future date within the same week was never seeded and
+        // the head pull must not fabricate one.
         val currentWeek = WeekBoundary.weekContaining(today)
-        for (date in currentWeek.dates) {
+        for (date in currentWeek.dates.filter { !it.isAfter(today) }) {
             assertTrue("$date of the current week must exist after the head pull", dayPlans.planFor(date) != null)
         }
 

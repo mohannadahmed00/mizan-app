@@ -18,6 +18,7 @@ class SyncWorker(
     context: Context,
     params: WorkerParameters,
     private val engine: SyncEngine,
+    private val backfill: Backfill,
     private val catalogue: CataloguePublicationRepository,
 ) : CoroutineWorker(context, params) {
 
@@ -25,6 +26,7 @@ class SyncWorker(
         catalogue.pullIfNewer()
         val outcome = engine.drain()
         engine.pull()
+        backfill.resumeOnePage()
         return if (outcome == DrainOutcome.StoppedUnreachable) Result.retry() else Result.success()
     }
 }

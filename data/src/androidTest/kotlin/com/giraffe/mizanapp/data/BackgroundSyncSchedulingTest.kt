@@ -17,6 +17,7 @@ import com.giraffe.mizanapp.data.repository.NoOpCataloguePublicationRepository
 import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
 import com.giraffe.mizanapp.data.seed.CatalogueSeeder
 import com.giraffe.mizanapp.data.sync.AccountScope
+import com.giraffe.mizanapp.data.sync.Backfill
 import com.giraffe.mizanapp.data.sync.Outbox
 import com.giraffe.mizanapp.data.sync.OutboxEntry
 import com.giraffe.mizanapp.data.sync.SyncEngine
@@ -64,6 +65,7 @@ class BackgroundSyncSchedulingTest {
         accountScope = AccountScope(db.accountScopeDao(), time)
         val catalogue = RoomCatalogueRepository(db, CatalogueSeeder(db, time))
         engine = SyncEngine(db, outbox, accountScope, fake, catalogue, time)
+        val backfill = Backfill(db, engine, fake, time)
 
         val workerFactory = object : WorkerFactory() {
             override fun createWorker(
@@ -71,7 +73,7 @@ class BackgroundSyncSchedulingTest {
                 workerClassName: String,
                 workerParameters: WorkerParameters,
             ): ListenableWorker? = if (workerClassName == SyncWorker::class.java.name) {
-                SyncWorker(appContext, workerParameters, engine, NoOpCataloguePublicationRepository())
+                SyncWorker(appContext, workerParameters, engine, backfill, NoOpCataloguePublicationRepository())
             } else {
                 null
             }
