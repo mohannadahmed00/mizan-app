@@ -26,6 +26,10 @@ fun deriveSyncStatus(
     pendingCount: Int,
     reachable: Boolean,
     coverage: RecordCoverage,
-): SyncStatus {
-    TODO("T024")
+): SyncStatus = when {
+    session is AccountSession.SignedOut -> SyncStatus.NotSignedIn
+    !coverage.complete -> SyncStatus.LoadingEarlierDays(coverage.knownFrom)
+    pendingCount > 0 && reachable -> SyncStatus.Pending(pendingCount)
+    pendingCount > 0 && !reachable -> SyncStatus.NotSyncing
+    else -> SyncStatus.UpToDate
 }
