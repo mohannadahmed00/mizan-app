@@ -5,6 +5,7 @@ import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.sync.dto.RemoteCompletion
 import com.giraffe.mizanapp.data.sync.dto.RemoteDayRecord
 import com.giraffe.mizanapp.data.sync.dto.RemoteProfile
+import com.giraffe.mizanapp.domain.identity.AccountSession
 import com.giraffe.mizanapp.domain.sync.RetrySchedule
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.Instant
@@ -218,9 +219,22 @@ class SyncEngine(
         }
     }
 
-    /** First sign-in on a device: claim, enqueue, drain, pull — each step safe to re-run alone (research R7). */
+    /**
+     * First sign-in on a device: claim, enqueue, drain — each step idempotent
+     * and safe to re-run alone (research R7), which is also what makes it
+     * safe to run on *every* sync trigger rather than only the first. Step 1
+     * of `contracts/sync-engine.md` §5 — pinning `account_scope` to [userId]
+     * — is defensive here: the caller (`SupabaseAccountRepository.confirmCode`)
+     * already set it with the real email before triggering sync.
+     */
     suspend fun migrateOnSignIn(userId: String) {
-        TODO("T066")
+        val current = accountScope.current()
+        if (current !is AccountSession.SignedIn || current.userId != userId) {
+            accountScope.set(userId, email = "", displayName = null)
+        }
+        claimLocalRecords(userId)
+        enqueueUnsynced()
+        drain()
     }
 
     /** No-op until T104 wires the real pull. Called by [SyncWorker] so its shape is stable from T083 on. */
