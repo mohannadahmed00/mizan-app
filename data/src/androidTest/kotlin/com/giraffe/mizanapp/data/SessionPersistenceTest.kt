@@ -2,6 +2,7 @@ package com.giraffe.mizanapp.data
 
 import com.giraffe.mizanapp.data.repository.SupabaseAccountRepository
 import com.giraffe.mizanapp.data.sync.AccountScope
+import com.giraffe.mizanapp.data.sync.Outbox
 import com.giraffe.mizanapp.data.sync.createSupabaseClient
 import com.giraffe.mizanapp.domain.identity.AccountSession
 import kotlinx.coroutines.flow.first
@@ -33,7 +34,7 @@ class SessionPersistenceTest : DbTestBase() {
         assumeTrue("no Supabase configuration in this build", client != null)
 
         val scope = AccountScope(db.accountScopeDao(), time)
-        val repository = SupabaseAccountRepository(client, scope)
+        val repository = SupabaseAccountRepository(client, scope, db, Outbox(db, time), time)
 
         val session = repository.observeSession().first()
 
@@ -48,7 +49,7 @@ class SessionPersistenceTest : DbTestBase() {
 
         val scope = AccountScope(db.accountScopeDao(), time)
         scope.set(userId = "stale-user", email = "stale@example.test", displayName = null)
-        val repository = SupabaseAccountRepository(client, scope)
+        val repository = SupabaseAccountRepository(client, scope, db, Outbox(db, time), time)
 
         // Supabase's own session status is authoritative: a device that once
         // carried an account's records but has no live token is signed out,

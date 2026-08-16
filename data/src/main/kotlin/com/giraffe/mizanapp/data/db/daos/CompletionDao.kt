@@ -98,6 +98,10 @@ interface CompletionDao {
     @Query("UPDATE completions SET syncedAt = :at WHERE id IN (:ids)")
     suspend fun markSynced(ids: List<String>, at: Long)
 
+    /** Every row, including tombstones. Feeds the account-switch confirmation (FR-013a). */
+    @Query("SELECT COUNT(*) FROM completions")
+    suspend fun countAll(): Int
+
     @Query("SELECT * FROM completions WHERE syncedAt IS NULL")
     suspend fun unsynced(): List<CompletionEntity>
 
