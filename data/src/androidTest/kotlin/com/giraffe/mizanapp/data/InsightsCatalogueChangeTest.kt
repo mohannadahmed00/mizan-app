@@ -72,7 +72,7 @@ class InsightsCatalogueChangeTest : DbTestBase() {
         }
         time.setDate(LocalDate.parse("2026-08-31"))
 
-        val monthOverview = GetMonthOverview(dayPlans, completions, catalogue, time)
+        val monthOverview = GetMonthOverview(dayPlans, completions, catalogue, time, coverageRepo)
         val month = YearMonth.of(2026, 8)
         val before = (monthOverview(month) as MonthOverviewOutcome.Ready).overview
 
@@ -110,9 +110,9 @@ class InsightsCatalogueChangeTest : DbTestBase() {
         }
         time.setDate(week.end)
 
-        val trendUseCase = GetWeeklyTrend(GetHistoryPage(dayPlans, completions, catalogue, time))
-        val sectionsUseCase = GetSectionBreakdown(dayPlans, completions, catalogue, time)
-        val bestsUseCase = GetPersonalBests(dayPlans, completions, catalogue, time)
+        val trendUseCase = GetWeeklyTrend(GetHistoryPage(dayPlans, completions, catalogue, time, coverageRepo))
+        val sectionsUseCase = GetSectionBreakdown(dayPlans, completions, catalogue, time, coverageRepo)
+        val bestsUseCase = GetPersonalBests(dayPlans, completions, catalogue, time, coverageRepo)
 
         val trendBefore = (trendUseCase() as TrendOutcome.Ready).weeks.first { it.week.key == week.key }.score
         val sectionsBefore = (sectionsUseCase(InsightsPeriod.ForWeek(week)) as SectionBreakdownOutcome.Ready).sections

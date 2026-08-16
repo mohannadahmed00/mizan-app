@@ -65,7 +65,7 @@ class HistoryPerformanceTest : DbTestBase() {
     @Test
     fun the_first_screen_of_history_resolves_within_budget() = runTest {
         seedThreeYears()
-        val useCase = GetHistoryPage(dayPlans, completions, catalogue, time)
+        val useCase = GetHistoryPage(dayPlans, completions, catalogue, time, coverageRepo)
 
         val startNanos = System.nanoTime()
         val outcome = useCase(before = null)

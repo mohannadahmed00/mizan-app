@@ -66,7 +66,7 @@ class CatalogueChangeHistoryTest : DbTestBase() {
             }
         }
 
-        val historyUseCase = GetHistoryPage(dayPlans, completions, catalogue, time)
+        val historyUseCase = GetHistoryPage(dayPlans, completions, catalogue, time, coverageRepo)
         val dayUseCase = GetDayDetail(dayPlans, completions, catalogue, time)
 
         time.setDate(week.end)
