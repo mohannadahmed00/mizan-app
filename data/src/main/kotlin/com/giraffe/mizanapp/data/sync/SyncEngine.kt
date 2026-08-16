@@ -3,6 +3,7 @@ package com.giraffe.mizanapp.data.sync
 import androidx.room.withTransaction
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.db.entities.CompletionEntity
+import com.giraffe.mizanapp.data.db.entities.SyncCursorEntity
 import com.giraffe.mizanapp.data.mapper.toEntity
 import com.giraffe.mizanapp.data.sync.dto.RemoteCompletion
 import com.giraffe.mizanapp.data.sync.dto.RemoteDayRecord
@@ -254,9 +255,40 @@ class SyncEngine(
         drain()
     }
 
-    /** No-op until T104 wires the real pull. Called by [SyncWorker] so its shape is stable from T083 on. */
+    /**
+     * Incremental pull — `contracts/sync-engine.md` §3. Runs after every drain
+     * and on every foregrounding, so a device that just uploaded also learns
+     * what the other device did. Only rows at or after `backfill_floor` are
+     * applied; anything older is [Backfill]'s job, and applying it here would
+     * otherwise create a hole above the floor.
+     */
     suspend fun pull() {
-        // T104 fills this in.
+        val cursor = db.syncCursorDao().get(KEY_PULL_CURSOR)?.let(Instant::parse)
+        val changes = when (val result = remote.changedSince(cursor, limit = PULL_LIMIT)) {
+            is RemoteResult.Ok -> result.value
+            RemoteResult.Unreachable -> return
+            RemoteResult.NotAuthenticated -> {
+                onSessionExpired()
+                return
+            }
+            is RemoteResult.Rejected -> return
+        }
+
+        val floor = db.syncCursorDao().get(KEY_BACKFILL_FLOOR)?.let(LocalDate::parse)
+        val applicable = if (floor == null) {
+            changes
+        } else {
+            RemoteChanges(
+                dayRecords = changes.dayRecords.filter { !LocalDate.parse(it.date).isBefore(floor) },
+                completions = changes.completions.filter { !LocalDate.parse(it.creditedDate).isBefore(floor) },
+                watermark = changes.watermark,
+            )
+        }
+
+        applyRemote(applicable)
+        changes.watermark?.let {
+            db.syncCursorDao().upsert(SyncCursorEntity(key = KEY_PULL_CURSOR, value = it.toString()))
+        }
     }
 
     /**
@@ -321,6 +353,9 @@ class SyncEngine(
 
     private companion object {
         const val BATCH_LIMIT = 200
+        const val PULL_LIMIT = 500
+        const val KEY_PULL_CURSOR = "pull_cursor"
+        const val KEY_BACKFILL_FLOOR = "backfill_floor"
     }
 }
 
