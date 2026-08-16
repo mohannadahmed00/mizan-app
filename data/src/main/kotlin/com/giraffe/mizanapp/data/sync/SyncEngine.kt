@@ -4,6 +4,8 @@ import androidx.room.withTransaction
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.sync.dto.RemoteCompletion
 import com.giraffe.mizanapp.data.sync.dto.RemoteDayRecord
+import com.giraffe.mizanapp.data.sync.dto.RemoteProfile
+import com.giraffe.mizanapp.domain.sync.RetrySchedule
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.Instant
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,7 +86,136 @@ class SyncEngine(
 
     /** Sends every due outbox entry, per `contracts/sync-engine.md` §2. */
     suspend fun drain(): DrainOutcome {
-        TODO("T065")
+        while (true) {
+            val due = outbox.due(time.now(), limit = BATCH_LIMIT)
+            if (due.isEmpty()) return DrainOutcome.Drained
+
+            val dayRecords = due.filter { it.entityType == OutboxEntry.EntityType.DAY_RECORD }
+            val completions = due.filter { it.entityType == OutboxEntry.EntityType.COMPLETION }
+            val profiles = due.filter { it.entityType == OutboxEntry.EntityType.PROFILE }
+
+            if (dayRecords.isNotEmpty()) {
+                when (val outcome = sendDayRecords(dayRecords)) {
+                    BatchOutcome.Unreachable -> return DrainOutcome.StoppedUnreachable
+                    BatchOutcome.NotAuthenticated -> return DrainOutcome.StoppedUnauthenticated
+                    BatchOutcome.Continue -> Unit
+                }
+            }
+            if (completions.isNotEmpty()) {
+                when (val outcome = sendCompletions(completions)) {
+                    BatchOutcome.Unreachable -> return DrainOutcome.StoppedUnreachable
+                    BatchOutcome.NotAuthenticated -> return DrainOutcome.StoppedUnauthenticated
+                    BatchOutcome.Continue -> Unit
+                }
+            }
+            if (profiles.isNotEmpty()) {
+                when (val outcome = sendProfiles(profiles)) {
+                    BatchOutcome.Unreachable -> return DrainOutcome.StoppedUnreachable
+                    BatchOutcome.NotAuthenticated -> return DrainOutcome.StoppedUnauthenticated
+                    BatchOutcome.Continue -> Unit
+                }
+            }
+        }
+    }
+
+    private suspend fun sendDayRecords(entries: List<OutboxEntry>): BatchOutcome {
+        val rows = entries.map { Json.decodeFromString<RemoteDayRecord>(it.payload) }
+        return when (val result = remote.upsertDayRecords(rows)) {
+            is RemoteResult.Ok -> {
+                _reachable.value = true
+                accept(entries)
+                val at = time.now().toEpochMilli()
+                db.dayPlanDao().markSynced(entries.map { it.entityId }, at)
+                BatchOutcome.Continue
+            }
+            RemoteResult.Unreachable -> {
+                _reachable.value = false
+                deferBatch(entries)
+                BatchOutcome.Unreachable
+            }
+            RemoteResult.NotAuthenticated -> BatchOutcome.NotAuthenticated
+            is RemoteResult.Rejected -> {
+                _reachable.value = true
+                rejectNamed(entries, result.entityIds) { accepted ->
+                    db.dayPlanDao().markSynced(accepted.map { it.entityId }, time.now().toEpochMilli())
+                }
+                BatchOutcome.Continue
+            }
+        }
+    }
+
+    private suspend fun sendCompletions(entries: List<OutboxEntry>): BatchOutcome {
+        val rows = entries.map { Json.decodeFromString<RemoteCompletion>(it.payload) }
+        return when (val result = remote.upsertCompletions(rows)) {
+            is RemoteResult.Ok -> {
+                _reachable.value = true
+                accept(entries)
+                val at = time.now().toEpochMilli()
+                db.completionDao().markSynced(entries.map { it.entityId }, at)
+                BatchOutcome.Continue
+            }
+            RemoteResult.Unreachable -> {
+                _reachable.value = false
+                deferBatch(entries)
+                BatchOutcome.Unreachable
+            }
+            RemoteResult.NotAuthenticated -> BatchOutcome.NotAuthenticated
+            is RemoteResult.Rejected -> {
+                _reachable.value = true
+                rejectNamed(entries, result.entityIds) { accepted ->
+                    db.completionDao().markSynced(accepted.map { it.entityId }, time.now().toEpochMilli())
+                }
+                BatchOutcome.Continue
+            }
+        }
+    }
+
+    private suspend fun sendProfiles(entries: List<OutboxEntry>): BatchOutcome {
+        for (entry in entries) {
+            val row = Json.decodeFromString<RemoteProfile>(entry.payload)
+            when (val result = remote.upsertProfile(row)) {
+                is RemoteResult.Ok -> {
+                    _reachable.value = true
+                    accept(listOf(entry))
+                }
+                RemoteResult.Unreachable -> {
+                    _reachable.value = false
+                    deferBatch(listOf(entry))
+                    return BatchOutcome.Unreachable
+                }
+                RemoteResult.NotAuthenticated -> return BatchOutcome.NotAuthenticated
+                is RemoteResult.Rejected -> {
+                    _reachable.value = true
+                    deferBatch(listOf(entry))
+                }
+            }
+        }
+        return BatchOutcome.Continue
+    }
+
+    private suspend fun accept(entries: List<OutboxEntry>) {
+        outbox.accepted(entries.map { it.id })
+    }
+
+    private suspend fun deferBatch(entries: List<OutboxEntry>) {
+        for (entry in entries) {
+            outbox.deferred(listOf(entry.id), RetrySchedule.nextAttemptAt(entry.attempts, time.now()))
+        }
+    }
+
+    /** Defers only the entries named in [rejectedEntityIds]; accepts and marks synced the rest. */
+    private suspend fun rejectNamed(
+        entries: List<OutboxEntry>,
+        rejectedEntityIds: List<String>,
+        markAcceptedSynced: suspend (List<OutboxEntry>) -> Unit,
+    ) {
+        val rejected = entries.filter { it.entityId in rejectedEntityIds }
+        val accepted = entries - rejected.toSet()
+        if (rejected.isNotEmpty()) deferBatch(rejected)
+        if (accepted.isNotEmpty()) {
+            accept(accepted)
+            markAcceptedSynced(accepted)
+        }
     }
 
     /** First sign-in on a device: claim, enqueue, drain, pull — each step safe to re-run alone (research R7). */
@@ -96,10 +227,20 @@ class SyncEngine(
     suspend fun pull() {
         // T104 fills this in.
     }
+
+    private companion object {
+        const val BATCH_LIMIT = 200
+    }
 }
 
 sealed interface DrainOutcome {
     data object Drained : DrainOutcome
     data object StoppedUnreachable : DrainOutcome
     data object StoppedUnauthenticated : DrainOutcome
+}
+
+private sealed interface BatchOutcome {
+    data object Continue : BatchOutcome
+    data object Unreachable : BatchOutcome
+    data object NotAuthenticated : BatchOutcome
 }
