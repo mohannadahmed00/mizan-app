@@ -323,7 +323,7 @@ scores for every affected day.
 - [X] T106 [US3] Add a neutral container colour for `NOT_YET_KNOWN` to `app/src/main/java/com/giraffe/mizanapp/ui/DayCellColors.kt`, visually distinct from `NOTHING_RECORDED` and `OUTSIDE_RECORD`. No red, orange or amber value may enter this file. Re-run T096.
 - [X] T107 [US3] Render the loading state in `app/src/main/java/com/giraffe/mizanapp/history/HistoryScreen.kt` and `app/src/main/java/com/giraffe/mizanapp/insights/InsightsScreen.kt`: a `NOT_YET_KNOWN` date shows as still loading, **never as 0%, never as untouched, never as absent** (FR-023b); a provisional figure is labelled still-loading rather than final (FR-023d). Add a case each to `HistoryScreenTest` and `InsightsScreenTest`.
 - [X] T108 [US3] Register `RoomRecordCoverageRepository` in `app/src/main/java/com/giraffe/mizanapp/di/Modules.kt` and add the new constructor argument to the six use-case factories in `domainModule`.
-- [ ] T109 [US3] Run all four suites, then quickstart §4 SC-004 and SC-006 by hand on two emulators — including the documented different-version exception.
+- [ ] T109 [US3] Run all four suites, then quickstart §4 SC-004 and SC-006 by hand on two emulators — including the documented different-version exception. **Automated part done** (`:domain:test`, `:app:test`, `:data:connectedAndroidTest` 100/100, `:app:connectedAndroidTest` 74/74, all green). The two-emulator manual walkthrough is a human task, same as T072/T089 — left unchecked.
 
 **Checkpoint**: two devices converge, and a fresh device is usable immediately while history arrives.
 
