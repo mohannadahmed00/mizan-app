@@ -18,5 +18,8 @@ package com.giraffe.mizanapp.domain.sync
  * already exists locally — that day is left exactly as recorded (FR-024a).
  */
 fun mergeDayRecord(local: DayRecord?, remote: DayRecord?): DayRecord {
-    TODO("T018")
+    require(local != null || remote != null) { "mergeDayRecord requires at least one non-null side" }
+    if (local == null) return remote!!
+    if (remote == null) return local
+    return if (local.catalogueVersion <= remote.catalogueVersion) local else remote
 }
