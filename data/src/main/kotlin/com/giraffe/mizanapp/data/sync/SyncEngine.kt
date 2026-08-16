@@ -28,6 +28,7 @@ class SyncEngine(
     private val accountScope: AccountScope,
     private val remote: RemoteDataSource,
     private val time: TimeProvider,
+    private val onSessionExpired: suspend () -> Unit = {},
 ) {
 
     private val _reachable = MutableStateFlow(true)

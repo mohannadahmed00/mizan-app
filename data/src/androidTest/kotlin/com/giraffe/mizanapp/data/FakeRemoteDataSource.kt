@@ -48,6 +48,9 @@ class FakeRemoteDataSource : RemoteDataSource {
     /** Scopes reads the way row-level security would; writes carry their own userId. */
     var currentUserId: String? = null
 
+    /** When true, every write reports [RemoteResult.NotAuthenticated] — a token that could not be renewed. */
+    var forceNotAuthenticated: Boolean = false
+
     private val readCounter = AtomicLong(0)
     private val writeClock = AtomicLong(0)
 
@@ -69,6 +72,7 @@ class FakeRemoteDataSource : RemoteDataSource {
 
     override suspend fun upsertDayRecords(rows: List<RemoteDayRecord>): RemoteResult<Unit> {
         if (unreachable) return RemoteResult.Unreachable
+        if (forceNotAuthenticated) return RemoteResult.NotAuthenticated
         val rejected = rows.filter { it.date in rejectIds }
         if (rejected.isNotEmpty()) {
             return RemoteResult.Rejected("rejected", rejected.map { it.date })
@@ -90,6 +94,7 @@ class FakeRemoteDataSource : RemoteDataSource {
 
     override suspend fun upsertCompletions(rows: List<RemoteCompletion>): RemoteResult<Unit> {
         if (unreachable) return RemoteResult.Unreachable
+        if (forceNotAuthenticated) return RemoteResult.NotAuthenticated
         val rejected = rows.filter { it.id in rejectIds }
         if (rejected.isNotEmpty()) {
             return RemoteResult.Rejected("rejected", rejected.map { it.id })
@@ -110,6 +115,7 @@ class FakeRemoteDataSource : RemoteDataSource {
 
     override suspend fun upsertProfile(row: RemoteProfile): RemoteResult<Unit> {
         if (unreachable) return RemoteResult.Unreachable
+        if (forceNotAuthenticated) return RemoteResult.NotAuthenticated
         if (!admitWrite()) return RemoteResult.Unreachable
         if (!acknowledgeButDiscard) profiles[row.id] = row
         return RemoteResult.Ok(Unit)
@@ -117,6 +123,7 @@ class FakeRemoteDataSource : RemoteDataSource {
 
     override suspend fun changedSince(since: Instant?, limit: Int): RemoteResult<RemoteChanges> {
         if (unreachable) return RemoteResult.Unreachable
+        if (forceNotAuthenticated) return RemoteResult.NotAuthenticated
         readCounter.incrementAndGet()
         val userId = currentUserId
         val dr = dayRecords.values
@@ -136,6 +143,7 @@ class FakeRemoteDataSource : RemoteDataSource {
 
     override suspend fun recordsBetween(from: LocalDate, to: LocalDate): RemoteResult<RemoteChanges> {
         if (unreachable) return RemoteResult.Unreachable
+        if (forceNotAuthenticated) return RemoteResult.NotAuthenticated
         readCounter.incrementAndGet()
         val userId = currentUserId
         val dr = dayRecords.values
@@ -149,6 +157,7 @@ class FakeRemoteDataSource : RemoteDataSource {
 
     override suspend fun earliestRecordedDate(): RemoteResult<LocalDate?> {
         if (unreachable) return RemoteResult.Unreachable
+        if (forceNotAuthenticated) return RemoteResult.NotAuthenticated
         readCounter.incrementAndGet()
         val userId = currentUserId
         val earliest = (dayRecords.values.filter { it.userId == userId }.map { it.date } +
@@ -159,6 +168,7 @@ class FakeRemoteDataSource : RemoteDataSource {
 
     override suspend fun catalogues(knownFormatVersions: Set<Int>): RemoteResult<List<RemotePublication>> {
         if (unreachable) return RemoteResult.Unreachable
+        if (forceNotAuthenticated) return RemoteResult.NotAuthenticated
         readCounter.incrementAndGet()
         return RemoteResult.Ok(publications.toList())
     }
