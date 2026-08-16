@@ -67,6 +67,7 @@ class GetSectionBreakdown(
 }
 
 sealed interface SectionBreakdownOutcome {
-    data class Ready(val sections: List<SectionPerformance>) : SectionBreakdownOutcome
+    /** [provisional] is true while coverage over the requested period is incomplete (FR-023d). */
+    data class Ready(val sections: List<SectionPerformance>, val provisional: Boolean = false) : SectionBreakdownOutcome
     data class CatalogueUnavailable(val detail: String) : SectionBreakdownOutcome
 }
