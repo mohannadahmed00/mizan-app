@@ -63,7 +63,7 @@ sealed interface Destination {
  * `String` the default saver already knows how to store, joined on `"|"` —
  * a character that cannot appear in an ISO date.
  */
-private fun encode(destination: Destination): String = when (destination) {
+internal fun encode(destination: Destination): String = when (destination) {
     Destination.Today -> "TODAY"
     Destination.Week -> "WEEK"
     Destination.History -> "HISTORY"
@@ -71,7 +71,7 @@ private fun encode(destination: Destination): String = when (destination) {
     is Destination.DaySummary -> "DAY:${destination.date}"
 }
 
-private fun decode(encoded: String): Destination = when {
+internal fun decode(encoded: String): Destination = when {
     encoded == "TODAY" -> Destination.Today
     encoded == "WEEK" -> Destination.Week
     encoded == "HISTORY" -> Destination.History
@@ -80,7 +80,7 @@ private fun decode(encoded: String): Destination = when {
     else -> Destination.Today
 }
 
-private val StackSaver = Saver<List<Destination>, String>(
+internal val StackSaver = Saver<List<Destination>, String>(
     save = { stack -> stack.joinToString("|") { encode(it) } },
     restore = { encoded ->
         encoded.split("|").filter { it.isNotEmpty() }.map { decode(it) }
