@@ -19,8 +19,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -115,18 +117,27 @@ class SignInViewModelTest {
         val vm = buildViewModel(accounts)
         vm.onEvent(SignInEvent.EmailChanged("user@example.test"))
         vm.onEvent(SignInEvent.SubmitEmail)
-        advanceUntilIdle()
+        // runCurrent(), not advanceUntilIdle(): the latter would also fast-forward
+        // past the scheduled resend-enable delay below, defeating this test.
+        runCurrent()
 
         assertFalse(vm.state.value.resendEnabled)
         assertEquals(1, accounts.requestCodeCallCount)
 
-        // Inert before resendAvailableAt: the button does nothing.
+        // Inert before resendAvailableAt: the button does nothing. The gate reads
+        // the injected clock, which has not moved yet.
         vm.onEvent(SignInEvent.ResendCode)
-        advanceUntilIdle()
+        runCurrent()
         assertEquals(1, accounts.requestCodeCallCount)
 
-        // Once the wait has elapsed, resend states it is available and works.
+        // Once the wait has elapsed on both the injected clock (the gate) and the
+        // coroutine scheduler (the delay backing resendEnabled), resend states it
+        // is available and works.
         clock.advanceBy(Duration.ofSeconds(31))
+        advanceTimeBy(Duration.ofSeconds(31).toMillis())
+        runCurrent()
+        assertTrue(vm.state.value.resendEnabled)
+
         vm.onEvent(SignInEvent.ResendCode)
         advanceUntilIdle()
         assertEquals(2, accounts.requestCodeCallCount)
