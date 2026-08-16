@@ -21,7 +21,7 @@ data class RecordCoverage(
 ) {
 
     /** Whether this device can speak for [date] yet. */
-    fun isKnown(date: LocalDate): Boolean = TODO("T016")
+    fun isKnown(date: LocalDate): Boolean = complete || knownFrom == null || !date.isBefore(knownFrom)
 
     companion object {
 
