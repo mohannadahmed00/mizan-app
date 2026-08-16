@@ -17,6 +17,8 @@ class ConfirmSignInCode(private val accounts: AccountRepository, private val syn
         code: String,
         replaceLocalRecords: Boolean = false,
     ): CodeConfirmation {
-        TODO("T061")
+        val outcome = accounts.confirmCode(email, code, replaceLocalRecords)
+        if (outcome is CodeConfirmation.SignedIn) sync.syncNow()
+        return outcome
     }
 }
