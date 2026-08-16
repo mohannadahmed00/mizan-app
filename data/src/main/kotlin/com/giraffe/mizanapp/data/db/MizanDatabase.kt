@@ -2,14 +2,20 @@ package com.giraffe.mizanapp.data.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.giraffe.mizanapp.data.db.daos.AccountScopeDao
 import com.giraffe.mizanapp.data.db.daos.CatalogueDao
 import com.giraffe.mizanapp.data.db.daos.CompletionDao
 import com.giraffe.mizanapp.data.db.daos.DayPlanDao
+import com.giraffe.mizanapp.data.db.daos.OutboxDao
+import com.giraffe.mizanapp.data.db.daos.SyncCursorDao
+import com.giraffe.mizanapp.data.db.entities.AccountScopeEntity
 import com.giraffe.mizanapp.data.db.entities.CatalogueVersionEntity
 import com.giraffe.mizanapp.data.db.entities.CompletionEntity
 import com.giraffe.mizanapp.data.db.entities.DayPlanEntity
+import com.giraffe.mizanapp.data.db.entities.OutboxEntity
 import com.giraffe.mizanapp.data.db.entities.PlannedTaskEntity
 import com.giraffe.mizanapp.data.db.entities.SectionEntity
+import com.giraffe.mizanapp.data.db.entities.SyncCursorEntity
 import com.giraffe.mizanapp.data.db.entities.TaskDefinitionEntity
 import com.giraffe.mizanapp.data.db.entities.TaskVersionEntity
 
@@ -28,8 +34,11 @@ import com.giraffe.mizanapp.data.db.entities.TaskVersionEntity
         DayPlanEntity::class,
         PlannedTaskEntity::class,
         CompletionEntity::class,
+        OutboxEntity::class,
+        SyncCursorEntity::class,
+        AccountScopeEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class MizanDatabase : RoomDatabase() {
@@ -39,6 +48,12 @@ abstract class MizanDatabase : RoomDatabase() {
     abstract fun dayPlanDao(): DayPlanDao
 
     abstract fun completionDao(): CompletionDao
+
+    abstract fun outboxDao(): OutboxDao
+
+    abstract fun syncCursorDao(): SyncCursorDao
+
+    abstract fun accountScopeDao(): AccountScopeDao
 
     companion object {
         const val NAME = "mizan.db"

@@ -16,5 +16,5 @@ import androidx.room.Room
  */
 fun createMizanDatabase(context: Context): MizanDatabase =
     Room.databaseBuilder(context, MizanDatabase::class.java, MizanDatabase.NAME)
-        .addMigrations(MIGRATION_1_2)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
         .build()

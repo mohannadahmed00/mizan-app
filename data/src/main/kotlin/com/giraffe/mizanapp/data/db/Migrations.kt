@@ -22,3 +22,10 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         db.execSQL("ALTER TABLE day_plans ADD COLUMN origin TEXT NOT NULL DEFAULT 'OPENED'")
     }
 }
+
+/** DDL added by T039. Kept empty until then so `3.json` can be exported first. */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // T039 fills this in.
+    }
+}
