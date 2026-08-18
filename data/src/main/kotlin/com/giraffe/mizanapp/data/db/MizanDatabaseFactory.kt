@@ -2,6 +2,7 @@ package com.giraffe.mizanapp.data.db
 
 import android.content.Context
 import androidx.room.Room
+import com.giraffe.mizanapp.data.db.daos.AccountScopeDao
 
 /**
  * Builds the database.
@@ -18,3 +19,13 @@ fun createMizanDatabase(context: Context): MizanDatabase =
     Room.databaseBuilder(context, MizanDatabase::class.java, MizanDatabase.NAME)
         .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
         .build()
+
+/**
+ * `:app`'s DI wiring needs [com.giraffe.mizanapp.data.sync.AccountScope]'s DAO
+ * directly (every other repository takes the whole [MizanDatabase] instead),
+ * and calling `database.accountScopeDao()` straight from `:app` fails to
+ * compile there — `MizanDatabase`'s `RoomDatabase` supertype isn't on `:app`'s
+ * classpath (`implementation`, not `api`). This keeps that resolution inside
+ * `:data`, same as [createMizanDatabase].
+ */
+fun accountScopeDaoOf(database: MizanDatabase): AccountScopeDao = database.accountScopeDao()

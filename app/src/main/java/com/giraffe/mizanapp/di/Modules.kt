@@ -1,6 +1,7 @@
 package com.giraffe.mizanapp.di
 
 import com.giraffe.mizanapp.data.db.MizanDatabase
+import com.giraffe.mizanapp.data.db.accountScopeDaoOf
 import com.giraffe.mizanapp.data.db.createMizanDatabase
 import com.giraffe.mizanapp.data.repository.OutboxSyncRepository
 import com.giraffe.mizanapp.data.repository.RemoteCataloguePublicationRepository
@@ -100,6 +101,7 @@ val dataModule = module {
     // still gets a real RemoteDataSource, just one that reports Unreachable (FR-003).
     single { SyncScheduler(androidContext()) }
     single { Outbox(get(), get(), get()) }
+    single { accountScopeDaoOf(get()) }
     single { AccountScope(get(), get()) }
     single<RemoteDataSource> { createRemoteDataSource() }
     single { SyncEngine(get(), get(), get(), get(), get(), get(), ::endSupabaseSession) }
