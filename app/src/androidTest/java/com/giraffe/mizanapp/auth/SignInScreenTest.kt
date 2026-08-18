@@ -4,11 +4,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.giraffe.mizanapp.domain.identity.CodeRejection
 import com.giraffe.mizanapp.domain.identity.SignInStep
+import com.giraffe.mizanapp.domain.repository.CodeConfirmation
 import java.time.Instant
 import org.junit.Rule
 import org.junit.Test
@@ -81,6 +83,24 @@ class SignInScreenTest {
         }
         compose.onAllNodes(hasText("password", substring = true, ignoreCase = true))
             .assertCountEquals(0)
+    }
+
+    @Test
+    fun the_account_switch_confirmation_names_the_account_being_replaced() {
+        compose.setContent {
+            SignInScreen(
+                state = SignInUiState(
+                    replaceConfirmation = CodeConfirmation.WouldReplaceLocalRecords(
+                        currentEmail = "old@example.test",
+                        recordedDays = 30,
+                        completionCount = 90,
+                        unsyncedCount = 3,
+                    ),
+                ),
+                onEvent = {},
+            )
+        }
+        compose.onAllNodesWithText("old@example.test", substring = true)[0].assertExists()
     }
 
     @Test
