@@ -12,6 +12,7 @@ import com.giraffe.mizanapp.domain.identity.SignOutMode
 import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.CodeConfirmation
 import com.giraffe.mizanapp.domain.repository.CodeRequest
+import com.giraffe.mizanapp.domain.repository.LocalRecordCounts
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.OtpType
@@ -90,10 +91,11 @@ class SupabaseAccountRepository(
 
         val existing = accountScope.current()
         if (existing is AccountSession.SignedIn && !existing.email.equals(email, ignoreCase = true) && !replaceLocalRecords) {
+            val counts = localRecordCounts()
             return CodeConfirmation.WouldReplaceLocalRecords(
                 currentEmail = existing.email,
-                recordedDays = db.dayPlanDao().countPlans(),
-                completionCount = db.completionDao().countAll(),
+                recordedDays = counts.recordedDays,
+                completionCount = counts.completionCount,
                 unsyncedCount = db.outboxDao().count(),
             )
         }
@@ -141,6 +143,11 @@ class SupabaseAccountRepository(
             )
         }
     }
+
+    override suspend fun localRecordCounts(): LocalRecordCounts = LocalRecordCounts(
+        recordedDays = db.dayPlanDao().countPlans(),
+        completionCount = db.completionDao().countAll(),
+    )
 
     private companion object {
         val RESEND_WAIT: Duration = Duration.ofSeconds(30)

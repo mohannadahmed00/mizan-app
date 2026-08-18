@@ -70,6 +70,7 @@ class SignInViewModelTest {
         }
         override suspend fun signOut(mode: SignOutMode) = error("not used")
         override suspend fun updateDisplayName(name: String?) = error("not used")
+        override suspend fun localRecordCounts() = error("not used")
     }
 
     private class NoOpSyncRepository : SyncRepository {

@@ -23,6 +23,7 @@ class ConfirmSignInCodeTest {
         override suspend fun confirmCode(email: String, code: String, replaceLocalRecords: Boolean) = outcome
         override suspend fun signOut(mode: com.giraffe.mizanapp.domain.identity.SignOutMode) = error("not used")
         override suspend fun updateDisplayName(name: String?) = error("not used")
+        override suspend fun localRecordCounts() = error("not used")
     }
 
     private class CountingSyncRepository : SyncRepository {

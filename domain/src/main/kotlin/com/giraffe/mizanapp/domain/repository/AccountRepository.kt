@@ -58,7 +58,16 @@ interface AccountRepository {
 
     /** Optional, empty by default, editable at any time, never required (FR-007e). */
     suspend fun updateDisplayName(name: String?)
+
+    /**
+     * Local-only counts behind a removing sign-out's confirmation (FR-007b) —
+     * how many recorded days and completions are about to leave this device.
+     * Reads nothing from the account and changes nothing.
+     */
+    suspend fun localRecordCounts(): LocalRecordCounts
 }
+
+data class LocalRecordCounts(val recordedDays: Int, val completionCount: Int)
 
 sealed interface CodeRequest {
     data class Sent(val resendAvailableAt: Instant) : CodeRequest
