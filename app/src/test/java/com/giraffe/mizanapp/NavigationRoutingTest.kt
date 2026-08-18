@@ -98,6 +98,21 @@ class NavigationRoutingTest {
     }
 
     @Test
+    fun `Profile round-trips through encode and decode`() {
+        assertEquals("PROFILE", encode(Destination.Profile))
+        assertEquals(Destination.Profile, decode("PROFILE"))
+    }
+
+    @Test
+    fun `a stack containing Profile survives the StackSaver save and restore cycle`() {
+        val stack = listOf<Destination>(Destination.Today, Destination.Profile)
+        val scope = SaverScope { true }
+        val saved = with(StackSaver) { scope.save(stack) }
+        val restored = StackSaver.restore(requireNotNull(saved))
+        assertEquals(stack, restored)
+    }
+
+    @Test
     fun `an unrecognised token still falls back to Today`() {
         assertEquals(Destination.Today, decode("SOMETHING-UNKNOWN"))
     }

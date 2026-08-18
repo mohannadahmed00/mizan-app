@@ -29,6 +29,8 @@ import com.giraffe.mizanapp.history.HistoryScreen
 import com.giraffe.mizanapp.history.HistoryViewModel
 import com.giraffe.mizanapp.insights.InsightsScreen
 import com.giraffe.mizanapp.insights.InsightsViewModel
+import com.giraffe.mizanapp.profile.ProfileScreen
+import com.giraffe.mizanapp.profile.ProfileViewModel
 import com.giraffe.mizanapp.sync.SyncStatusViewModel
 import com.giraffe.mizanapp.today.TodayScreen
 import com.giraffe.mizanapp.today.TodayViewModel
@@ -57,6 +59,7 @@ sealed interface Destination {
     data object Insights : Destination
     data class DaySummary(val date: LocalDate) : Destination
     data object SignIn : Destination
+    data object Profile : Destination
 }
 
 /**
@@ -74,6 +77,7 @@ internal fun encode(destination: Destination): String = when (destination) {
     Destination.Insights -> "INSIGHTS"
     is Destination.DaySummary -> "DAY:${destination.date}"
     Destination.SignIn -> "SIGNIN"
+    Destination.Profile -> "PROFILE"
 }
 
 internal fun decode(encoded: String): Destination = when {
@@ -82,6 +86,7 @@ internal fun decode(encoded: String): Destination = when {
     encoded == "HISTORY" -> Destination.History
     encoded == "INSIGHTS" -> Destination.Insights
     encoded == "SIGNIN" -> Destination.SignIn
+    encoded == "PROFILE" -> Destination.Profile
     encoded.startsWith("DAY:") -> Destination.DaySummary(LocalDate.parse(encoded.removePrefix("DAY:")))
     else -> Destination.Today
 }
@@ -151,6 +156,7 @@ private fun AppRoute(modifier: Modifier = Modifier) {
         Destination.Insights -> InsightsRoute(modifier = modifier)
         is Destination.DaySummary -> DaySummaryRoute(date = current.date, modifier = modifier)
         Destination.SignIn -> SignInRoute(modifier = modifier)
+        Destination.Profile -> ProfileRoute(modifier = modifier)
     }
 }
 
@@ -188,6 +194,14 @@ private fun SignInRoute(modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     SignInScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
+}
+
+@Composable
+private fun ProfileRoute(modifier: Modifier = Modifier) {
+    val viewModel: ProfileViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    ProfileScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
 }
 
 @Composable
