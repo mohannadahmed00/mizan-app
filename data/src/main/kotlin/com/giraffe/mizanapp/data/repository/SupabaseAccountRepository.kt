@@ -2,6 +2,7 @@ package com.giraffe.mizanapp.data.repository
 
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.sync.AccountScope
+import com.giraffe.mizanapp.data.sync.LocalRecordWipe
 import com.giraffe.mizanapp.data.sync.Outbox
 import com.giraffe.mizanapp.data.sync.OutboxEntry
 import com.giraffe.mizanapp.data.sync.createSupabaseClient
@@ -53,6 +54,8 @@ class SupabaseAccountRepository(
     private val time: TimeProvider,
 ) : AccountRepository {
 
+    private val wipe = LocalRecordWipe(db)
+
     override fun observeSession(): Flow<AccountSession> {
         val c = client ?: return flowOf(AccountSession.SignedOut)
         return combine(c.auth.sessionStatus, accountScope.observe()) { status, scoped ->
@@ -87,8 +90,9 @@ class SupabaseAccountRepository(
     }
 
     override suspend fun confirmCode(email: String, code: String, replaceLocalRecords: Boolean): CodeConfirmation {
-        val c = client ?: return CodeConfirmation.NeedsConnection
-
+        // Detected entirely locally, from AccountScope alone (research R8) — this
+        // has to run before the client check below, or a build with no Supabase
+        // configuration could never surface it at all.
         val existing = accountScope.current()
         if (existing is AccountSession.SignedIn && !existing.email.equals(email, ignoreCase = true) && !replaceLocalRecords) {
             val counts = localRecordCounts()
@@ -100,12 +104,14 @@ class SupabaseAccountRepository(
             )
         }
 
+        val c = client ?: return CodeConfirmation.NeedsConnection
+
         return try {
             when (val result = c.auth.verifyEmailOtp(type = OtpType.Email.EMAIL, email = email, token = code)) {
                 is OtpVerifyResult.Authenticated -> {
                     val userId = result.session.user?.id ?: return CodeConfirmation.NeedsConnection
                     if (replaceLocalRecords && existing is AccountSession.SignedIn) {
-                        TODO("T126")
+                        wipe.wipe()
                     }
                     accountScope.set(userId, email, null)
                     CodeConfirmation.SignedIn(AccountSession.SignedIn(userId = userId, email = email))
@@ -123,10 +129,8 @@ class SupabaseAccountRepository(
     }
 
     override suspend fun signOut(mode: SignOutMode) {
-        when (mode) {
-            SignOutMode.KEEP_LOCAL_RECORDS -> client?.auth?.signOut()
-            SignOutMode.REMOVE_LOCAL_RECORDS -> TODO("T125")
-        }
+        client?.auth?.signOut()
+        if (mode == SignOutMode.REMOVE_LOCAL_RECORDS) wipe.wipe()
     }
 
     override suspend fun updateDisplayName(name: String?) {

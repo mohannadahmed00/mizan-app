@@ -46,7 +46,11 @@ class ForeignAccountIsolationTest : DbTestBase() {
         dayPlans.ensurePlanFor(time.today())
         val plan = requireNotNull(dayPlans.planFor(time.today()))
         completions.record(time.today(), plan.plannedTasks.first().taskSlug)
-        val engine = SyncEngine(db, Outbox(db, time), AccountScope(db.accountScopeDao(), time), fake, catalogue, time)
+        val accountScope = AccountScope(db.accountScopeDao(), time)
+        // Mirrors what SupabaseAccountRepository.confirmCode does before triggering
+        // sync: set the real email first, since migrateOnSignIn alone leaves it "".
+        accountScope.set(userA, emailA, null)
+        val engine = SyncEngine(db, Outbox(db, time), accountScope, fake, catalogue, time)
         engine.migrateOnSignIn(userA)
     }
 
