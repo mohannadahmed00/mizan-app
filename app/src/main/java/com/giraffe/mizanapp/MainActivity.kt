@@ -24,6 +24,8 @@ import com.giraffe.mizanapp.auth.SignInScreen
 import com.giraffe.mizanapp.auth.SignInViewModel
 import com.giraffe.mizanapp.daysummary.DaySummaryScreen
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
+import com.giraffe.mizanapp.domain.identity.AccountSession
+import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.history.HistoryEvent
 import com.giraffe.mizanapp.history.HistoryScreen
 import com.giraffe.mizanapp.history.HistoryViewModel
@@ -140,7 +142,8 @@ private fun AppRoute(modifier: Modifier = Modifier) {
     when (val current = stack.last()) {
         Destination.Today -> TodayRoute(
             onOpenWeek = { push(Destination.Week) },
-            onOpenAccount = { push(Destination.SignIn) },
+            onOpenSignIn = { push(Destination.SignIn) },
+            onOpenProfile = { push(Destination.Profile) },
             modifier = modifier,
         )
         Destination.Week -> WeekRoute(
@@ -161,7 +164,12 @@ private fun AppRoute(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TodayRoute(onOpenWeek: () -> Unit, onOpenAccount: () -> Unit = {}, modifier: Modifier = Modifier) {
+private fun TodayRoute(
+    onOpenWeek: () -> Unit,
+    onOpenSignIn: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     val viewModel: TodayViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -178,11 +186,16 @@ private fun TodayRoute(onOpenWeek: () -> Unit, onOpenAccount: () -> Unit = {}, m
     val syncViewModel: SyncStatusViewModel = koinViewModel()
     val syncStatus by syncViewModel.status.collectAsStateWithLifecycle()
 
+    // The single, dismissible entry point (FR-004): signed out it opens
+    // SignIn, signed in it opens Profile — never a gate, never automatic.
+    val accounts: AccountRepository = koinInject()
+    val session by accounts.observeSession().collectAsStateWithLifecycle(initialValue = AccountSession.SignedOut)
+
     TodayScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onOpenWeek = onOpenWeek,
-        onOpenAccount = onOpenAccount,
+        onOpenAccount = if (session is AccountSession.SignedIn) onOpenProfile else onOpenSignIn,
         syncStatus = syncStatus,
         modifier = modifier,
     )

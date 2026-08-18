@@ -43,10 +43,13 @@ import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeekSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeeklyTrend
 import com.giraffe.mizanapp.domain.usecase.RequestSignInCode
+import com.giraffe.mizanapp.domain.usecase.SignOut
+import com.giraffe.mizanapp.domain.usecase.UpdateDisplayName
 import com.giraffe.mizanapp.auth.SignInViewModel
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
 import com.giraffe.mizanapp.history.HistoryViewModel
 import com.giraffe.mizanapp.insights.InsightsViewModel
+import com.giraffe.mizanapp.profile.ProfileViewModel
 import com.giraffe.mizanapp.sync.SyncStatusViewModel
 import com.giraffe.mizanapp.today.TodayViewModel
 import com.giraffe.mizanapp.week.WeekViewModel
@@ -106,6 +109,8 @@ val dataModule = module {
     single<CataloguePublicationRepository> { RemoteCataloguePublicationRepository(get(), get(), get()) }
     factory { RequestSignInCode(get()) }
     factory { ConfirmSignInCode(get(), get()) }
+    factory { SignOut(get(), get()) }
+    factory { UpdateDisplayName(get()) }
     worker { SyncWorker(get(), get(), get(), get(), get()) }
 }
 
@@ -117,6 +122,7 @@ val appModule = module {
     viewModel { InsightsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get(), get(), get(), isSupabaseConfigured()) }
     viewModel { SyncStatusViewModel(get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get()) }
 }
 
 val mizanModules = listOf(domainModule, dataModule, appModule)
