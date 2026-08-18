@@ -2,8 +2,8 @@ package com.giraffe.mizanapp.di
 
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.db.createMizanDatabase
-import com.giraffe.mizanapp.data.repository.NoOpCataloguePublicationRepository
 import com.giraffe.mizanapp.data.repository.OutboxSyncRepository
+import com.giraffe.mizanapp.data.repository.RemoteCataloguePublicationRepository
 import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
 import com.giraffe.mizanapp.data.repository.RoomCompletionRepository
 import com.giraffe.mizanapp.data.repository.RoomDayPlanRepository
@@ -103,7 +103,7 @@ val dataModule = module {
     single { Backfill(get(), get(), get(), get()) }
     single<SyncRepository> { OutboxSyncRepository(get(), get(), get(), scheduler = get()) }
     single<AccountRepository> { createAccountRepository(get(), get(), get(), get()) }
-    single<CataloguePublicationRepository> { NoOpCataloguePublicationRepository() }
+    single<CataloguePublicationRepository> { RemoteCataloguePublicationRepository(get(), get(), get()) }
     factory { RequestSignInCode(get()) }
     factory { ConfirmSignInCode(get(), get()) }
     worker { SyncWorker(get(), get(), get(), get(), get()) }
