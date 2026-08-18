@@ -308,6 +308,24 @@ Charts are only meaningful once there is enough correct history to chart, and th
 
 ## Phase 7 — Identity & Cloud Sync (Supabase)
 
+**Status: delivered** (`specs/007-identity-cloud-sync/`). Automated: `:domain:test`, `:app:test`,
+`:data:connectedAndroidTest`, `:app:connectedAndroidTest` all green. Outstanding: the manual
+two-emulator convergence walkthrough, the fresh-install/airplane-mode walkthrough, and the RLS
+re-verification / live contract test that need real Supabase CLI credentials this environment does
+not have — see `specs/007-identity-cloud-sync/tasks.md` T109, T115, T129, T130, T131.
+
+**Conflict policy actually shipped** — concurrent-record and concurrent-undo, resolved without a
+timestamp comparison: a record merges as the union (nothing recorded on either device is ever
+discarded); an undo (a tombstone) beats a record, on whichever device or in whichever order the two
+arrive, because a tombstone can only ever be set, never cleared, once applied. Two devices opening
+the same date for the first time under two different catalogue versions settle on the lower version
+— never re-derived, never re-priced, once a device has materialised its own copy of that day
+(Principle III). This is what `mergeCompletion` and `mergeDayRecord` encode in
+`domain/src/main/kotlin/com/giraffe/mizanapp/domain/sync/`; the plain-language version of it — "If
+you record on two devices at once, both records are kept. If you undo something on one device, it
+stays undone on the other." — is the FR-019a user-facing obligation, and it is satisfied by the
+profile screen's own statement (`ProfileUiState.conflictPolicy`, T127), not by this file.
+
 ### Goal
 Introduce accounts and bidirectional sync without changing the offline-first behavior of anything shipped so far.
 
