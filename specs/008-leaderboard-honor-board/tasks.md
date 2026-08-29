@@ -279,7 +279,7 @@ participant's own position, total and region label. No Honor Board and no period
 - [X] T044 [US1] Create `app/src/main/java/com/giraffe/mizanapp/leaderboard/LeaderboardSection.kt` rendering the ranking rows and the region label (FR-016, FR-026). Every row uses the same container, background and text colour; only `isViewer` may vary the container, and it must vary identically regardless of position (FR-038).
 - [X] T045 [US1] Host `LeaderboardSection` **inside the existing Progress area**. Do **not** add a `Destination` entry, do **not** add a navigation route, do **not** touch the three-tab navigation in `app/src/main/java/com/giraffe/mizanapp/MainActivity.kt` beyond what hosting requires (FR-032). Re-run T035 — MUST pass.
 - [X] T046 [US1] Register `RoomParticipationRepository`, `RoomLeaderboardRepository`, `LeaderboardRefresh`, the three use cases and `LeaderboardViewModel` in `app/src/main/java/com/giraffe/mizanapp/di/Modules.kt`. Koin only — no other DI framework.
-- [ ] T047 [US1] Run `.\gradlew :domain:test :app:test :data:connectedAndroidTest :app:connectedAndroidTest`. All green before proceeding.
+- [X] T047 [US1] Run `.\gradlew :domain:test :app:test :data:connectedAndroidTest :app:connectedAndroidTest`. All green before proceeding.
 
 **Checkpoint**: US1 is independently shippable — opt in, see your region's ranking, own row marked.
 
