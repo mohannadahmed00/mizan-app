@@ -2,6 +2,7 @@ package com.giraffe.mizanapp.domain.week
 
 import com.giraffe.mizanapp.domain.day.Completion
 import com.giraffe.mizanapp.domain.day.DayPlan
+import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import java.time.LocalDate
 
 /**
@@ -27,8 +28,9 @@ fun buildWeekSummary(
     plans: List<DayPlan>,
     completions: List<Completion>,
     projectedAvailable: Map<LocalDate, Int>,
+    coverage: RecordCoverage = RecordCoverage.completeFrom(recordStart),
 ): WeekSummary {
-    val days = buildDayCells(week.dates, today, recordStart, plans, completions, projectedAvailable)
+    val days = buildDayCells(week.dates, today, recordStart, plans, completions, projectedAvailable, coverage)
 
     val elapsedAvailable = days.filter { !it.date.isAfter(today) }.sumOf { it.available }
     val futureAvailable = days.filter { it.date.isAfter(today) }.sumOf { it.available }
@@ -61,6 +63,7 @@ fun buildDayCells(
     plans: List<DayPlan>,
     completions: List<Completion>,
     projectedAvailable: Map<LocalDate, Int>,
+    coverage: RecordCoverage,
 ): List<DayCell> {
     val plansByDate = plans.associateBy { it.date }
     val completionsByDate = completions.filter { it.isLive }.groupBy { it.creditedDate }
@@ -71,6 +74,7 @@ fun buildDayCells(
 
         val state = when {
             date.isAfter(today) -> DayCellState.NOT_YET_ELAPSED
+            !coverage.isKnown(date) -> DayCellState.NOT_YET_KNOWN
             recordStart == null || date.isBefore(recordStart) -> DayCellState.OUTSIDE_RECORD
             plan == null -> DayCellState.NOTHING_RECORDED
             earned == 0 -> DayCellState.NOTHING_RECORDED

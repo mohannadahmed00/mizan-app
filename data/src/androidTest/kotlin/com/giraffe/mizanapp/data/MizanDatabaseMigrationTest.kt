@@ -5,7 +5,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.db.MIGRATION_1_2
+import com.giraffe.mizanapp.data.db.MIGRATION_2_3
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -55,6 +58,73 @@ class MizanDatabaseMigrationTest {
         migrated.query("SELECT pointsAwarded FROM completions WHERE id = 'c1'").use { cursor ->
             assertEquals(true, cursor.moveToFirst())
             assertEquals(2, cursor.getInt(cursor.getColumnIndexOrThrow("pointsAwarded")))
+        }
+    }
+
+    /**
+     * The 2 -> 3 migration adds `outbox`, `sync_cursors`, `account_scope` and a
+     * nullable `syncedAt` on `day_plans` and `completions` — and nothing else.
+     * Every figure already recorded under v2 must survive byte-identical.
+     */
+    @Test
+    fun migrate2To3_preserves_every_figure_and_adds_only_sync_tables() {
+        val v2: SupportSQLiteDatabase = helper.createDatabase(DB_NAME, 2).apply {
+            execSQL(
+                "INSERT INTO day_plans (id, date, catalogueVersion, hijriLabel, availablePoints, updatedAt, origin) " +
+                    "VALUES ('p1', '2026-08-08', 1, 'X', 69, 1, 'OPENED')",
+            )
+            for (i in 1..3) {
+                execSQL(
+                    "INSERT INTO planned_tasks (id, dayPlanId, taskSlug, sectionId, sectionLabel, sectionOrder, " +
+                        "displayPosition, label, points, maxOccurrencesPerDay, updatedAt) " +
+                        "VALUES ('t$i', 'p1', 'task-$i', 's1', 'Section', 0, $i, 'Task $i', $i, 1, 1)",
+                )
+            }
+            for (i in 1..4) {
+                execSQL(
+                    "INSERT INTO completions (id, dayPlanId, taskSlug, creditedDate, pointsAwarded, recordedAt, updatedAt) " +
+                        "VALUES ('c$i', 'p1', 'task-${((i - 1) % 3) + 1}', '2026-08-08', $i, $i, $i)",
+                )
+            }
+        }
+        v2.close()
+
+        val migrated = helper.runMigrationsAndValidate(DB_NAME, 3, true, MIGRATION_2_3)
+
+        migrated.query("SELECT availablePoints, hijriLabel, origin, syncedAt FROM day_plans WHERE id = 'p1'").use { cursor ->
+            assertEquals(true, cursor.moveToFirst())
+            assertEquals(69, cursor.getInt(cursor.getColumnIndexOrThrow("availablePoints")))
+            assertEquals("X", cursor.getString(cursor.getColumnIndexOrThrow("hijriLabel")))
+            assertEquals("OPENED", cursor.getString(cursor.getColumnIndexOrThrow("origin")))
+            assertNull(cursor.getString(cursor.getColumnIndexOrThrow("syncedAt")))
+        }
+
+        migrated.query("SELECT COUNT(*) FROM planned_tasks WHERE dayPlanId = 'p1'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(3, cursor.getInt(0))
+        }
+
+        migrated.query("SELECT pointsAwarded, syncedAt FROM completions ORDER BY id").use { cursor ->
+            var count = 0
+            while (cursor.moveToNext()) {
+                count++
+                assertEquals(count, cursor.getInt(cursor.getColumnIndexOrThrow("pointsAwarded")))
+                assertNull(cursor.getString(cursor.getColumnIndexOrThrow("syncedAt")))
+            }
+            assertEquals(4, count)
+        }
+
+        migrated.query("SELECT COUNT(*) FROM outbox").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+        migrated.query("SELECT COUNT(*) FROM sync_cursors").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+        migrated.query("SELECT COUNT(*) FROM account_scope").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
         }
     }
 }

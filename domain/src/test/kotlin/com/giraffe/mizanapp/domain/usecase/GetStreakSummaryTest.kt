@@ -36,7 +36,7 @@ class GetStreakSummaryTest {
         time: FakeTimeProvider,
         completionsRepo: FakeWeekCompletionRepository = FakeWeekCompletionRepository(),
         dayPlansRepo: FakeWeekDayPlanRepository = FakeWeekDayPlanRepository(time = time),
-    ) = GetStreakSummary(completionsRepo, dayPlansRepo, time) to (completionsRepo to dayPlansRepo)
+    ) = GetStreakSummary(completionsRepo, dayPlansRepo, time, FakeRecordCoverageRepository()) to (completionsRepo to dayPlansRepo)
 
     @Test
     fun reports_the_seeded_run() = runTest {

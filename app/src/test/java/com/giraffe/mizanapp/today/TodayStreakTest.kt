@@ -65,7 +65,7 @@ class TodayStreakTest {
         val policy = DayWritePolicy(clock)
         val realCompletions = FakeCompletionRepository(plans, policy, clock)
         val completions = completionsOverride?.invoke(realCompletions) ?: realCompletions
-        val getStreakSummary = GetStreakSummary(completions, plans, clock)
+        val getStreakSummary = GetStreakSummary(completions, plans, clock, FakeRecordCoverageRepository())
         val vm = TodayViewModel(
             catalogue = catalogue,
             dayPlans = plans,

@@ -103,7 +103,7 @@ class DayOpenMaterialisationTest : DbTestBase() {
         val streakBefore = buildStreakSummary(datesBefore, time.today(), time.now(), time.zone(), dayPlans.earliestPlanDate())
 
         // Browse the whole record and open ten unplanned days.
-        val historyUseCase = GetHistoryPage(dayPlans, completions, catalogue, time)
+        val historyUseCase = GetHistoryPage(dayPlans, completions, catalogue, time, coverageRepo)
         var cursor: com.giraffe.mizanapp.domain.week.WeekKey? = null
         var hasMore: Boolean
         do {

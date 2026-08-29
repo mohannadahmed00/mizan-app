@@ -17,6 +17,8 @@ data class StreakSummary(
     val recentActivity: List<ActivityDay>,
     val showBreakNotice: Boolean,
     val isAtRisk: Boolean,
+    /** True while coverage over the streak's range is incomplete (FR-023d). */
+    val provisional: Boolean = false,
 ) {
     init {
         require(current >= 0) { "current may never be negative: $current" }

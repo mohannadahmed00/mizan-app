@@ -6,6 +6,7 @@ import com.giraffe.mizanapp.domain.insights.buildMonthOverview
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.week.projectAvailablePoints
 import java.time.LocalDate
@@ -25,11 +26,13 @@ class GetMonthOverview(
     private val completions: CompletionRepository,
     private val catalogue: CatalogueRepository,
     private val time: TimeProvider,
+    private val recordCoverage: RecordCoverageRepository,
 ) {
     suspend operator fun invoke(month: YearMonth): MonthOverviewOutcome {
         val currentVersion = catalogue.currentVersion()
             ?: return MonthOverviewOutcome.CatalogueUnavailable("no catalogue is available")
 
+        val coverage = recordCoverage.coverage()
         val today = time.today()
         val recordStart = plans.earliestPlanDate()
         val start = month.atDay(1)
@@ -77,7 +80,7 @@ class GetMonthOverview(
             }
         }
 
-        val overview = buildMonthOverview(month, today, recordStart, storedPlans, liveCompletions, projected)
+        val overview = buildMonthOverview(month, today, recordStart, storedPlans, liveCompletions, projected, coverage)
         return MonthOverviewOutcome.Ready(overview)
     }
 }

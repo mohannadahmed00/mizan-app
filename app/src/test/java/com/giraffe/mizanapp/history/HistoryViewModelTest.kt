@@ -7,6 +7,7 @@ import com.giraffe.mizanapp.today.FakeCatalogueRepository
 import com.giraffe.mizanapp.today.FakeClock
 import com.giraffe.mizanapp.today.FakeCompletionRepository
 import com.giraffe.mizanapp.today.FakeDayPlanRepository
+import com.giraffe.mizanapp.today.FakeRecordCoverageRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -40,7 +41,7 @@ class HistoryViewModelTest {
     }
 
     private fun buildViewModel(plans: FakeDayPlanRepository, catalogue: FakeCatalogueRepository = FakeCatalogueRepository()): HistoryViewModel {
-        val useCase = GetHistoryPage(plans, FakeCompletionRepository(plans, DayWritePolicy(clock), clock), catalogue, clock)
+        val useCase = GetHistoryPage(plans, FakeCompletionRepository(plans, DayWritePolicy(clock), clock), catalogue, clock, FakeRecordCoverageRepository())
         return HistoryViewModel(useCase, catalogue)
     }
 
@@ -126,7 +127,7 @@ class HistoryViewModelTest {
         val completions = FakeCompletionRepository(plans, policy, clock)
         val catalogue = FakeCatalogueRepository()
         runBlocking { plans.ensurePlanFor(clock.today()) }
-        val useCase = GetHistoryPage(plans, completions, catalogue, clock)
+        val useCase = GetHistoryPage(plans, completions, catalogue, clock, FakeRecordCoverageRepository())
         val vm = HistoryViewModel(useCase, catalogue)
         advanceUntilIdle()
 

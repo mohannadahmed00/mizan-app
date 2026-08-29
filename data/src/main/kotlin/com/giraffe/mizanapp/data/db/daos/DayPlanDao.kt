@@ -15,7 +15,12 @@ import kotlinx.coroutines.flow.Flow
  *
  * **There is deliberately no update method here** — not for points, not for the
  * Hijri label, not for anything. An interface that cannot express the forbidden
- * operation is stronger than one that merely avoids calling it.
+ * operation is stronger than one that merely avoids calling it. Sync adds three
+ * more methods on top of that rule, not exceptions to it: the only columns any
+ * method in this interface can write are `userId`, `updatedAt` and `syncedAt`.
+ * A recorded day's date, catalogue version, and available-points total are
+ * unreachable from here, which is how FR-024a is enforced structurally rather
+ * than by discipline.
  */
 @Dao
 interface DayPlanDao {
@@ -51,4 +56,24 @@ interface DayPlanDao {
         insertPlan(plan)
         insertPlannedTasks(tasks)
     }
+
+    /** Attributes every unclaimed local plan to [userId] on sign-in. Idempotent (FR-013). */
+    @Query("UPDATE day_plans SET userId = :userId, updatedAt = :at WHERE userId IS NULL")
+    suspend fun claimPlansForUser(userId: String, at: Long): Int
+
+    /** Attributes every unclaimed local planned task to [userId] on sign-in. Idempotent (FR-013). */
+    @Query("UPDATE planned_tasks SET userId = :userId, updatedAt = :at WHERE userId IS NULL")
+    suspend fun claimPlannedTasksForUser(userId: String, at: Long): Int
+
+    @Query("UPDATE day_plans SET syncedAt = :at WHERE date IN (:dates)")
+    suspend fun markSynced(dates: List<String>, at: Long)
+
+    @Query("SELECT * FROM day_plans WHERE syncedAt IS NULL ORDER BY date")
+    suspend fun unsynced(): List<DayPlanEntity>
+
+    @Query("DELETE FROM day_plans")
+    suspend fun clear()
+
+    @Query("DELETE FROM planned_tasks")
+    suspend fun clearPlannedTasks()
 }

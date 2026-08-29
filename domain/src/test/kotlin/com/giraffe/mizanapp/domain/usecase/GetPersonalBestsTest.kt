@@ -22,7 +22,7 @@ class GetPersonalBestsTest {
     fun `an empty record returns NoHistory`() = runBlocking {
         val time = timeAt(LocalDate.parse("2026-08-10"))
         val plans = FakeWeekDayPlanRepository(time = time)
-        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase()
 
@@ -35,7 +35,7 @@ class GetPersonalBestsTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-01"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase() as PersonalBestsOutcome.Ready
 
@@ -49,7 +49,7 @@ class GetPersonalBestsTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, recordStart, PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase() as PersonalBestsOutcome.Ready
 
@@ -65,7 +65,7 @@ class GetPersonalBestsTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-01"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(available = false), time)
+        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(available = false), time, FakeRecordCoverageRepository())
 
         val outcome = useCase()
 
@@ -80,7 +80,7 @@ class GetPersonalBestsTest {
         val plans = FakeWeekDayPlanRepository(time = time, failDates = span).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, LocalDate.parse("2026-08-01"), PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetPersonalBests(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         // No exception means ensurePlanFor was never called on any poisoned date.
         useCase()

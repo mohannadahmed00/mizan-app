@@ -7,6 +7,7 @@ import com.giraffe.mizanapp.today.FakeCatalogueRepository
 import com.giraffe.mizanapp.today.FakeClock
 import com.giraffe.mizanapp.today.FakeCompletionRepository
 import com.giraffe.mizanapp.today.FakeDayPlanRepository
+import com.giraffe.mizanapp.today.FakeRecordCoverageRepository
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,7 +57,7 @@ class WeekNavigationTest {
         clock.setDate(recordStart)
         runBlocking { plans.ensurePlanFor(recordStart) }
         clock.setDate(originalToday)
-        return WeekViewModel(GetWeekSummary(plans, completions, catalogue, clock), catalogue, clock, plans)
+        return WeekViewModel(GetWeekSummary(plans, completions, catalogue, clock, FakeRecordCoverageRepository()), catalogue, clock, plans)
     }
 
     @Test
@@ -131,7 +132,7 @@ class WeekNavigationTest {
         val policy = DayWritePolicy(clock)
         val completions = FakeCompletionRepository(plans, policy, clock)
         val catalogue = FakeCatalogueRepository()
-        val second = WeekViewModel(GetWeekSummary(plans, completions, catalogue, clock), catalogue, clock, plans)
+        val second = WeekViewModel(GetWeekSummary(plans, completions, catalogue, clock, FakeRecordCoverageRepository()), catalogue, clock, plans)
         advanceUntilIdle()
 
         assertEquals(WeekBoundary.weekContaining(clock.today()).start, second.state.value.startDate)

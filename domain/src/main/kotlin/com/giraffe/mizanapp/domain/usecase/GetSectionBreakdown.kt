@@ -8,6 +8,7 @@ import com.giraffe.mizanapp.domain.insights.buildSectionBreakdown
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.LocalDate
 
@@ -26,10 +27,12 @@ class GetSectionBreakdown(
     private val completions: CompletionRepository,
     private val catalogue: CatalogueRepository,
     private val time: TimeProvider,
+    private val recordCoverage: RecordCoverageRepository,
 ) {
     suspend operator fun invoke(period: InsightsPeriod): SectionBreakdownOutcome {
         catalogue.currentVersion() ?: return SectionBreakdownOutcome.CatalogueUnavailable("no catalogue is available")
 
+        val coverage = recordCoverage.coverage()
         val today = time.today()
         val (rangeStart, rangeEnd) = when (period) {
             is InsightsPeriod.ForWeek -> period.week.start to period.week.end
@@ -46,6 +49,7 @@ class GetSectionBreakdown(
         val derived = mutableListOf<DayPlan>()
         for (date in dates) {
             if (date in plannedDates) continue
+            if (!coverage.isKnown(date)) continue
             val version = try {
                 catalogue.versionEffectiveOn(date)
             } catch (e: Exception) {
@@ -60,11 +64,12 @@ class GetSectionBreakdown(
         }
 
         val sections: List<SectionPerformance> = buildSectionBreakdown(storedPlans + derived, liveCompletions)
-        return SectionBreakdownOutcome.Ready(sections)
+        return SectionBreakdownOutcome.Ready(sections, provisional = !coverage.complete)
     }
 }
 
 sealed interface SectionBreakdownOutcome {
-    data class Ready(val sections: List<SectionPerformance>) : SectionBreakdownOutcome
+    /** [provisional] is true while coverage over the requested period is incomplete (FR-023d). */
+    data class Ready(val sections: List<SectionPerformance>, val provisional: Boolean = false) : SectionBreakdownOutcome
     data class CatalogueUnavailable(val detail: String) : SectionBreakdownOutcome
 }

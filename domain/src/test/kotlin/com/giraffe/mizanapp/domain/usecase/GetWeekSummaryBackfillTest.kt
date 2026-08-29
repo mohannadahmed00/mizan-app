@@ -40,7 +40,7 @@ class GetWeekSummaryBackfillTest {
     fun `every elapsed day of the week except today gets exactly one plan created`() = runBlocking {
         val time = FakeTimeProvider().apply { setDate(week.end) } // Friday: the whole week has elapsed
         val plans = anchoredPlans(time)
-        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(week)
 
@@ -54,7 +54,7 @@ class GetWeekSummaryBackfillTest {
         val today = week.dates[3] // Tuesday
         val time = FakeTimeProvider().apply { setDate(today) }
         val plans = anchoredPlans(time)
-        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         useCase(week)
 
@@ -77,7 +77,7 @@ class GetWeekSummaryBackfillTest {
         plans.seedPlan(
             buildDayPlan(DayFixtures.catalogue, version = 1, date = recordStart, origin = PlanOrigin.OPENED) { "seed" },
         )
-        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         useCase(week)
 
@@ -89,7 +89,7 @@ class GetWeekSummaryBackfillTest {
     fun `an existing plan is returned untouched and never rebuilt`() = runBlocking {
         val time = FakeTimeProvider().apply { setDate(week.end) }
         val plans = anchoredPlans(time)
-        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         useCase(week)
         val firstRunCount = plans.creationCount
@@ -103,7 +103,7 @@ class GetWeekSummaryBackfillTest {
     fun `invoking twice returns identical figures`() = runBlocking {
         val time = FakeTimeProvider().apply { setDate(week.end) }
         val plans = anchoredPlans(time)
-        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val first = useCase(week) as WeekOutcome.Ready
         val second = useCase(week) as WeekOutcome.Ready
@@ -116,7 +116,7 @@ class GetWeekSummaryBackfillTest {
         val time = FakeTimeProvider().apply { setDate(week.end) }
         val plans = anchoredPlans(time)
         val completions = FakeWeekCompletionRepository()
-        val useCase = GetWeekSummary(plans, completions, FakeWeekCatalogueRepository(), time)
+        val useCase = GetWeekSummary(plans, completions, FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(week) as WeekOutcome.Ready
 
@@ -127,7 +127,7 @@ class GetWeekSummaryBackfillTest {
     fun `a storage failure during backfill returns BackfillFailed with no figures`() = runBlocking {
         val time = FakeTimeProvider().apply { setDate(week.end) }
         val plans = anchoredPlans(time, failDates = setOf(week.dates[3])) // Tuesday poisoned
-        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase(week)
 
@@ -139,7 +139,7 @@ class GetWeekSummaryBackfillTest {
         val time = FakeTimeProvider().apply { setDate(week.end) }
         val poisoned = week.dates[3] // Tuesday; dates before it (Sat, Sun, Mon) must survive
         val plans = anchoredPlans(time, failDates = setOf(poisoned))
-        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetWeekSummary(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         useCase(week)
 

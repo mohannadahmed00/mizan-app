@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.giraffe.mizanapp.domain.sync.SyncStatus
+import com.giraffe.mizanapp.sync.SyncStatusBar
 
 /**
  * The Today screen.
@@ -50,13 +52,15 @@ fun TodayScreen(
     state: TodayUiState,
     onEvent: (TodayEvent) -> Unit,
     onOpenWeek: () -> Unit,
+    onOpenAccount: () -> Unit = {},
+    syncStatus: SyncStatus = SyncStatus.NotSignedIn,
     modifier: Modifier = Modifier,
 ) {
     when (val status = state.status) {
         is TodayUiState.Status.Loading -> LoadingState(modifier)
         is TodayUiState.Status.CatalogueUnavailable ->
             CatalogueUnavailableState(status.detail, state.streak, onEvent, modifier)
-        is TodayUiState.Status.Ready -> ReadyState(state, onEvent, onOpenWeek, modifier)
+        is TodayUiState.Status.Ready -> ReadyState(state, onEvent, onOpenWeek, onOpenAccount, syncStatus, modifier)
     }
 }
 
@@ -104,6 +108,8 @@ private fun ReadyState(
     state: TodayUiState,
     onEvent: (TodayEvent) -> Unit,
     onOpenWeek: () -> Unit,
+    onOpenAccount: () -> Unit = {},
+    syncStatus: SyncStatus = SyncStatus.NotSignedIn,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().padding(16.dp)) {
@@ -113,8 +119,12 @@ private fun ReadyState(
         Spacer(Modifier.width(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             DayHeader(state)
-            TextButton(onClick = onOpenWeek) { Text("Week") }
+            Row {
+                TextButton(onClick = onOpenAccount) { Text("Account") }
+                TextButton(onClick = onOpenWeek) { Text("Week") }
+            }
         }
+        SyncStatusBar(syncStatus)
         Spacer(Modifier.width(16.dp))
         PointsHeader(state)
         Spacer(Modifier.width(16.dp))

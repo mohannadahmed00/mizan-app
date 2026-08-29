@@ -11,6 +11,8 @@ import com.giraffe.mizanapp.domain.week.Week
 data class PersonalBests(
     val bestDay: DayCell?,
     val bestWeek: BestWeek?,
+    /** True while coverage over the full record is incomplete (FR-023d). */
+    val provisional: Boolean = false,
 )
 
 /**

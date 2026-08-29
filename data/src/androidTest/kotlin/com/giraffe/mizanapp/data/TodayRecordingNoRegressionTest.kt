@@ -46,12 +46,12 @@ class TodayRecordingNoRegressionTest : DbTestBase() {
 
         // Exercise all three Insights views once, as opening the screen would.
         kotlinx.coroutines.runBlocking {
-            GetWeeklyTrend(GetHistoryPage(dayPlans, completions, catalogue, time))()
-            GetMonthOverview(dayPlans, completions, catalogue, time)(YearMonth.from(today))
-            GetSectionBreakdown(dayPlans, completions, catalogue, time)(
+            GetWeeklyTrend(GetHistoryPage(dayPlans, completions, catalogue, time, coverageRepo))()
+            GetMonthOverview(dayPlans, completions, catalogue, time, coverageRepo)(YearMonth.from(today))
+            GetSectionBreakdown(dayPlans, completions, catalogue, time, coverageRepo)(
                 com.giraffe.mizanapp.domain.insights.InsightsPeriod.ForMonth(YearMonth.from(today)),
             )
-            GetPersonalBests(dayPlans, completions, catalogue, time)()
+            GetPersonalBests(dayPlans, completions, catalogue, time, coverageRepo)()
         }
 
         val afterInsights = timedMillis {

@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.giraffe.mizanapp.domain.week.DayCellState
+import com.giraffe.mizanapp.ui.containerColorFor
 import com.giraffe.mizanapp.week.DayCellUi
 
 /**
@@ -216,12 +217,6 @@ private fun descriptionFor(state: DayCellState): String = when (state) {
     DayCellState.NOTHING_RECORDED -> "Not recorded"
     DayCellState.NOT_YET_ELAPSED -> "Upcoming"
     DayCellState.OUTSIDE_RECORD -> "Outside the record"
-}
-
-@Composable
-private fun containerColorFor(state: DayCellState) = when (state) {
-    DayCellState.FULLY_RECORDED -> MaterialTheme.colorScheme.secondaryContainer
-    DayCellState.PARTLY_RECORDED -> MaterialTheme.colorScheme.tertiaryContainer
-    DayCellState.NOTHING_RECORDED -> MaterialTheme.colorScheme.surfaceVariant
-    DayCellState.NOT_YET_ELAPSED, DayCellState.OUTSIDE_RECORD -> MaterialTheme.colorScheme.surface
+    // Never 0%, never absent (FR-023b) — this device just hasn't fetched it yet.
+    DayCellState.NOT_YET_KNOWN -> "Still loading"
 }

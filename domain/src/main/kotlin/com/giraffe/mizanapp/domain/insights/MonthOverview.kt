@@ -12,4 +12,6 @@ import java.time.YearMonth
 data class MonthOverview(
     val month: YearMonth,
     val days: List<DayCell>,
+    /** True while coverage over this month's range is incomplete (FR-023d). */
+    val provisional: Boolean = false,
 )

@@ -14,6 +14,13 @@ enum class DayCellState {
     /** After today — nothing is recorded here yet because the day has not happened. */
     NOT_YET_ELAPSED,
 
+    /**
+     * In the record, but this device has not fetched it yet (FR-023b). Never
+     * conflated with [NOTHING_RECORDED] — a date this device hasn't heard
+     * from yet is not the same fact as a date it knows was empty.
+     */
+    NOT_YET_KNOWN,
+
     /** Elapsed, in the record, and nothing completed. */
     NOTHING_RECORDED,
 

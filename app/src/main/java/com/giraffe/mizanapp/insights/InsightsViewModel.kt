@@ -158,6 +158,7 @@ class InsightsViewModel(
                         days = outcome.overview.days.map { it.toDayCellUi() },
                         canGoEarlier = bounds.canGoEarlier(month.minusMonths(1)),
                         canGoLater = bounds.canGoLater(month.plusMonths(1)),
+                        provisional = outcome.overview.provisional,
                     ),
                 )
             }
@@ -181,7 +182,10 @@ class InsightsViewModel(
             }
             when (val outcome = getSectionBreakdown(period)) {
                 is SectionBreakdownOutcome.Ready -> {
-                    _state.value = _state.value.copy(sections = outcome.sections.map { it.toSectionRowUi() })
+                    _state.value = _state.value.copy(
+                        sections = outcome.sections.map { it.toSectionRowUi() },
+                        sectionsProvisional = outcome.provisional,
+                    )
                 }
                 is SectionBreakdownOutcome.CatalogueUnavailable -> {
                     _state.value = _state.value.copy(status = InsightsUiState.Status.CatalogueUnavailable(outcome.detail))
@@ -231,6 +235,7 @@ class InsightsViewModel(
         bestWeek = bestWeek?.let {
             BestWeekUi(startDate = it.week.start, endDate = it.week.end, percentage = (it.fraction * 100).toInt())
         },
+        provisional = provisional,
     )
 
     private fun DayCell.fraction(): Float = if (available == 0) 0f else earned.toFloat() / available

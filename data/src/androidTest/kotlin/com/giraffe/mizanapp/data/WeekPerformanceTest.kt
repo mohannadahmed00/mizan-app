@@ -35,7 +35,7 @@ class WeekPerformanceTest : DbTestBase() {
         dayPlans.ensurePlanFor(LocalDate.parse("2026-01-05"))
         time.setDate(LocalDate.parse("2026-08-14")) // Friday: the whole week has elapsed
 
-        val useCase = GetWeekSummary(dayPlans, completions, catalogue, time)
+        val useCase = GetWeekSummary(dayPlans, completions, catalogue, time, coverageRepo)
         val week = WeekBoundary.weekContaining(time.today())
 
         val elapsed = measureMillis { useCase(week) }
@@ -64,7 +64,7 @@ class WeekPerformanceTest : DbTestBase() {
         }
         time.setDate(start.plusDays(364)) // the last seeded date, a fully elapsed week behind it
 
-        val useCase = GetWeekSummary(dayPlans, completions, catalogue, time)
+        val useCase = GetWeekSummary(dayPlans, completions, catalogue, time, coverageRepo)
         val week = WeekBoundary.weekContaining(time.today())
 
         val elapsed = measureMillis { useCase(week) }

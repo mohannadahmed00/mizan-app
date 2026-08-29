@@ -75,7 +75,7 @@ class InsightsPerformanceTest : DbTestBase() {
     @Test
     fun weekly_trend_resolves_within_budget_over_a_year() = runTest {
         seedDays(365, LocalDate.parse("2025-08-15"))
-        val useCase = GetWeeklyTrend(GetHistoryPage(dayPlans, completions, catalogue, time))
+        val useCase = GetWeeklyTrend(GetHistoryPage(dayPlans, completions, catalogue, time, coverageRepo))
 
         var outcome: TrendOutcome? = null
         val elapsed = timedMillis { outcome = useCase() }
@@ -87,7 +87,7 @@ class InsightsPerformanceTest : DbTestBase() {
     @Test
     fun monthly_overview_resolves_within_budget_over_a_year() = runTest {
         val last = seedDays(365, LocalDate.parse("2025-08-15"))
-        val useCase = GetMonthOverview(dayPlans, completions, catalogue, time)
+        val useCase = GetMonthOverview(dayPlans, completions, catalogue, time, coverageRepo)
 
         var outcome: MonthOverviewOutcome? = null
         val elapsed = timedMillis { outcome = useCase(YearMonth.from(last)) }
@@ -99,7 +99,7 @@ class InsightsPerformanceTest : DbTestBase() {
     @Test
     fun section_breakdown_resolves_within_budget_over_a_year() = runTest {
         val last = seedDays(365, LocalDate.parse("2025-08-15"))
-        val useCase = GetSectionBreakdown(dayPlans, completions, catalogue, time)
+        val useCase = GetSectionBreakdown(dayPlans, completions, catalogue, time, coverageRepo)
 
         var outcome: SectionBreakdownOutcome? = null
         val elapsed = timedMillis { outcome = useCase(InsightsPeriod.ForMonth(YearMonth.from(last))) }
@@ -111,7 +111,7 @@ class InsightsPerformanceTest : DbTestBase() {
     @Test
     fun personal_bests_resolves_within_budget_over_three_years() = runTest {
         seedDays(365L * 3, LocalDate.parse("2023-08-15"))
-        val useCase = GetPersonalBests(dayPlans, completions, catalogue, time)
+        val useCase = GetPersonalBests(dayPlans, completions, catalogue, time, coverageRepo)
 
         var outcome: PersonalBestsOutcome? = null
         val elapsed = timedMillis { outcome = useCase() }

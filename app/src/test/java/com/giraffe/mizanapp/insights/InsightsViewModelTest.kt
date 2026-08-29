@@ -11,6 +11,7 @@ import com.giraffe.mizanapp.today.FakeCatalogueRepository
 import com.giraffe.mizanapp.today.FakeClock
 import com.giraffe.mizanapp.today.FakeCompletionRepository
 import com.giraffe.mizanapp.today.FakeDayPlanRepository
+import com.giraffe.mizanapp.today.FakeRecordCoverageRepository
 import java.time.YearMonth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,11 +55,11 @@ class InsightsViewModelTest {
         catalogue: FakeCatalogueRepository = FakeCatalogueRepository(),
     ): InsightsViewModel {
         val completions = FakeCompletionRepository(plans, DayWritePolicy(clock), clock)
-        val historyPage = GetHistoryPage(plans, completions, catalogue, clock)
+        val historyPage = GetHistoryPage(plans, completions, catalogue, clock, FakeRecordCoverageRepository())
         val trend = GetWeeklyTrend(historyPage)
-        val month = GetMonthOverview(plans, completions, catalogue, clock)
-        val sections = GetSectionBreakdown(plans, completions, catalogue, clock)
-        val personalBests = GetPersonalBests(plans, completions, catalogue, clock)
+        val month = GetMonthOverview(plans, completions, catalogue, clock, FakeRecordCoverageRepository())
+        val sections = GetSectionBreakdown(plans, completions, catalogue, clock, FakeRecordCoverageRepository())
+        val personalBests = GetPersonalBests(plans, completions, catalogue, clock, FakeRecordCoverageRepository())
         return InsightsViewModel(trend, month, sections, personalBests, clock, plans)
     }
 

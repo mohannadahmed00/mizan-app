@@ -30,7 +30,7 @@ class GetHistoryPageTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, currentWeek.start, PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase() as HistoryOutcome.Ready
 
@@ -45,7 +45,7 @@ class GetHistoryPageTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, recordStartWeek.start, PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val allWeeks = mutableListOf<com.giraffe.mizanapp.domain.week.Week>()
         var cursor: com.giraffe.mizanapp.domain.week.WeekKey? = null
@@ -71,7 +71,7 @@ class GetHistoryPageTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, recordStartWeek.start, PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         var cursor: com.giraffe.mizanapp.domain.week.WeekKey? = null
         var last: HistoryOutcome.Ready
@@ -91,7 +91,7 @@ class GetHistoryPageTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, currentWeek.start, PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         // Requesting "before" a future week must still clamp to the current week.
         val futureKey = WeekBoundary.weekContaining(today.plusDays(21)).key
@@ -104,7 +104,7 @@ class GetHistoryPageTest {
     fun `an empty record is Ready with no weeks, not an error`() = runBlocking {
         val time = timeAt(today)
         val plans = FakeWeekDayPlanRepository(time = time) // no plans seeded at all
-        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase() as HistoryOutcome.Ready
 
@@ -122,7 +122,7 @@ class GetHistoryPageTest {
         val plans = FakeWeekDayPlanRepository(time = time).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, recordStart, PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         val outcome = useCase() as HistoryOutcome.Ready
         val weekWithUnplannedElapsedDay = outcome.page.weeks.first { it.week.key == currentWeek.key }
@@ -144,7 +144,7 @@ class GetHistoryPageTest {
         val plans = FakeWeekDayPlanRepository(time = time, failDates = span).apply {
             seedPlan(buildDayPlan(DayFixtures.catalogue, 1, recordStartWeek.start, PlanOrigin.OPENED) { "seed" })
         }
-        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time)
+        val useCase = GetHistoryPage(plans, FakeWeekCompletionRepository(), FakeWeekCatalogueRepository(), time, FakeRecordCoverageRepository())
 
         var cursor: com.giraffe.mizanapp.domain.week.WeekKey? = null
         var hasMore: Boolean

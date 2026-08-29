@@ -57,6 +57,9 @@ dependencies {
     implementation(project(":domain"))
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
+    // spec 007 — supplies SyncWorker's dependencies. A Koin integration, not a
+    // second DI container: Koin remains the sole framework.
+    implementation(libs.koin.androidx.workmanager)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.serialization.json)

@@ -6,6 +6,7 @@ import com.giraffe.mizanapp.today.FakeCatalogueRepository
 import com.giraffe.mizanapp.today.FakeClock
 import com.giraffe.mizanapp.today.FakeCompletionRepository
 import com.giraffe.mizanapp.today.FakeDayPlanRepository
+import com.giraffe.mizanapp.today.FakeRecordCoverageRepository
 import com.giraffe.mizanapp.domain.policy.DayWritePolicy
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +48,7 @@ class WeekViewModelTest {
         val completions = FakeCompletionRepository(plans, policy, clock)
         seedPlans(plans, completions)
 
-        val getWeekSummary = GetWeekSummary(plans, completions, catalogue, clock)
+        val getWeekSummary = GetWeekSummary(plans, completions, catalogue, clock, FakeRecordCoverageRepository())
         return WeekViewModel(getWeekSummary, catalogue, clock, plans)
     }
 

@@ -20,13 +20,20 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.giraffe.mizanapp.auth.SignInScreen
+import com.giraffe.mizanapp.auth.SignInViewModel
 import com.giraffe.mizanapp.daysummary.DaySummaryScreen
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
+import com.giraffe.mizanapp.domain.identity.AccountSession
+import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.history.HistoryEvent
 import com.giraffe.mizanapp.history.HistoryScreen
 import com.giraffe.mizanapp.history.HistoryViewModel
 import com.giraffe.mizanapp.insights.InsightsScreen
 import com.giraffe.mizanapp.insights.InsightsViewModel
+import com.giraffe.mizanapp.profile.ProfileScreen
+import com.giraffe.mizanapp.profile.ProfileViewModel
+import com.giraffe.mizanapp.sync.SyncStatusViewModel
 import com.giraffe.mizanapp.today.TodayScreen
 import com.giraffe.mizanapp.today.TodayViewModel
 import com.giraffe.mizanapp.ui.theme.MizanAppTheme
@@ -53,6 +60,8 @@ sealed interface Destination {
     data object History : Destination
     data object Insights : Destination
     data class DaySummary(val date: LocalDate) : Destination
+    data object SignIn : Destination
+    data object Profile : Destination
 }
 
 /**
@@ -63,24 +72,28 @@ sealed interface Destination {
  * `String` the default saver already knows how to store, joined on `"|"` —
  * a character that cannot appear in an ISO date.
  */
-private fun encode(destination: Destination): String = when (destination) {
+internal fun encode(destination: Destination): String = when (destination) {
     Destination.Today -> "TODAY"
     Destination.Week -> "WEEK"
     Destination.History -> "HISTORY"
     Destination.Insights -> "INSIGHTS"
     is Destination.DaySummary -> "DAY:${destination.date}"
+    Destination.SignIn -> "SIGNIN"
+    Destination.Profile -> "PROFILE"
 }
 
-private fun decode(encoded: String): Destination = when {
+internal fun decode(encoded: String): Destination = when {
     encoded == "TODAY" -> Destination.Today
     encoded == "WEEK" -> Destination.Week
     encoded == "HISTORY" -> Destination.History
     encoded == "INSIGHTS" -> Destination.Insights
+    encoded == "SIGNIN" -> Destination.SignIn
+    encoded == "PROFILE" -> Destination.Profile
     encoded.startsWith("DAY:") -> Destination.DaySummary(LocalDate.parse(encoded.removePrefix("DAY:")))
     else -> Destination.Today
 }
 
-private val StackSaver = Saver<List<Destination>, String>(
+internal val StackSaver = Saver<List<Destination>, String>(
     save = { stack -> stack.joinToString("|") { encode(it) } },
     restore = { encoded ->
         encoded.split("|").filter { it.isNotEmpty() }.map { decode(it) }
@@ -129,6 +142,8 @@ private fun AppRoute(modifier: Modifier = Modifier) {
     when (val current = stack.last()) {
         Destination.Today -> TodayRoute(
             onOpenWeek = { push(Destination.Week) },
+            onOpenSignIn = { push(Destination.SignIn) },
+            onOpenProfile = { push(Destination.Profile) },
             modifier = modifier,
         )
         Destination.Week -> WeekRoute(
@@ -143,11 +158,18 @@ private fun AppRoute(modifier: Modifier = Modifier) {
         )
         Destination.Insights -> InsightsRoute(modifier = modifier)
         is Destination.DaySummary -> DaySummaryRoute(date = current.date, modifier = modifier)
+        Destination.SignIn -> SignInRoute(modifier = modifier)
+        Destination.Profile -> ProfileRoute(modifier = modifier)
     }
 }
 
 @Composable
-private fun TodayRoute(onOpenWeek: () -> Unit, modifier: Modifier = Modifier) {
+private fun TodayRoute(
+    onOpenWeek: () -> Unit,
+    onOpenSignIn: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     val viewModel: TodayViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -161,7 +183,38 @@ private fun TodayRoute(onOpenWeek: () -> Unit, modifier: Modifier = Modifier) {
         }
     }
 
-    TodayScreen(state = state, onEvent = viewModel::onEvent, onOpenWeek = onOpenWeek, modifier = modifier)
+    val syncViewModel: SyncStatusViewModel = koinViewModel()
+    val syncStatus by syncViewModel.status.collectAsStateWithLifecycle()
+
+    // The single, dismissible entry point (FR-004): signed out it opens
+    // SignIn, signed in it opens Profile — never a gate, never automatic.
+    val accounts: AccountRepository = koinInject()
+    val session by accounts.observeSession().collectAsStateWithLifecycle(initialValue = AccountSession.SignedOut)
+
+    TodayScreen(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onOpenWeek = onOpenWeek,
+        onOpenAccount = if (session is AccountSession.SignedIn) onOpenProfile else onOpenSignIn,
+        syncStatus = syncStatus,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun SignInRoute(modifier: Modifier = Modifier) {
+    val viewModel: SignInViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    SignInScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
+}
+
+@Composable
+private fun ProfileRoute(modifier: Modifier = Modifier) {
+    val viewModel: ProfileViewModel = koinViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    ProfileScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
 }
 
 @Composable
@@ -183,6 +236,9 @@ private fun WeekRoute(
         }
     }
 
+    val syncViewModel: SyncStatusViewModel = koinViewModel()
+    val syncStatus by syncViewModel.status.collectAsStateWithLifecycle()
+
     WeekScreen(
         state = state,
         onEvent = { event ->
@@ -193,6 +249,7 @@ private fun WeekRoute(
                 else -> viewModel.onEvent(event)
             }
         },
+        syncStatus = syncStatus,
         modifier = modifier,
     )
 }

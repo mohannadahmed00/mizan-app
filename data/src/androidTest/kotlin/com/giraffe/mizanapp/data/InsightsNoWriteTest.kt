@@ -38,7 +38,7 @@ class InsightsNoWriteTest : DbTestBase() {
         val plansBefore = db.dayPlanDao().countPlans()
         val completionsBefore = completions.liveBetween(LocalDate.parse("2000-01-01"), currentWeekStart).size
 
-        val trend = GetWeeklyTrend(GetHistoryPage(dayPlans, completions, catalogue, time))
+        val trend = GetWeeklyTrend(GetHistoryPage(dayPlans, completions, catalogue, time, coverageRepo))
         // Simulate opening Insights and scrolling the trend back several times.
         trend()
         var cursor: com.giraffe.mizanapp.domain.week.WeekKey? = null
@@ -68,7 +68,7 @@ class InsightsNoWriteTest : DbTestBase() {
 
         val plansBefore = db.dayPlanDao().countPlans()
 
-        val monthOverview = GetMonthOverview(dayPlans, completions, catalogue, time)
+        val monthOverview = GetMonthOverview(dayPlans, completions, catalogue, time, coverageRepo)
         var month = YearMonth.from(currentDate)
         repeat(4) {
             monthOverview(month)
@@ -88,7 +88,7 @@ class InsightsNoWriteTest : DbTestBase() {
 
         val plansBefore = db.dayPlanDao().countPlans()
 
-        val sectionBreakdown = GetSectionBreakdown(dayPlans, completions, catalogue, time)
+        val sectionBreakdown = GetSectionBreakdown(dayPlans, completions, catalogue, time, coverageRepo)
         sectionBreakdown(InsightsPeriod.ForWeek(WeekBoundary.weekContaining(currentDate)))
         sectionBreakdown(InsightsPeriod.ForMonth(YearMonth.from(currentDate)))
 
@@ -108,7 +108,7 @@ class InsightsNoWriteTest : DbTestBase() {
 
         val plansBefore = db.dayPlanDao().countPlans()
 
-        GetPersonalBests(dayPlans, completions, catalogue, time)()
+        GetPersonalBests(dayPlans, completions, catalogue, time, coverageRepo)()
 
         val plansAfter = db.dayPlanDao().countPlans()
         assertEquals("computing personal bests must create no plan rows", plansBefore, plansAfter)

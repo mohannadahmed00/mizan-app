@@ -6,7 +6,9 @@ import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
 import com.giraffe.mizanapp.data.repository.RoomCompletionRepository
 import com.giraffe.mizanapp.data.repository.RoomDayPlanRepository
+import com.giraffe.mizanapp.data.repository.RoomRecordCoverageRepository
 import com.giraffe.mizanapp.data.seed.CatalogueSeeder
+import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.domain.policy.DayWritePolicy
 import com.giraffe.mizanapp.domain.time.DayBoundary
 import com.giraffe.mizanapp.domain.time.TimeProvider
@@ -39,6 +41,7 @@ abstract class DbTestBase {
     protected lateinit var catalogue: RoomCatalogueRepository
     protected lateinit var dayPlans: RoomDayPlanRepository
     protected lateinit var completions: RoomCompletionRepository
+    protected lateinit var coverageRepo: RoomRecordCoverageRepository
 
     @Before
     fun setUpDatabase() {
@@ -69,6 +72,7 @@ abstract class DbTestBase {
         catalogue = RoomCatalogueRepository(db, CatalogueSeeder(db, time))
         dayPlans = RoomDayPlanRepository(db, catalogue, time)
         completions = RoomCompletionRepository(db, dayPlans, DayWritePolicy(time), time)
+        coverageRepo = RoomRecordCoverageRepository(db, AccountScope(db.accountScopeDao(), time))
     }
 
     protected suspend fun seedAndPlanToday() {

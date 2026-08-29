@@ -5,6 +5,7 @@ import com.giraffe.mizanapp.domain.history.HistoryPage
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.time.WeekBoundary
 import com.giraffe.mizanapp.domain.week.Week
@@ -27,6 +28,7 @@ class GetHistoryPage(
     private val completions: CompletionRepository,
     private val catalogue: CatalogueRepository,
     private val time: TimeProvider,
+    private val recordCoverage: RecordCoverageRepository,
 ) {
 
     suspend operator fun invoke(before: WeekKey? = null, weeksPerPage: Int = 8): HistoryOutcome {
@@ -38,6 +40,7 @@ class GetHistoryPage(
         val currentVersion = catalogue.currentVersion()
             ?: return HistoryOutcome.CatalogueUnavailable("no catalogue is available")
 
+        val coverage = recordCoverage.coverage()
         val today = time.today()
         val currentWeek = WeekBoundary.weekContaining(today)
         val recordStartWeek = WeekBoundary.weekContaining(recordStart)
@@ -107,6 +110,7 @@ class GetHistoryPage(
                 plans = storedPlans.filter { !it.date.isBefore(week.start) && !it.date.isAfter(week.end) },
                 completions = liveCompletions.filter { !it.creditedDate.isBefore(week.start) && !it.creditedDate.isAfter(week.end) },
                 projectedAvailable = projected,
+                coverage = coverage,
             )
         }
 

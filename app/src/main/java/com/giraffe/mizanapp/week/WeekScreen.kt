@@ -23,7 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.giraffe.mizanapp.domain.sync.SyncStatus
 import com.giraffe.mizanapp.domain.week.DayCellState
+import com.giraffe.mizanapp.sync.SyncStatusBar
 import com.giraffe.mizanapp.ui.containerColorFor
 
 /**
@@ -39,6 +41,7 @@ import com.giraffe.mizanapp.ui.containerColorFor
 fun WeekScreen(
     state: WeekUiState,
     onEvent: (WeekEvent) -> Unit,
+    syncStatus: SyncStatus = SyncStatus.NotSignedIn,
     modifier: Modifier = Modifier,
 ) {
     when (val status = state.status) {
@@ -47,7 +50,7 @@ fun WeekScreen(
             "The task list could not be loaded.", status.detail, modifier,
         )
         is WeekUiState.Status.CouldNotLoad -> CouldNotLoadState(status, onEvent, modifier)
-        is WeekUiState.Status.Ready -> ReadyState(state, onEvent, modifier)
+        is WeekUiState.Status.Ready -> ReadyState(state, onEvent, syncStatus, modifier)
     }
 }
 
@@ -102,12 +105,14 @@ private fun CouldNotLoadState(
 private fun ReadyState(
     state: WeekUiState,
     onEvent: (WeekEvent) -> Unit,
+    syncStatus: SyncStatus = SyncStatus.NotSignedIn,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().padding(16.dp)) {
         WeekNavigationRow(state, onEvent)
         Spacer(Modifier.width(8.dp))
         WeekHeader(state)
+        SyncStatusBar(syncStatus)
         Spacer(Modifier.width(16.dp))
 
         state.days.forEach { day ->

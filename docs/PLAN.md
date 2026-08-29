@@ -308,6 +308,32 @@ Charts are only meaningful once there is enough correct history to chart, and th
 
 ## Phase 7 — Identity & Cloud Sync (Supabase)
 
+**Status: delivered** (`specs/007-identity-cloud-sync/`). Automated: `:domain:test`, `:app:test`,
+`:data:test`, `:data:connectedAndroidTest`, `:app:connectedAndroidTest` all green. Validated by hand
+before merge: SC-007 (fresh install, airplane mode, no account — then repeated with the network on
+and the project paused), SC-011 (every new string read against the Principle IX list), and **SC-008,
+the live RLS verification, which prints `RLS OK` against the project** (T129, T130, T132).
+
+**Deferred validation — GitHub issue #15.** Five items ship unvalidated by hand: SC-001, SC-003,
+SC-004, SC-006 and T131. All five need a signed-in account, and sign-in is passwordless OTP
+(FR-002), so each needs a real code delivered to an inbox. A fixed test OTP in Supabase Auth would
+open all five, but that setting is not available on the project's current Free plan. Each has a
+passing automated counterpart (`SignInMigrationTest`, `BackgroundSyncSchedulingTest`,
+`TwoDeviceConvergenceTest`, `BackfillResumeTest`). Merged with this understood and accepted; the
+issue carries the full procedure and three ways to unblock.
+
+**Conflict policy actually shipped** — concurrent-record and concurrent-undo, resolved without a
+timestamp comparison: a record merges as the union (nothing recorded on either device is ever
+discarded); an undo (a tombstone) beats a record, on whichever device or in whichever order the two
+arrive, because a tombstone can only ever be set, never cleared, once applied. Two devices opening
+the same date for the first time under two different catalogue versions settle on the lower version
+— never re-derived, never re-priced, once a device has materialised its own copy of that day
+(Principle III). This is what `mergeCompletion` and `mergeDayRecord` encode in
+`domain/src/main/kotlin/com/giraffe/mizanapp/domain/sync/`; the plain-language version of it — "If
+you record on two devices at once, both records are kept. If you undo something on one device, it
+stays undone on the other." — is the FR-019a user-facing obligation, and it is satisfied by the
+profile screen's own statement (`ProfileUiState.conflictPolicy`, T127), not by this file.
+
 ### Goal
 Introduce accounts and bidirectional sync without changing the offline-first behavior of anything shipped so far.
 

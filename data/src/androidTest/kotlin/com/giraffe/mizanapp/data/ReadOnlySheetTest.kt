@@ -48,7 +48,7 @@ class ReadOnlySheetTest : DbTestBase() {
         completions.record(weekStart, "fajr-1")
         time.setDate(weekEnd) // the whole viewed week has now elapsed
 
-        val getWeekSummary = GetWeekSummary(dayPlans, completions, catalogue, time)
+        val getWeekSummary = GetWeekSummary(dayPlans, completions, catalogue, time, coverageRepo)
         val getDaySummary = GetDaySummary(dayPlans, completions)
         val currentWeek = WeekBoundary.weekContaining(time.today())
         val previousWeek = WeekBoundary.weekContaining(currentWeek.start.minusDays(7))

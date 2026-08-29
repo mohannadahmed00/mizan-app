@@ -24,6 +24,24 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+          Disables WorkManager's default auto-init, which otherwise runs before
+          Application.onCreate() and initializes WorkManager with the reflection
+          factory — before Koin's workManagerFactory() ever registers SyncWorker's
+          constructor. MizanApplication supplies the Koin-backed Configuration
+          instead (Configuration.Provider), triggered on WorkManager's first use.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>

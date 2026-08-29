@@ -34,7 +34,7 @@ class HistoryNoWriteTest : DbTestBase() {
 
         val plansBefore = db.dayPlanDao().countPlans()
 
-        val useCase = GetHistoryPage(dayPlans, completions, catalogue, time)
+        val useCase = GetHistoryPage(dayPlans, completions, catalogue, time, coverageRepo)
         var cursor: com.giraffe.mizanapp.domain.week.WeekKey? = null
         var hasMore: Boolean
         do {
