@@ -223,7 +223,7 @@ Do not improvise. The three most likely causes, in order:
 
 ### Domain vocabulary
 
-- [ ] T014 [P] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/leaderboard/PeriodKind.kt` containing `enum class PeriodKind { DAILY, WEEKLY, MONTHLY }` (FR-020). No other content.
+- [X] T014 [P] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/leaderboard/PeriodKind.kt` containing `enum class PeriodKind { DAILY, WEEKLY, MONTHLY }` (FR-020). No other content.
 - [ ] T015 [P] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/leaderboard/Region.kt` containing `@JvmInline value class RegionId(val value: String)` and `data class Region(val id: RegionId, val displayName: String, val zone: ZoneId)`.
 - [ ] T016 Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/leaderboard/LeaderboardPeriod.kt` with `data class LeaderboardPeriod(val kind: PeriodKind, val start: LocalDate, val endInclusive: LocalDate, val regionId: RegionId)` and the signature `fun periodFor(kind: PeriodKind, date: LocalDate, zone: ZoneId, regionId: RegionId): LeaderboardPeriod` with body `TODO("T017")`. Write `domain/src/test/kotlin/com/giraffe/mizanapp/domain/leaderboard/PeriodForTest.kt` covering: DAILY start == end == date; **WEEKLY runs Saturday to Friday and matches `WeekBoundary`'s own output for the same date**; MONTHLY is the calendar month; and a date near midnight in a zone 12 hours from UTC lands in the expected day. Run it — MUST fail.
 - [ ] T017 Implement `periodFor`. **WEEKLY MUST delegate to the existing `WeekBoundary`** — do not compute Saturday yourself, do not copy its logic (FR-011). Re-run T016 — MUST pass.
