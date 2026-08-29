@@ -31,6 +31,8 @@ import com.giraffe.mizanapp.history.HistoryScreen
 import com.giraffe.mizanapp.history.HistoryViewModel
 import com.giraffe.mizanapp.insights.InsightsScreen
 import com.giraffe.mizanapp.insights.InsightsViewModel
+import com.giraffe.mizanapp.leaderboard.LeaderboardSection
+import com.giraffe.mizanapp.leaderboard.LeaderboardViewModel
 import com.giraffe.mizanapp.profile.ProfileScreen
 import com.giraffe.mizanapp.profile.ProfileViewModel
 import com.giraffe.mizanapp.sync.SyncStatusViewModel
@@ -238,6 +240,8 @@ private fun WeekRoute(
 
     val syncViewModel: SyncStatusViewModel = koinViewModel()
     val syncStatus by syncViewModel.status.collectAsStateWithLifecycle()
+    val leaderboardViewModel: LeaderboardViewModel = koinViewModel()
+    val leaderboardState by leaderboardViewModel.state.collectAsStateWithLifecycle()
 
     WeekScreen(
         state = state,
@@ -250,6 +254,12 @@ private fun WeekRoute(
             }
         },
         syncStatus = syncStatus,
+        progressContent = {
+            LeaderboardSection(
+                state = leaderboardState,
+                onJoin = leaderboardViewModel::join,
+            )
+        },
         modifier = modifier,
     )
 }
