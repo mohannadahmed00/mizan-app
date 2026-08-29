@@ -49,7 +49,15 @@ class RoomParticipationRepository(
         }
     }
 
-    override suspend fun optOut(): ParticipationResult = ParticipationResult.Unreachable
+    override suspend fun optOut(): ParticipationResult = when (val result = remote.setParticipation(false)) {
+        is RemoteResult.Ok -> {
+            assignedZone = null
+            db.participationStateDao().deleteAll()
+            db.leaderboardCacheDao().deleteAll()
+            ParticipationResult.Applied
+        }
+        else -> result.toParticipationResult()
+    }
 
     override suspend fun reportZone(zone: ZoneId): ParticipationResult = ParticipationResult.Unreachable
 
