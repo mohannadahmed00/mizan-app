@@ -80,6 +80,11 @@ class FakeRemoteDataSource : RemoteDataSource {
     }
 
     val reportedZones: MutableList<String> = mutableListOf()
+    var materializedPeriodCount: Int = 0
+        private set
+
+    /** T062 replaces this placeholder with the fake's mirror of the SQL fold. */
+    fun recomputeOpenPeriods() = Unit
 
     /** Adds or replaces one zone mapping without giving production code a region-selection path. */
     fun seedRegion(zoneId: String, regionId: String, displayName: String) {
