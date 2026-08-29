@@ -86,6 +86,13 @@ class FakeRemoteDataSource : RemoteDataSource {
     /** T062 replaces this placeholder with the fake's mirror of the SQL fold. */
     fun recomputeOpenPeriods() = Unit
 
+    /**
+     * Test-only mirror of `leaderboard_entries.days_engaged` (T057, T069/T070) —
+     * never exposed through [RemoteDataSource] or any client-facing DTO (Rule D).
+     * T062 replaces this placeholder with the fake's mirror of the SQL fold.
+     */
+    fun daysEngagedFor(kind: PeriodKind, regionId: String, userId: String): Int = 0
+
     /** Adds or replaces one zone mapping without giving production code a region-selection path. */
     fun seedRegion(zoneId: String, regionId: String, displayName: String) {
         regionsByZone[zoneId] = FakeRegion(regionId, displayName, zoneId)
