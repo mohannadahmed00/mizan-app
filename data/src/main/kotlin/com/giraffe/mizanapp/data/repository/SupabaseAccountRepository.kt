@@ -131,6 +131,8 @@ class SupabaseAccountRepository(
     }
 
     override suspend fun signOut(mode: SignOutMode) {
+        // Result ignored: the leaderboard being unreachable must never block a sign-out (FR-008).
+        remote.setParticipation(false)
         client?.auth?.signOut()
         if (mode == SignOutMode.REMOVE_LOCAL_RECORDS) wipe.wipe()
     }
