@@ -5,6 +5,7 @@ import com.giraffe.mizanapp.data.db.entity.LeaderboardCacheEntity
 import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.data.sync.LeaderboardRefresh
 import com.giraffe.mizanapp.data.sync.RemoteDataSource
+import com.giraffe.mizanapp.data.sync.RemoteResult
 import com.giraffe.mizanapp.data.sync.dto.RemoteRankingPage
 import com.giraffe.mizanapp.domain.identity.AccountSession
 import com.giraffe.mizanapp.domain.leaderboard.LeaderboardPeriod
@@ -26,16 +27,18 @@ import java.time.ZoneId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /** Maps server-ranked snapshots without deriving, sorting, or assigning positions. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class RoomLeaderboardRepository(
     private val db: MizanDatabase,
-    @Suppress("unused") private val remote: RemoteDataSource,
+    private val remote: RemoteDataSource,
     private val refreshBoundary: LeaderboardRefresh,
     private val accountScope: AccountScope,
     private val time: TimeProvider,
@@ -58,7 +61,31 @@ class RoomLeaderboardRepository(
 
     override fun observeOwnRank(kind: PeriodKind): Flow<OwnRankState> = flowOf(OwnRankState.Unavailable)
 
-    override suspend fun loadMore(kind: PeriodKind): LoadMoreResult = LoadMoreResult.Unreachable
+    override suspend fun loadMore(kind: PeriodKind): LoadMoreResult {
+        val participation = db.participationStateDao().observe().first()
+        val regionId = participation?.regionId?.takeIf { participation.optedIn } ?: return LoadMoreResult.Unreachable
+        val start = periodFor(kind, time.today(), time.zone(), RegionId(regionId)).start
+        val id = "${kind.name}:$start:$regionId"
+        val cached = db.leaderboardCacheDao().observeById(id).first() ?: return LoadMoreResult.Unreachable
+        val current = Json.decodeFromString<RemoteRankingPage>(cached.payload)
+        val cursor = current.entries.lastOrNull()?.position
+
+        return when (val result = remote.rankingPage(kind, cursor)) {
+            is RemoteResult.Ok -> {
+                val merged = current.copy(
+                    entries = current.entries + result.value.entries,
+                    hasMore = result.value.hasMore,
+                    isFinal = result.value.isFinal,
+                )
+                db.leaderboardCacheDao().upsert(
+                    cached.copy(payload = Json.encodeToString(merged), retrievedAt = time.now().toEpochMilli()),
+                )
+                LoadMoreResult.Applied
+            }
+            RemoteResult.NotAuthenticated -> LoadMoreResult.SessionExpired
+            RemoteResult.Unreachable, is RemoteResult.Rejected -> LoadMoreResult.Unreachable
+        }
+    }
 
     override suspend fun refresh(kind: PeriodKind) = refreshBoundary.refresh(kind)
 
