@@ -166,8 +166,11 @@ unwidened policies, the server-side region assignment, the read-model-level Prin
 — is there because the failure mode is not a wrong number on a screen. It is a participant's
 recording history leaking to a stranger.
 
-**Gate result: PASS.** No principle violation. Complexity Tracking records one constraint relaxation
-that the constitution requires to be justified explicitly.
+**Gate result: PASS.** No principle violation. Complexity Tracking records three items the
+constitution requires to be justified explicitly: the first scheduled server-side job, the offline
+disadvantage created by an immediate period freeze, and the tie-break's reliance on a device-reported
+timestamp. The second is a genuine Principle IV tension rather than a mere relaxation, and is
+recorded as such rather than smoothed over.
 
 ### Post-design re-check (after Phase 1)
 
@@ -185,13 +188,26 @@ Re-evaluated against the artifacts actually produced, not against the intentions
 | **VIII** | Yes | Regions carry seven requirements that FR-012 needs *now*; no follower, group or challenge entity exists in the data model. |
 | **IX** | Yes, and moved into the schema | The absences in [contracts/leaderboard-read-model.md](./contracts/leaderboard-read-model.md) are the enforcement: no `isLast`, no trend, no threshold, no gap figure exists for any view to render. `rls-verification-008.sql` §7 fails the build if such a column is ever added. |
 
-**One design decision changed after the gate**, and it strengthened the result rather than weakening
-it: the user revised Q3 from "withdraw from closed rankings, keep closed Honor Board recognition" to
-"closed periods stand". That removed an exception from a Principle III rule. The tradeoff it
-introduces — a participant cannot erase past standings — is a consent question, not a constitutional
-one, and is handled by **FR-002a** requiring disclosure before opt-in.
+**Design decisions changed after the first gate**, all re-evaluated above rather than assumed still
+compliant:
 
-**Post-design gate result: PASS.**
+- **Q3 revised** from "withdraw from closed rankings, keep closed Honor Board recognition" to
+  "closed periods stand". Removed an exception from a Principle III rule, strengthening it.
+- **Five clarifications** (session 2026-08-29) folded back through every artifact. Two carry
+  constitutional weight. The immediate period freeze creates a real Principle IV tension — an
+  offline participant scores nothing for days synced after a boundary — recorded in the gate table,
+  in Complexity Tracking, in the spec's Assumptions with a revisit trigger, disclosed by FR-025b and
+  asserted by SC-016. The tie-break's device-reported timestamp is bounded by FR-022a to reordering
+  ties alone.
+
+The consent costs these introduce — a participant can neither erase past standings nor have late
+offline days counted — are product questions rather than constitutional ones, and each is handled by
+requiring disclosure before opt-in (FR-002a, FR-002b, FR-025b).
+
+**Traceability check**: all 49 functional requirements and all 17 success criteria are referenced by
+at least one design artifact. No unresolved clarification markers remain in the spec or any artifact.
+
+**Post-design gate result: PASS**, with the Principle IV tension recorded rather than claimed clean.
 
 ## Project Structure
 

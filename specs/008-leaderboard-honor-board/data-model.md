@@ -16,6 +16,9 @@ server computes, the client renders.
 DAILY | WEEKLY | MONTHLY
 ```
 
+The three periods FR-020 requires. Rankings exist for all three; the Honor Board for `WEEKLY` and
+`MONTHLY` only (FR-027a).
+
 ### `LeaderboardPeriod`
 
 | Field | Type | Notes |
@@ -67,7 +70,7 @@ signalling; the way to guarantee neither happens is for the data not to exist (r
 
 | Field | Type | Notes |
 |---|---|---|
-| `period` | `LeaderboardPeriod` | |
+| `period` | `LeaderboardPeriod` | Carries its own boundaries, so the surface can state exactly which span the total covers (FR-026) |
 | `region` | `Region` | |
 | `entries` | `List<RankingEntry>` | A bounded page, position-ordered |
 | `hasMore` | `Boolean` | Drives extend-on-demand (FR-024) |
@@ -82,7 +85,9 @@ signalling; the way to guarantee neither happens is for the data not to exist (r
 | `neighbours` | `List<RankingEntry>` | Entries immediately around it |
 | `totalParticipants` | `Int` | Region size, for context — never framed as "you beat N" |
 
-Returned by a dedicated lookup so SC-009 does not require paging (research R9).
+Returned by a dedicated lookup, which is what satisfies FR-023 — the viewer reaches their own row
+without scrolling an unbounded list — and lets SC-009 hold at 10 000 participants without paging
+(research R9).
 
 ### `TieBreak`
 
