@@ -373,7 +373,7 @@ listed, counted or alluded to.
 - [X] T075 [US4] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomHonorBoardRepository.kt` implementing `HonorBoardRepository`. Re-run T070 and T071 — MUST pass.
 - [X] T076 [US4] Create `GetHonorBoard.kt` in `domain/src/main/kotlin/com/giraffe/mizanapp/domain/usecase/` and register it in Koin.
 - [X] T077 [US4] Create `app/src/main/java/com/giraffe/mizanapp/leaderboard/HonorBoardPanel.kt`. Render for `WEEKLY` and `MONTHLY` only; for `DAILY` render nothing — no placeholder, no explanation, no "not available today" (FR-027a). Re-run T072 — MUST pass.
-- [ ] T078 [US4] Run all four suites. All green.
+- [X] T078 [US4] Run all four suites. All green.
 
 **Checkpoint**: all four stories delivered.
 
