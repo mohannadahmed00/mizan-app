@@ -37,6 +37,8 @@ Then schedule `public.recompute_open_periods()` — cadence is an operator decis
 threshold is configuration, not a constant in code (FR-028). There is no settlement window: periods
 freeze at their boundary (FR-025).
 
+Operator configuration: Supabase Cron runs `public.recompute_open_periods()` every 15 minutes.
+
 Verify the migration matches the contract, as the merge gate requires:
 
 ```powershell
