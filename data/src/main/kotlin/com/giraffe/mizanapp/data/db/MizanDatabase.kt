@@ -4,6 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.giraffe.mizanapp.data.db.dao.LeaderboardCacheDao
+import com.giraffe.mizanapp.data.db.dao.ParticipationStateDao
 import com.giraffe.mizanapp.data.db.daos.AccountScopeDao
 import com.giraffe.mizanapp.data.db.daos.CatalogueDao
 import com.giraffe.mizanapp.data.db.daos.CompletionDao
@@ -60,6 +62,10 @@ abstract class MizanDatabase : RoomDatabase() {
     abstract fun syncCursorDao(): SyncCursorDao
 
     abstract fun accountScopeDao(): AccountScopeDao
+
+    abstract fun leaderboardCacheDao(): LeaderboardCacheDao
+
+    abstract fun participationStateDao(): ParticipationStateDao
 
     companion object {
         const val NAME = "mizan.db"
