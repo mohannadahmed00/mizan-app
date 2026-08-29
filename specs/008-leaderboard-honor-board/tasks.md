@@ -309,7 +309,7 @@ is unchanged, and that the first person's own records and streak are untouched.
 - [X] T054 [US2] Add the leave control to `app/src/main/java/com/giraffe/mizanapp/leaderboard/OptInPanel.kt` (same file, same place — FR-003), with a single confirmation stating the forward/backward asymmetry. Re-run T050 and T051 — MUST pass.
 - [X] T054a [P] [US2] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/SignOutEndsParticipationTest.kt` (FR-008): opt in, confirm the account is visible in the ranking, then sign out. Assert the account is no longer visible to any other participant. Clearing the local tables (T013) is **not** sufficient — a signed-out account left opted-in server-side stays published. Run it — MUST fail.
 - [X] T054b [US2] Extend the sign-out path in `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/SupabaseAccountRepository.kt` to call `setParticipation(false)` before ending the session, for **both** sign-out modes. If the call is unreachable, let sign-out proceed anyway — never block a person from signing out because the leaderboard is down. Re-run T054a — MUST pass.
-- [ ] T055 [US2] Run all four suites. All green before proceeding.
+- [X] T055 [US2] Run all four suites. All green before proceeding.
 
 **Checkpoint**: consent is genuinely revocable; closed periods are provably immutable.
 
