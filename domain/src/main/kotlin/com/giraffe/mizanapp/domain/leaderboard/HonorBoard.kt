@@ -19,6 +19,4 @@ sealed interface HonorBoardState {
 }
 
 /** SC-011: qualification depends only on consistency, never on points (FR-027). */
-fun qualifiesForHonorBoard(daysEngaged: Int, threshold: Int): Boolean {
-    TODO("T073")
-}
+fun qualifiesForHonorBoard(daysEngaged: Int, threshold: Int): Boolean = daysEngaged >= threshold

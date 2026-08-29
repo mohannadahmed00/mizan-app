@@ -368,7 +368,7 @@ listed, counted or alluded to.
 
 ### Implementation for User Story 4
 
-- [ ] T073 [US4] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/leaderboard/HonorBoard.kt` with `HonorBoardMember` (exactly `displayName` and `isViewer`), `HonorBoard`, `HonorBoardState`, and `fun qualifiesForHonorBoard(daysEngaged: Int, threshold: Int): Boolean`. **Points must not be a parameter.** Re-run T069 — MUST pass.
+- [X] T073 [US4] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/leaderboard/HonorBoard.kt` with `HonorBoardMember` (exactly `displayName` and `isViewer`), `HonorBoard`, `HonorBoardState`, and `fun qualifiesForHonorBoard(daysEngaged: Int, threshold: Int): Boolean`. **Points must not be a parameter.** Re-run T069 — MUST pass.
 - [ ] T074 [US4] Add Honor Board writing to `recompute_open_periods()`: on close, insert qualifying members into `honor_board_closed` for `WEEKLY` and `MONTHLY` only (FR-027a). The threshold is read from configuration, not hard-coded (FR-028). Re-copy to the contract and re-verify byte-identity.
 - [ ] T075 [US4] Create `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/RoomHonorBoardRepository.kt` implementing `HonorBoardRepository`. Re-run T070 and T071 — MUST pass.
 - [ ] T076 [US4] Create `GetHonorBoard.kt` in `domain/src/main/kotlin/com/giraffe/mizanapp/domain/usecase/` and register it in Koin.
