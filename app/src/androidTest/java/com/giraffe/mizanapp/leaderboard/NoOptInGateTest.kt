@@ -50,6 +50,7 @@ class NoOptInGateTest {
                     isRefreshing = false,
                 ),
                 onJoin = {},
+                onLeave = {},
             )
         }
     }

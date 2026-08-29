@@ -20,6 +20,7 @@ import com.giraffe.mizanapp.domain.leaderboard.RankingState
 fun LeaderboardSection(
     state: LeaderboardUiState,
     onJoin: () -> Unit,
+    onLeave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (state.visibility) {
@@ -31,6 +32,7 @@ fun LeaderboardSection(
         ) {
             Text("Regional standings", style = MaterialTheme.typography.titleLarge)
             state.regionLabel?.let { Text(it, modifier = Modifier.testTag("leaderboard-region")) }
+            LeaveControl(onLeave = onLeave)
             when (val ranking = state.ranking) {
                 RankingState.Unavailable -> Text("Standings aren't available right now")
                 is RankingState.Cached -> RankingRows(ranking.ranking)

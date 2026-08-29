@@ -258,6 +258,7 @@ private fun WeekRoute(
             LeaderboardSection(
                 state = leaderboardState,
                 onJoin = leaderboardViewModel::join,
+                onLeave = leaderboardViewModel::leave,
             )
         },
         modifier = modifier,

@@ -58,7 +58,7 @@ class LeaderboardViewModel(
     }
 
     fun leave() {
-        TODO("T054")
+        viewModelScope.launch { setParticipation(false) }
     }
 
     private fun Context.toState(ranking: RankingState): LeaderboardUiState {

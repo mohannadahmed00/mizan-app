@@ -4,10 +4,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -51,5 +57,41 @@ fun LeaveControl(
     onLeave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    TODO("T054")
+    var confirming by remember { mutableStateOf(false) }
+
+    Button(
+        onClick = { confirming = true },
+        modifier = modifier.testTag("leaderboard-leave"),
+    ) {
+        Text("Leave the leaderboard")
+    }
+
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text("Leave the leaderboard") },
+            text = {
+                Text(
+                    "Leaving takes you out of the period running now and any that follow — periods " +
+                        "that have already finished stay as they are.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirming = false
+                        onLeave()
+                    },
+                    modifier = Modifier.testTag("leaderboard-leave-confirm"),
+                ) {
+                    Text("Leave")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirming = false }) {
+                    Text("Stay")
+                }
+            },
+        )
+    }
 }
