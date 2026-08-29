@@ -39,6 +39,7 @@ class ForeignAccountIsolationTest : DbTestBase() {
         db = db,
         outbox = Outbox(db, time),
         time = time,
+        remote = FakeRemoteDataSource(),
     )
 
     private suspend fun seedSignedInAsA(fake: FakeRemoteDataSource) {

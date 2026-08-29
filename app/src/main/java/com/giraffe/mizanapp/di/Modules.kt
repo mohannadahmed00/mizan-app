@@ -122,7 +122,7 @@ val dataModule = module {
     single { SyncEngine(get(), get(), get(), get(), get(), get(), ::endSupabaseSession) }
     single { Backfill(get(), get(), get(), get()) }
     single<SyncRepository> { OutboxSyncRepository(get(), get(), get(), scheduler = get()) }
-    single<AccountRepository> { createAccountRepository(get(), get(), get(), get()) }
+    single<AccountRepository> { createAccountRepository(get(), get(), get(), get(), get()) }
     single<CataloguePublicationRepository> { RemoteCataloguePublicationRepository(get(), get(), get()) }
     factory { RequestSignInCode(get()) }
     factory { ConfirmSignInCode(get(), get()) }
