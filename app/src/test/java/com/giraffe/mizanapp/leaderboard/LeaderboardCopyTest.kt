@@ -32,9 +32,16 @@ import org.junit.Test
  *   text in `RankingRows` and `OwnRankRow` — numbers and a static heading,
  *   no comparative language. Visually inspected, clean.
  *
- * No red, orange or amber colour value appears anywhere in this increment's
- * added files (T086 colour audit, in the same comment block by convention;
- * recorded there, not duplicated here).
+ * T086 colour audit — `grep -n "Color(" app/src/main/java/com/giraffe/mizanapp/leaderboard`
+ * and a search for `#`/`0xFF` hex literals across the same directory both
+ * return nothing. Every colour reference in this increment's files
+ * (`LeaderboardSection.kt`, `OptInPanel.kt`, `HonorBoardPanel.kt`) is a
+ * `MaterialTheme.colorScheme` token — `.primary` (the viewer's own row,
+ * `alpha = 0.08f`) or `.surface` (every other row) — never a raw value, so
+ * none can fall in the red/orange/amber range. In `RankingRows`, the
+ * container colour is keyed only on `entry.isViewer`, never on `position`:
+ * the last-place row and the first-place row receive the identical
+ * `.surface` container whenever neither is the viewer (FR-038).
  */
 class LeaderboardCopyTest {
 
