@@ -237,7 +237,6 @@ domain/src/main/kotlin/com/giraffe/mizanapp/domain/
 ├── leaderboard/
 │   ├── LeaderboardPeriod.kt        # Period kind + boundary derivation in a region's zone
 │   ├── Ranking.kt                  # Ranking, RankingEntry, own-rank marker
-│   ├── TieBreak.kt                 # Pure, stable ordering for equal totals
 │   ├── HonorBoard.kt               # Membership; qualification by days engaged
 │   └── Participation.kt            # Consent state
 ├── repository/

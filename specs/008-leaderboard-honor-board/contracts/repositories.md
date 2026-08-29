@@ -137,9 +137,10 @@ Testable without a fake, a database or a clock.
 | Function | Signature | Guarantee |
 |---|---|---|
 | `periodFor` | `(PeriodKind, LocalDate, ZoneId) -> LeaderboardPeriod` | `WEEKLY` delegates to the existing `WeekBoundary`; FR-011 forbids a second week definition |
-| `tieBreak` | `(RankingEntry, RankingEntry) -> Int` | Equal totals order by who reached them earliest (FR-022); total, stable, deterministic |
 | `qualifiesForHonorBoard` | `(daysEngaged: Int, threshold: Int) -> Boolean` | Points are **not a parameter** — the function cannot consult them even by accident (FR-027). Defined for `WEEKLY` and `MONTHLY` only (FR-027a) |
 | `markViewer` | `(List<RankingEntry>, userId: String) -> List<RankingEntry>` | Sets `isViewer`; sets no `isLast`, no `isBottom` (FR-038) |
+
+The tie-break (FR-022) is implemented in SQL, inside `recompute_open_periods()` — not a `:domain` pure function, which would be dead code (Principle VIII). Tested by `RankingAggregationTest` (T057).
 
 ---
 

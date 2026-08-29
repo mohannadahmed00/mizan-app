@@ -89,17 +89,9 @@ Returned by a dedicated lookup, which is what satisfies FR-023 — the viewer re
 without scrolling an unbounded list — and lets SC-009 hold at 10 000 participants without paging
 (research R9).
 
-### `TieBreak`
-
-A pure, total ordering for equal totals (FR-022). Ordering is by `points` descending, then by
-**who reached the total earliest** — the recorded time of the last completion contributing to it.
-The function is pure, so the same inputs always produce the same order, and no comparison is
-expressed as one participant beating another.
-
-The recorded time is device-reported, so a manipulated client could reorder a tie. FR-022a bounds
-that exposure explicitly: it cannot change any total, days-engaged figure or region, and cannot put
-a participant above anyone with a higher total. Ordering *within* an identical total is all it
-reaches.
+The tie-break for equal totals (FR-022) lives in SQL, inside `recompute_open_periods()` — not a
+`:domain` pure function, which would be dead code (Principle VIII). Tested by `RankingAggregationTest`
+(T057).
 
 ### `HonorBoardMember`
 
