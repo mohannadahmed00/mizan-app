@@ -135,6 +135,21 @@ class FakeRemoteDataSource : RemoteDataSource {
         closedPeriods += kind to regionId
     }
 
+    /** Materialises a newly opened period from consent as the server fold does. */
+    fun seedNewOpenPeriod(
+        kind: PeriodKind,
+        regionId: String,
+        candidateEntries: List<RemoteRankingEntry>,
+        periodStart: String,
+    ) {
+        seedEntries(
+            kind = kind,
+            regionId = regionId,
+            entries = candidateEntries.filter { participation[it.userId]?.optedIn == true },
+            periodStart = periodStart,
+        )
+    }
+
     fun publish(publication: RemotePublication) {
         publications += publication
     }
