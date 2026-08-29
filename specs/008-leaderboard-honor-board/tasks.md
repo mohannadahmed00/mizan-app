@@ -237,7 +237,7 @@ Do not improvise. The three most likely causes, in order:
 - [X] T022 [P] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/repository/ParticipationRepository.kt` exactly as declared in [contracts/repositories.md](./contracts/repositories.md), including the KDoc. Interface only — no implementation.
 - [X] T023 [P] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/repository/LeaderboardRepository.kt` exactly as declared in [contracts/repositories.md](./contracts/repositories.md). Interface only. **It must contain no method that sums, sorts or extends a ranking** (Rule C).
 - [X] T024 [P] Create `domain/src/main/kotlin/com/giraffe/mizanapp/domain/repository/HonorBoardRepository.kt` exactly as declared in [contracts/repositories.md](./contracts/repositories.md), including the comment that `DAILY` is a programming error (FR-027a).
-- [ ] T025 Run `.\gradlew :domain:test` and confirm `ModuleBoundaryTest` still passes — `:domain` must have gained no Android, Room, Ktor, Supabase or Koin import.
+- [X] T025 Run `.\gradlew :domain:test` and confirm `ModuleBoundaryTest` still passes — `:domain` must have gained no Android, Room, Ktor, Supabase or Koin import.
 
 ### Remote seam
 
