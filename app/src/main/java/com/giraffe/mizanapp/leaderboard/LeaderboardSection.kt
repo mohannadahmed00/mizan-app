@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -54,7 +56,29 @@ private fun PeriodSelector(
     onSelect: (PeriodKind) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    TODO("T067")
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PeriodKind.entries.forEach { kind -> PeriodOption(kind, selected, onSelect) }
+        }
+        Text(periodLabel(selected), modifier = Modifier.testTag("leaderboard-period-label"))
+    }
+}
+
+@Composable
+private fun PeriodOption(kind: PeriodKind, selected: PeriodKind, onSelect: (PeriodKind) -> Unit) {
+    val tag = Modifier.testTag("leaderboard-period-${kind.name.lowercase()}")
+    val label = kind.name.lowercase().replaceFirstChar(Char::uppercase)
+    if (kind == selected) {
+        Button(onClick = { onSelect(kind) }, modifier = tag) { Text(label) }
+    } else {
+        TextButton(onClick = { onSelect(kind) }, modifier = tag) { Text(label) }
+    }
+}
+
+private fun periodLabel(kind: PeriodKind): String = when (kind) {
+    PeriodKind.DAILY -> "Today"
+    PeriodKind.WEEKLY -> "This week, Saturday to Friday"
+    PeriodKind.MONTHLY -> "This month"
 }
 
 /** FR-023, SC-009: the viewer's own row, reachable without scrolling through the page. */
