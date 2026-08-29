@@ -16,14 +16,24 @@ insert into auth.users (id, email) values
     ('22222222-2222-2222-2222-222222222222', 'user-b@example.test'),
     ('33333333-3333-3333-3333-333333333333', 'user-c@example.test');
 
+-- Safe only because the whole script rolls back: this project's real seed
+-- (T003) already carries a fallback region, and `regions_single_fallback`
+-- allows at most one. Clearing it inside the transaction lets this script's
+-- own fixture regions stand up without colliding with production seed data.
+update public.regions set is_fallback = false where is_fallback;
+
 insert into public.regions (id, display_name, zone, is_fallback) values
     ('r-east', 'Eastern',  'Asia/Riyadh',  false),
     ('r-west', 'Western',  'Europe/London', false),
     ('r-back', 'Elsewhere','UTC',           true);
 
+-- `on conflict` for the same reason as the fallback clear above: the real
+-- seed already maps these zones to its own regions, and the whole script
+-- rolls back, so temporarily repointing them is safe.
 insert into public.region_zone_map (zone, region_id) values
     ('Asia/Riyadh',   'r-east'),
-    ('Europe/London', 'r-west');
+    ('Europe/London', 'r-west')
+on conflict (zone) do update set region_id = excluded.region_id;
 
 -- A and B are in the same region; C is in another.
 insert into public.leaderboard_participation (user_id, opted_in, reported_zone) values
