@@ -14,8 +14,11 @@ import com.giraffe.mizanapp.data.sync.dto.RemotePublication
 import com.giraffe.mizanapp.data.sync.dto.RemoteRankingEntry
 import com.giraffe.mizanapp.data.sync.dto.RemoteRankingPage
 import com.giraffe.mizanapp.domain.leaderboard.PeriodKind
+import com.giraffe.mizanapp.domain.leaderboard.RegionId
+import com.giraffe.mizanapp.domain.leaderboard.periodFor
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -83,15 +86,80 @@ class FakeRemoteDataSource : RemoteDataSource {
     var materializedPeriodCount: Int = 0
         private set
 
-    /** T062 replaces this placeholder with the fake's mirror of the SQL fold. */
-    fun recomputeOpenPeriods() = Unit
+    private val daysEngagedStore = HashMap<Triple<PeriodKind, String, String>, Int>()
+
+    /**
+     * The fake's mirror of `recompute_open_periods()`'s fold (T062). Never
+     * auto-closes a period — that stays test-driven via [markPeriodClosed],
+     * since only the real SQL function has a wall clock to check a boundary
+     * against (Rule B: every already-closed key here is skipped, never
+     * touched).
+     */
+    fun recomputeOpenPeriods() {
+        val regionIds = regionsByZone.values.map { it.id }.distinct()
+        for (kind in PeriodKind.entries) {
+            for (regionId in regionIds) {
+                val key = kind to regionId
+                if (key in closedPeriods) continue
+                val region = regionsByZone.values.first { it.id == regionId }
+                val zone = ZoneId.of(region.zone)
+                val participantIds = participation.filterValues { it.optedIn && it.regionId == regionId }.keys
+                if (participantIds.isEmpty()) continue
+
+                val liveByUser = participantIds.associateWith { uid ->
+                    completions.values.filter { it.userId == uid && it.reversedAt == null }
+                }
+                val latestStart = liveByUser.values.flatten()
+                    .map { periodFor(kind, LocalDate.parse(it.creditedDate), zone, RegionId(regionId)).start }
+                    .maxOrNull() ?: continue
+                val period = periodFor(kind, latestStart, zone, RegionId(regionId))
+
+                val summaries = liveByUser.mapNotNull { (uid, rows) ->
+                    val inPeriod = rows.filter { row ->
+                        val date = LocalDate.parse(row.creditedDate)
+                        !date.isBefore(period.start) && !date.isAfter(period.endInclusive)
+                    }
+                    if (inPeriod.isEmpty()) return@mapNotNull null
+                    FoldSummary(
+                        userId = uid,
+                        points = inPeriod.sumOf { it.pointsAwarded },
+                        daysEngaged = inPeriod.map { it.creditedDate }.distinct().size,
+                        // FR-022's tie-break: who reached the total earliest.
+                        lastRecordedAt = inPeriod.maxOf { Instant.parse(it.recordedAt) },
+                    )
+                }
+                // Position = rank over (points desc, lastRecordedAt asc) — FR-022a bounds
+                // a forged clock to reordering this tie alone.
+                val ordered = summaries.sortedWith(compareByDescending<FoldSummary> { it.points }.thenBy { it.lastRecordedAt })
+
+                ordered.forEach { daysEngagedStore[Triple(kind, regionId, it.userId)] = it.daysEngaged }
+                rankingPages[key] = FakeRankingSnapshot(
+                    periodStart = period.start.toString(),
+                    periodEndInclusive = period.endInclusive.toString(),
+                    regionDisplayName = region.displayName,
+                    regionZone = region.zone,
+                    entries = ordered.mapIndexed { index, s ->
+                        RemoteRankingEntry(
+                            userId = s.userId,
+                            displayName = profiles[s.userId]?.displayName ?: "Participant",
+                            points = s.points,
+                            position = index + 1,
+                        )
+                    },
+                )
+                materializedPeriodCount++
+            }
+        }
+    }
+
+    private data class FoldSummary(val userId: String, val points: Int, val daysEngaged: Int, val lastRecordedAt: Instant)
 
     /**
      * Test-only mirror of `leaderboard_entries.days_engaged` (T057, T069/T070) —
      * never exposed through [RemoteDataSource] or any client-facing DTO (Rule D).
-     * T062 replaces this placeholder with the fake's mirror of the SQL fold.
      */
-    fun daysEngagedFor(kind: PeriodKind, regionId: String, userId: String): Int = 0
+    fun daysEngagedFor(kind: PeriodKind, regionId: String, userId: String): Int =
+        daysEngagedStore[Triple(kind, regionId, userId)] ?: 0
 
     /** Adds or replaces one zone mapping without giving production code a region-selection path. */
     fun seedRegion(zoneId: String, regionId: String, displayName: String) {

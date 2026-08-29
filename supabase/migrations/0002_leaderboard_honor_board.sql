@@ -324,7 +324,73 @@ begin
     --
     -- The threshold comes from public.honor_board_config, joined on period_kind
     -- — never a constant in this function (FR-028).
-    null;
+    declare
+        r record;
+    begin
+        -- Step 0.
+        for r in select id as region_id, zone from public.regions loop
+            insert into public.leaderboard_periods (period_kind, period_start, region_id)
+            values
+                ('DAILY',   (now() at time zone r.zone)::date, r.region_id),
+                ('WEEKLY',  (now() at time zone r.zone)::date
+                                - ((extract(dow from (now() at time zone r.zone)::date)::int + 1) % 7),
+                            r.region_id),
+                ('MONTHLY', date_trunc('month', (now() at time zone r.zone)::date)::date, r.region_id)
+            on conflict (period_kind, period_start, region_id) do nothing;
+        end loop;
+
+        -- The fold, over every period still OPEN.
+        for r in
+            select p.period_kind, p.period_start, p.region_id, rg.zone,
+                   case p.period_kind
+                       when 'DAILY'   then p.period_start
+                       when 'WEEKLY'  then p.period_start + 6
+                       when 'MONTHLY' then (date_trunc('month', p.period_start) + interval '1 month' - interval '1 day')::date
+                   end as period_end_inclusive
+              from public.leaderboard_periods p
+              join public.regions rg on rg.id = p.region_id
+             where p.state <> 'CLOSED'
+        loop
+            delete from public.leaderboard_entries
+                  where period_kind = r.period_kind and period_start = r.period_start and region_id = r.region_id;
+
+            insert into public.leaderboard_entries
+                (period_kind, period_start, region_id, user_id, display_name, points, days_engaged, position)
+            select r.period_kind, r.period_start, r.region_id, c.user_id,
+                   coalesce(pr.display_name, 'Participant'),
+                   sum(c.points_awarded),
+                   count(distinct c.credited_date),
+                   rank() over (order by sum(c.points_awarded) desc, max(c.recorded_at) asc)
+              from public.completions c
+              join public.leaderboard_participation lp
+                on lp.user_id = c.user_id and lp.opted_in and lp.region_id = r.region_id
+              left join public.profiles pr on pr.id = c.user_id
+             where c.reversed_at is null
+               and c.credited_date between r.period_start and r.period_end_inclusive
+             group by c.user_id, pr.display_name;
+
+            -- Close it once its own region-local boundary has passed. No settlement
+            -- window (FR-025): the check runs every call, so the freeze lands on the
+            -- first recompute after the boundary, not on a fixed delay.
+            if (r.period_end_inclusive + 1)::timestamp at time zone r.zone <= now() then
+                if r.period_kind in ('WEEKLY', 'MONTHLY') then
+                    insert into public.honor_board_closed (period_kind, period_start, region_id, user_id, display_name)
+                    select e.period_kind, e.period_start, e.region_id, e.user_id, e.display_name
+                      from public.leaderboard_entries e
+                      join public.honor_board_config hc on hc.period_kind = e.period_kind
+                     where e.period_kind = r.period_kind
+                       and e.period_start = r.period_start
+                       and e.region_id = r.region_id
+                       and e.days_engaged >= hc.threshold_days
+                    on conflict do nothing;
+                end if;
+
+                update public.leaderboard_periods
+                   set state = 'CLOSED', closed_at = now()
+                 where period_kind = r.period_kind and period_start = r.period_start and region_id = r.region_id;
+            end if;
+        end loop;
+    end;
 end;
 $$;
 
