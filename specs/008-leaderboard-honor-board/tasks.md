@@ -419,7 +419,7 @@ listed, counted or alluded to.
   - SC-016: `LateSyncAfterFreezeTest` — pass.
   - SC-017: `DuplicateDisplayNameTest` — pass.
   - Result: all 17 criteria have passing automated/structural coverage; four by-hand walks (SC-001, SC-005, SC-008, SC-014) need a live device and/or OTP inbox and are follow-ups, not silently skipped — same pattern as spec 007's issue #15.
-- [ ] T093 Pre-merge gate check against `CLAUDE.md`: Constitution Check passes and names each principle touched; all four suites green; **the PR's commit history shows every test task committed before its implementation task** (Principle I); the Principle III test (T079) is present and passing; the Room migration is additive and its schema exported.
+- [X] T093 Pre-merge gate check against `CLAUDE.md`: Constitution Check passes and names each principle touched; all four suites green; **the PR's commit history shows every test task committed before its implementation task** (Principle I); the Principle III test (T079) is present and passing; the Room migration is additive and its schema exported.
 
 ---
 
