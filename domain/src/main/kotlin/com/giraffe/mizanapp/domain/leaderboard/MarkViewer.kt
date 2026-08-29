@@ -4,4 +4,6 @@ package com.giraffe.mizanapp.domain.leaderboard
 fun markViewer(
     entries: List<RankingEntry>,
     viewerUserId: String?,
-): List<RankingEntry> = TODO("T021")
+): List<RankingEntry> = entries.map { entry ->
+    entry.copy(isViewer = viewerUserId != null && entry.userId == viewerUserId)
+}
