@@ -1,7 +1,16 @@
 package com.giraffe.mizanapp.leaderboard
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import com.giraffe.mizanapp.domain.leaderboard.HonorBoardState
 import com.giraffe.mizanapp.domain.leaderboard.PeriodKind
 
@@ -16,5 +25,18 @@ fun HonorBoardPanel(
     state: HonorBoardState,
     modifier: Modifier = Modifier,
 ) {
-    TODO("T077")
+    if (kind == PeriodKind.DAILY) return
+    if (state !is HonorBoardState.Available) return
+
+    Column(
+        modifier = modifier.fillMaxWidth().testTag("honor-board"),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("Honor Board", style = MaterialTheme.typography.titleLarge)
+        state.honorBoard.members.forEach { member ->
+            Card(modifier = Modifier.fillMaxWidth().testTag("honor-board-member")) {
+                Text(member.displayName, modifier = Modifier.padding(12.dp))
+            }
+        }
+    }
 }

@@ -45,6 +45,7 @@ fun LeaderboardSection(
                 is RankingState.Cached -> RankingRows(ranking.ranking)
                 is RankingState.Live -> RankingRows(ranking.ranking)
             }
+            HonorBoardPanel(kind = state.selectedPeriod, state = state.honorBoard)
         }
     }
 }
