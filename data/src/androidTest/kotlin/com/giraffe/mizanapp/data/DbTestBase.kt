@@ -22,13 +22,14 @@ import org.junit.Before
 /** A clock the instrumented tests control. No test may read the real one. */
 class TestTimeProvider(
     private var instant: Instant = Instant.parse("2026-03-14T09:00:00Z"),
-    private val zone: ZoneId = ZoneId.of("Africa/Cairo"),
+    private var zone: ZoneId = ZoneId.of("Africa/Cairo"),
 ) : TimeProvider {
     override fun now(): Instant = instant
     override fun today(): LocalDate = DayBoundary.dateAt(instant, zone)
     override fun zone(): ZoneId = zone
     fun advanceBy(duration: Duration) { instant = instant.plus(duration) }
     fun setDate(date: LocalDate) { instant = date.atTime(9, 0).atZone(zone).toInstant() }
+    fun setZone(newZone: ZoneId) { zone = newZone }
 }
 
 abstract class DbTestBase {
