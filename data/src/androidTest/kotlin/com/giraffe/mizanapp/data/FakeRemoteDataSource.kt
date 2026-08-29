@@ -190,6 +190,13 @@ class FakeRemoteDataSource : RemoteDataSource {
         )
     }
 
+    private val honorBoardMemberUserIds = HashMap<Pair<PeriodKind, String>, MutableList<String>>()
+
+    /**
+     * [memberUserIds], parallel to [members] by index, exists only so
+     * [setParticipation] can filter a withdrawing member out of an OPEN board
+     * (Rule B) — [RemoteHonorBoardMember] itself carries no user id (Rule D).
+     */
     fun seedHonorBoard(
         kind: PeriodKind,
         regionId: String,
@@ -198,6 +205,7 @@ class FakeRemoteDataSource : RemoteDataSource {
         regionZone: String = "UTC",
         periodStart: String = "2026-08-29",
         periodEndInclusive: String = periodStart,
+        memberUserIds: List<String> = emptyList(),
     ) {
         honorBoards[kind to regionId] = RemoteHonorBoard(
             periodKind = kind.name,
@@ -209,6 +217,7 @@ class FakeRemoteDataSource : RemoteDataSource {
             members = members.toList(),
             viewerQualified = members.any(RemoteHonorBoardMember::isViewer),
         )
+        honorBoardMemberUserIds[kind to regionId] = memberUserIds.toMutableList()
     }
 
     fun markPeriodClosed(kind: PeriodKind, regionId: String) {
@@ -419,6 +428,16 @@ class FakeRemoteDataSource : RemoteDataSource {
             rankingPages.forEach { (key, snapshot) ->
                 if (key !in closedPeriods) {
                     snapshot.entries = snapshot.entries.filterNot { it.userId == userId }
+                }
+            }
+            honorBoards.forEach { (key, board) ->
+                if (key !in closedPeriods) {
+                    val ids = honorBoardMemberUserIds[key]
+                    val index = ids?.indexOf(userId) ?: -1
+                    if (ids != null && index >= 0) {
+                        ids.removeAt(index)
+                        honorBoards[key] = board.copy(members = board.members.filterIndexed { i, _ -> i != index })
+                    }
                 }
             }
         }

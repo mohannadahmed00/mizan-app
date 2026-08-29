@@ -8,6 +8,7 @@ import com.giraffe.mizanapp.data.repository.RemoteCataloguePublicationRepository
 import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
 import com.giraffe.mizanapp.data.repository.RoomCompletionRepository
 import com.giraffe.mizanapp.data.repository.RoomDayPlanRepository
+import com.giraffe.mizanapp.data.repository.RoomHonorBoardRepository
 import com.giraffe.mizanapp.data.repository.RoomLeaderboardRepository
 import com.giraffe.mizanapp.data.repository.RoomParticipationRepository
 import com.giraffe.mizanapp.data.repository.RoomRecordCoverageRepository
@@ -33,6 +34,7 @@ import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.HonorBoardRepository
 import com.giraffe.mizanapp.domain.repository.LeaderboardRepository
 import com.giraffe.mizanapp.domain.repository.ParticipationRepository
 import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
@@ -123,6 +125,7 @@ val dataModule = module {
     single { LeaderboardRefresh(get(), get(), get()) }
     single<ParticipationRepository> { RoomParticipationRepository(get(), get()) }
     single<LeaderboardRepository> { RoomLeaderboardRepository(get(), get(), get(), get(), get()) }
+    single<HonorBoardRepository> { RoomHonorBoardRepository(get(), get()) }
     single { SyncEngine(get(), get(), get(), get(), get(), get(), ::endSupabaseSession) }
     single { Backfill(get(), get(), get(), get()) }
     single<SyncRepository> { OutboxSyncRepository(get(), get(), get(), scheduler = get()) }

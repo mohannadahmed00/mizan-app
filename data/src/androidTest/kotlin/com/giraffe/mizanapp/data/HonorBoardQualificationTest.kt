@@ -32,8 +32,15 @@ class HonorBoardQualificationTest {
             REGION,
             listOf(RemoteHonorBoardMember("Viewer", false), RemoteHonorBoardMember("Observer", false)),
             periodStart = "2026-08-15",
+            memberUserIds = listOf(VIEWER, OBSERVER),
         )
-        fake.seedHonorBoard(PeriodKind.MONTHLY, REGION, listOf(RemoteHonorBoardMember("Viewer", false)), periodStart = "2026-08-01")
+        fake.seedHonorBoard(
+            PeriodKind.MONTHLY,
+            REGION,
+            listOf(RemoteHonorBoardMember("Viewer", false)),
+            periodStart = "2026-08-01",
+            memberUserIds = listOf(VIEWER),
+        )
         fake.markPeriodClosed(PeriodKind.MONTHLY, REGION)
 
         fake.currentUserId = VIEWER
