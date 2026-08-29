@@ -8,6 +8,8 @@ import com.giraffe.mizanapp.data.repository.RemoteCataloguePublicationRepository
 import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
 import com.giraffe.mizanapp.data.repository.RoomCompletionRepository
 import com.giraffe.mizanapp.data.repository.RoomDayPlanRepository
+import com.giraffe.mizanapp.data.repository.RoomLeaderboardRepository
+import com.giraffe.mizanapp.data.repository.RoomParticipationRepository
 import com.giraffe.mizanapp.data.repository.RoomRecordCoverageRepository
 import com.giraffe.mizanapp.data.repository.SyncingCompletionRepository
 import com.giraffe.mizanapp.data.repository.SyncingDayPlanRepository
@@ -15,6 +17,7 @@ import com.giraffe.mizanapp.data.repository.createAccountRepository
 import com.giraffe.mizanapp.data.seed.CatalogueSeeder
 import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.data.sync.Backfill
+import com.giraffe.mizanapp.data.sync.LeaderboardRefresh
 import com.giraffe.mizanapp.data.sync.Outbox
 import com.giraffe.mizanapp.data.sync.RemoteDataSource
 import com.giraffe.mizanapp.data.sync.SyncEngine
@@ -30,6 +33,8 @@ import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.repository.LeaderboardRepository
+import com.giraffe.mizanapp.domain.repository.ParticipationRepository
 import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.time.TimeProvider
@@ -38,6 +43,8 @@ import com.giraffe.mizanapp.domain.usecase.GetDayDetail
 import com.giraffe.mizanapp.domain.usecase.GetDaySummary
 import com.giraffe.mizanapp.domain.usecase.GetHistoryPage
 import com.giraffe.mizanapp.domain.usecase.GetMonthOverview
+import com.giraffe.mizanapp.domain.usecase.GetParticipationState
+import com.giraffe.mizanapp.domain.usecase.GetRanking
 import com.giraffe.mizanapp.domain.usecase.GetPersonalBests
 import com.giraffe.mizanapp.domain.usecase.GetSectionBreakdown
 import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
@@ -45,11 +52,13 @@ import com.giraffe.mizanapp.domain.usecase.GetWeekSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeeklyTrend
 import com.giraffe.mizanapp.domain.usecase.RequestSignInCode
 import com.giraffe.mizanapp.domain.usecase.SignOut
+import com.giraffe.mizanapp.domain.usecase.SetParticipation
 import com.giraffe.mizanapp.domain.usecase.UpdateDisplayName
 import com.giraffe.mizanapp.auth.SignInViewModel
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
 import com.giraffe.mizanapp.history.HistoryViewModel
 import com.giraffe.mizanapp.insights.InsightsViewModel
+import com.giraffe.mizanapp.leaderboard.LeaderboardViewModel
 import com.giraffe.mizanapp.profile.ProfileViewModel
 import com.giraffe.mizanapp.sync.SyncStatusViewModel
 import com.giraffe.mizanapp.today.TodayViewModel
@@ -79,6 +88,9 @@ val domainModule = module {
     factory { GetMonthOverview(get(), get(), get(), get(), get()) }
     factory { GetSectionBreakdown(get(), get(), get(), get(), get()) }
     factory { GetPersonalBests(get(), get(), get(), get(), get()) }
+    factory { GetParticipationState(get()) }
+    factory { SetParticipation(get(), get()) }
+    factory { GetRanking(get()) }
 }
 
 val dataModule = module {
@@ -104,6 +116,9 @@ val dataModule = module {
     single { accountScopeDaoOf(get()) }
     single { AccountScope(get(), get()) }
     single<RemoteDataSource> { createRemoteDataSource() }
+    single { LeaderboardRefresh(get(), get(), get()) }
+    single<ParticipationRepository> { RoomParticipationRepository(get(), get()) }
+    single<LeaderboardRepository> { RoomLeaderboardRepository(get(), get(), get(), get(), get()) }
     single { SyncEngine(get(), get(), get(), get(), get(), get(), ::endSupabaseSession) }
     single { Backfill(get(), get(), get(), get()) }
     single<SyncRepository> { OutboxSyncRepository(get(), get(), get(), scheduler = get()) }
@@ -125,6 +140,7 @@ val appModule = module {
     viewModel { SignInViewModel(get(), get(), get(), isSupabaseConfigured()) }
     viewModel { SyncStatusViewModel(get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get()) }
+    viewModel { LeaderboardViewModel(get(), get(), get(), get(), get()) }
 }
 
 val mizanModules = listOf(domainModule, dataModule, appModule)
