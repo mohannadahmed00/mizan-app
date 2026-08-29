@@ -126,6 +126,30 @@ create policy leaderboard_periods_select_all on public.leaderboard_periods
     for select to authenticated using (true);
 
 -- ---------------------------------------------------------------------------
+-- 3b. Honor Board configuration. The days-engaged threshold, administrator-
+--     defined and never user-configurable (FR-028).
+--
+--     Readable by NO client. FR-030 and SC-012 forbid a participant retrieving
+--     the threshold at all: knowing it turns "I am not on the board" into
+--     "I was N days short", which is exactly the deficit framing Principle IX
+--     rules out. RLS with no policy denies every client, the same device used
+--     for region_zone_map.
+--
+--     Keyed by period_kind because weekly and monthly need different bars, and
+--     DAILY is absent because there is no daily Honor Board (FR-027a).
+-- ---------------------------------------------------------------------------
+
+create table public.honor_board_config (
+    period_kind     text primary key check (period_kind in ('WEEKLY', 'MONTHLY')),
+    threshold_days  integer not null check (threshold_days > 0),
+    updated_at      timestamptz not null default now()
+);
+
+alter table public.honor_board_config enable row level security;
+
+-- Deliberately no policy of any kind. Seeded by an operator (FR-028).
+
+-- ---------------------------------------------------------------------------
 -- 4. The aggregate. THE ONLY TABLE ANY PARTICIPANT READS ABOUT ANYONE ELSE.
 --    Holds only what FR-002 says opting in publishes.
 -- ---------------------------------------------------------------------------
@@ -248,7 +272,22 @@ security definer
 set search_path = public
 as $$
 begin
-    -- Implementation note for /speckit-tasks: the working set is
+    -- STEP 0 — MATERIALISE THE CURRENT PERIODS FIRST. Nothing else creates
+    -- rows in leaderboard_periods, and both mutating paths join it: the fold
+    -- below, and the withdrawal delete above. If this table is empty the
+    -- withdrawal delete matches zero rows and OPT-OUT SILENTLY DOES NOTHING,
+    -- which is the worst failure this feature can produce — it looks like it
+    -- worked. So, for every region and each of DAILY, WEEKLY and MONTHLY:
+    --
+    --   insert into public.leaderboard_periods (period_kind, period_start, region_id)
+    --   select ... the period containing now() in that region's zone ...
+    --   on conflict (period_kind, period_start, region_id) do nothing;
+    --
+    -- WEEKLY must start on a Saturday, matching WeekBoundary (FR-011).
+    -- `do nothing` keeps this idempotent and, critically, cannot resurrect or
+    -- reopen a period already marked CLOSED (Rule B).
+    --
+    -- Then the working set is
     --   select * from public.leaderboard_periods where state <> 'CLOSED'
     -- so a closed period is never selected, not merely skipped.
     --
@@ -283,7 +322,8 @@ begin
     -- opening period (FR-004b): the fold joins leaderboard_participation on
     -- opted_in.
     --
-    -- The Honor Board threshold is configuration, not a constant (FR-028).
+    -- The threshold comes from public.honor_board_config, joined on period_kind
+    -- — never a constant in this function (FR-028).
     null;
 end;
 $$;

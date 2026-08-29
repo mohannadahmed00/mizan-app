@@ -268,6 +268,50 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 8. The Honor Board threshold is not retrievable by any client (FR-030,
+--    SC-012). Knowing it turns "I am not on the board" into "I was N days
+--    short", which is the deficit framing Principle IX forbids.
+-- ---------------------------------------------------------------------------
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+
+do $$
+declare visible integer;
+begin
+    select count(*) into visible from public.honor_board_config;
+    if visible <> 0 then
+        raise exception 'SC-012 FAILED: a client reads % rows of the Honor Board threshold config', visible;
+    end if;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 9. Withdrawal actually reaches something (FR-004).
+--
+--    This guards the failure mode that looks like success: leaderboard_periods
+--    is the join target of the withdrawal delete, so if nothing ever populates
+--    it, opting out matches zero rows and silently does nothing. Section 6
+--    above seeds its own period rows and would pass regardless — this asserts
+--    the real table is populated for the current period.
+-- ---------------------------------------------------------------------------
+
+set local role postgres;
+
+do $$
+declare open_periods integer;
+begin
+    select count(*) into open_periods
+      from public.leaderboard_periods
+     where state = 'OPEN';
+    if open_periods = 0 then
+        raise exception
+            'FR-004 FAILED: no OPEN period rows exist, so the withdrawal delete can never match — opt-out would silently do nothing. Has recompute_open_periods() run?';
+    end if;
+end;
+$$;
+
 select 'RLS OK 008' as result;
 
 rollback;

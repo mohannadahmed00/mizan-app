@@ -59,7 +59,7 @@ Run from the repository root, Windows PowerShell:
 .\gradlew :data:connectedAndroidTest                                # needs a running emulator
 .\gradlew :app:connectedAndroidTest                                 # needs a running emulator
 .\gradlew :domain:test --tests "*PeriodForTest*"                    # one class
-.\gradlew :data:connectedAndroidTest -Pandroid.testInstrumentationrunnerArguments.class=com.giraffe.mizanapp.data.LeaderboardCacheTest
+.\gradlew :data:connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.giraffe.mizanapp.data.LeaderboardCacheTest
 ```
 
 Start an emulator with:
@@ -109,10 +109,43 @@ write to a closed period.
 entries, assigns a position, or extends a ranking locally. The client renders what the service
 returns. If you are writing arithmetic over points in `:domain`, `:data` or `:app`, stop.
 
-**Rule D — no field that shames anyone may exist.** Not in a DTO, not in a UI model, not in a
-database column, not filtered out later — it must not exist at all. Specifically forbidden anywhere:
+**Rule D — no field that shames anyone may be reachable by a client.** Not in a DTO, not in a UI
+model, not in a readable database column, not filtered out later — it must not be retrievable at
+all. Forbidden in every DTO, UI model, domain type and client-readable table:
+
 `isLast`, `isBottom`, `trend`, `positionChange`, `lastPosition`, `pointsBehind`, `gapToNext`,
 `threshold`, `thresholdDistance`, `daysShort`, `shortfall`, `nonQualifierCount`, `missedCount`.
+
+**One deliberate exception, on the server only**: `public.honor_board_config.threshold_days` holds
+the administrator-defined bar (FR-028). It is exempt because **no client can read it** — the table
+has RLS enabled and no policy, so every client is denied, and `rls-verification-008.sql` §8 proves
+it. The threshold must exist somewhere or it cannot be configured; the guarantee is that a
+participant can never retrieve it and turn "I am not on the board" into "I was N days short".
+
+The test of Rule D is therefore always: *can a client get at this?* If yes, it must not exist. If it
+is server-side and unreadable, it may.
+
+### 4b. The SQL copy direction — one direction, always
+
+The contract `specs/008-leaderboard-honor-board/contracts/remote-schema-008.sql` is the **source of
+truth**. The migration `supabase/migrations/0002_leaderboard_honor_board.sql` is a copy of it.
+
+Every SQL change follows the same three steps, in this order, with no exceptions:
+
+1. Edit **the contract**.
+2. Copy the contract over the migration (contract → migration). Never the reverse.
+3. Verify byte-identity, then apply:
+
+```powershell
+Copy-Item specs\008-leaderboard-honor-board\contracts\remote-schema-008.sql `
+          supabase\migrations\0002_leaderboard_honor_board.sql -Force
+git diff --no-index supabase\migrations\0002_leaderboard_honor_board.sql `
+                    specs\008-leaderboard-honor-board\contracts\remote-schema-008.sql
+supabase db execute --file supabase\migrations\0002_leaderboard_honor_board.sql
+```
+
+The `git diff` must print nothing. Copying migration → contract would overwrite the source of truth
+with a derivative, so if you ever find yourself doing that, you have misread the task.
 
 ### 5. Kotlin style, matching the existing code
 
@@ -162,8 +195,9 @@ Do not improvise. The three most likely causes, in order:
 
 - [ ] T001 Start an emulator, then run all four suites to confirm a green baseline before any change: `.\gradlew :domain:test :app:test :data:test :data:connectedAndroidTest :app:connectedAndroidTest`. Record the pass counts in the commit message. If anything is red, stop — fix `develop-v1` first, do not start this increment on a red tree.
 - [ ] T002 Create `supabase/migrations/0002_leaderboard_honor_board.sql` as a **byte-identical copy** of `specs/008-leaderboard-honor-board/contracts/remote-schema-008.sql`. Do not edit either file. Verify with `git diff --no-index supabase\migrations\0002_leaderboard_honor_board.sql specs\008-leaderboard-honor-board\contracts\remote-schema-008.sql` — it must print nothing.
-- [ ] T003 [P] Create `supabase/seed/regions.sql` inserting the administrator-defined regions into `public.regions` and their zone mappings into `public.region_zone_map`. Seed at least four regions spanning ≥12 hours of offset so SC-005 is testable, plus **exactly one** row with `is_fallback = true` (FR-015). Suggested: `Asia/Riyadh`, `Africa/Cairo`, `Europe/London`, `Asia/Karachi`, and a UTC fallback. Map every seeded zone in `region_zone_map`.
-- [ ] T004 Apply the migration to the Supabase project: `supabase db execute --file supabase\migrations\0002_leaderboard_honor_board.sql`. Then apply the seed: `supabase db execute --file supabase\seed\regions.sql`. If the project is paused, resume it from the dashboard first.
+- [ ] T003 [P] Create `supabase/seed/regions.sql` inserting the administrator-defined regions into `public.regions` and their zone mappings into `public.region_zone_map`. Each region carries the IANA zone that fixes its period boundaries (FR-010), and regions are operator-seeded with no client write path (FR-017). Seed at least four regions spanning ≥12 hours of offset so SC-005 is testable, plus **exactly one** row with `is_fallback = true` (FR-015). Suggested: `Asia/Riyadh`, `Africa/Cairo`, `Europe/London`, `Asia/Karachi`, and a UTC fallback. Map every seeded zone in `region_zone_map`.
+- [ ] T003a [P] Create `supabase/seed/honor_board_config.sql` seeding `public.honor_board_config` with one row per period kind (FR-028): `('WEEKLY', 5)` and `('MONTHLY', 20)` are sensible starting bars — roughly five days in seven and twenty in a month. There is no `DAILY` row and the table's own constraint forbids one (FR-027a). **The threshold lives only here**; no Kotlin file and no SQL function may contain the number.
+- [ ] T004 Apply the migration to the Supabase project: `supabase db execute --file supabase\migrations\0002_leaderboard_honor_board.sql`. Then apply both seeds: `supabase db execute --file supabase\seed\regions.sql` and `supabase db execute --file supabase\seed\honor_board_config.sql`. If the project is paused, resume it from the dashboard first.
 - [ ] T005 Re-run spec 007's verification unchanged to prove this increment has not regressed it: `supabase db execute --file specs\007-identity-cloud-sync\contracts\rls-verification.sql`. It MUST still print `RLS OK`. If it does not, the migration widened something — revert T004 and re-read Rule A.
 - [ ] T006 Schedule `public.recompute_open_periods()` in the Supabase project (cron extension or scheduled Edge Function; operator's choice of mechanism). Cadence: every 15 minutes is sufficient for SC-014, which reads a precomputed table. Record the chosen mechanism and cadence in `specs/008-leaderboard-honor-board/quickstart.md` §2 as a one-line note.
 
@@ -211,7 +245,7 @@ Do not improvise. The three most likely causes, in order:
 - [ ] T027 Extend the `RemoteDataSource` interface in `data/src/main/kotlin/com/giraffe/mizanapp/data/sync/RemoteDataSource.kt` with: `rankingPage(kind, cursor)`, `ownRank(kind)`, `honorBoard(kind)`, `setParticipation(optedIn)`, `reportZone(zoneId)`. All return `RemoteResult<…>`. **Do not modify any existing method on this interface.** Note `rankingPage` takes no region parameter — the service derives it (FR-009).
 - [ ] T028 Add the five new methods to `data/src/main/kotlin/com/giraffe/mizanapp/data/sync/NoOpRemoteDataSource.kt`, each returning `RemoteResult.Unreachable`. This is what keeps the app working with the leaderboard switched off.
 - [ ] T029 Add the five new methods to the fake at `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/FakeRemoteDataSource.kt`, backed by in-memory maps. Give it settable knobs: `unreachable: Boolean`, and the ability to seed entries per (kind, region) and to mark a period closed. The fake MUST enforce Rule B — a write to a closed period throws, so a test that tries fails loudly.
-- [ ] T030 Implement the five methods in `data/src/main/kotlin/com/giraffe/mizanapp/data/sync/SupabaseRemoteDataSource.kt` against the tables from T002. Reads go to `leaderboard_entries`, `honor_board_closed`, `leaderboard_periods`, `regions`; writes go **only** to `leaderboard_participation`. Any attempt to write `leaderboard_entries` from here is a misread of Rule C.
+- [ ] T030 Implement the five methods in `data/src/main/kotlin/com/giraffe/mizanapp/data/sync/SupabaseRemoteDataSource.kt` against the tables from T002. Reads go to `leaderboard_entries`, `honor_board_closed`, `leaderboard_periods`, `regions`; writes go **only** to `leaderboard_participation`. Any attempt to write `leaderboard_entries` from here is a misread of Rule C — rankings are service-computed (FR-018) and no client may alter a figure (FR-019).
 
 **Checkpoint**: foundation ready — all four stories can now start.
 
@@ -262,7 +296,8 @@ is unchanged, and that the first person's own records and streak are untouched.
 
 ### Tests for User Story 2
 
-- [ ] T048 [P] [US2] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/ParticipationWithdrawalTest.kt` — **the heart of this story.** Seed one OPEN and one CLOSED period, both containing the participant. Opt out. Assert **all four**: the open period no longer contains them (FR-004); the closed period's ranking is byte-identical (FR-004a); the closed period's Honor Board membership is byte-identical (FR-004a); a newly opened period does not contain them (FR-004b). Run it — MUST fail.
+- [ ] T048 [P] [US2] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/ParticipationWithdrawalTest.kt` — **the heart of this story** (SC-002). Seed one OPEN and one CLOSED period, both containing the participant. Opt out. Assert **all four**: the open period no longer contains them (FR-004); the closed period's ranking is byte-identical (FR-004a); the closed period's Honor Board membership is byte-identical (FR-004a); a newly opened period does not contain them (FR-004b). Run it — MUST fail.
+- [ ] T048a [P] [US2] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/WithdrawalReachesSomethingTest.kt` — **this catches the failure that looks like success.** T048 seeds its own period rows, so it passes even if nothing in production ever creates them; with an empty `leaderboard_periods` the withdrawal delete matches zero rows and opting out silently does nothing. Drive the real path: let the aggregation create the period rows (T062 step 0), record a completion, confirm the participant appears, then opt out and assert they are gone. Additionally assert `leaderboard_periods` is non-empty for the current period. Run it — MUST fail.
 - [ ] T049 [P] [US2] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/OptOutPreservesRecordTest.kt` (SC-003): record several days, note every day's earned and available totals plus the streak; opt out; assert every figure is identical and recording still works. Run it — MUST fail.
 - [ ] T050 [P] [US2] Write `app/src/androidTest/java/com/giraffe/mizanapp/leaderboard/LeaveControlTest.kt`: the leave control sits in the same place as the opt-in (FR-003); its confirmation states that leaving is immediate going forward and changes nothing backwards; **there is no retention plea** — assert no string contains "sure", "lose", "position" or any word from Conventions §6. Run it — MUST fail.
 - [ ] T051 [P] [US2] Write `app/src/test/java/com/giraffe/mizanapp/leaderboard/OptedOutStateTest.kt`: after opting out the state returns to `Visibility.Invitation`, the cached ranking is cleared, and no other participant's name remains in state. Run it — MUST fail.
@@ -270,8 +305,10 @@ is unchanged, and that the first person's own records and streak are untouched.
 ### Implementation for User Story 2
 
 - [ ] T052 [US2] Implement `optOut()` in `RoomParticipationRepository`: call `RemoteDataSource.setParticipation(false)`, then clear `participation_state` and `leaderboard_cache` locally. It MUST NOT touch `day_plans`, `planned_tasks` or `completions` (FR-005). Re-run T049 — MUST pass.
-- [ ] T053 [US2] Verify the server-side withdrawal trigger from T002 behaves as T048 expects. The delete joins `leaderboard_periods` and filters `state <> 'CLOSED'`; `honor_board_closed` holds only closed periods and is therefore unreachable from it. If T048 fails on the closed-period assertions, the trigger is wrong, not the test. Re-run T048 — MUST pass.
+- [ ] T053 [US2] Verify the server-side withdrawal trigger from T002 behaves as T048 and T048a expect. The delete joins `leaderboard_periods` and filters `state <> 'CLOSED'`; `honor_board_closed` holds only closed periods and is therefore unreachable from it. If the closed-period assertions fail, the trigger is wrong, not the test. If T048a fails while T048 passes, period rows are not being created — fix T062 step 0, not the trigger. Re-run T048 and T048a — both MUST pass.
 - [ ] T054 [US2] Add the leave control to `app/src/main/java/com/giraffe/mizanapp/leaderboard/OptInPanel.kt` (same file, same place — FR-003), with a single confirmation stating the forward/backward asymmetry. Re-run T050 and T051 — MUST pass.
+- [ ] T054a [P] [US2] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/SignOutEndsParticipationTest.kt` (FR-008): opt in, confirm the account is visible in the ranking, then sign out. Assert the account is no longer visible to any other participant. Clearing the local tables (T013) is **not** sufficient — a signed-out account left opted-in server-side stays published. Run it — MUST fail.
+- [ ] T054b [US2] Extend the sign-out path in `data/src/main/kotlin/com/giraffe/mizanapp/data/repository/SupabaseAccountRepository.kt` to call `setParticipation(false)` before ending the session, for **both** sign-out modes. If the call is unreachable, let sign-out proceed anyway — never block a person from signing out because the leaderboard is down. Re-run T054a — MUST pass.
 - [ ] T055 [US2] Run all four suites. All green before proceeding.
 
 **Checkpoint**: consent is genuinely revocable; closed periods are provably immutable.
@@ -290,7 +327,7 @@ boundaries in the region's timezone.
 ### Tests for User Story 3
 
 - [ ] T056 [P] [US3] Write `domain/src/test/kotlin/com/giraffe/mizanapp/domain/leaderboard/RegionalPeriodBoundaryTest.kt` (SC-005 — **the criterion this increment exists for**): for regions at ≥12 hours of offset, assert the leaderboard day for a participant always falls on the same weekday as their own device date, including across a Friday, when the catalogue schedules day-specific tasks. Run it — MUST fail if `periodFor` is wrong; if it passes immediately, the test is too weak — add a zone pair that actually straddles midnight.
-- [ ] T057 [P] [US3] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/RankingAggregationTest.kt` (SC-004): seed known completions; assert each period's total equals an independent hand-computed sum of `points_awarded` over non-reversed completions in the region's timezone. Assert a reversed completion is excluded and a catalogue points change does **not** alter a past total (Principle III). Run it — MUST fail.
+- [ ] T057 [P] [US3] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/RankingAggregationTest.kt` (SC-004, FR-021, FR-022): seed known completions; assert each period's total equals an independent hand-computed sum of `points_awarded` over non-reversed completions in the region's timezone. Assert a reversed completion is excluded and a catalogue points change does **not** alter a past total (Principle III). Assert the tie-break: two participants on equal points order by who reached the total first. **Then assert FR-022a's bound** — replay one participant's completions with a `recorded_at` forged far into the past and confirm their points total, `days_engaged` and region are all unchanged, and that they still rank below anyone with a higher total. A forged clock may reorder a tie and nothing else. Run it — MUST fail.
 - [ ] T058 [P] [US3] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/MidPeriodOptInTest.kt` (SC-015): record several days without opting in, then opt in on the last day of the period; assert the published total covers **every** day of the period, not only days after opting in (FR-021a). Run it — MUST fail.
 - [ ] T059 [P] [US3] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/OwnRankLookupTest.kt` (SC-009, FR-023): seed a region with 10 000 entries; assert `ownRank` returns the viewer's row plus neighbours **without** fetching intervening pages, and that `totalParticipants` is present. Run it — MUST fail.
 - [ ] T060 [P] [US3] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/RankingPaginationTest.kt` (FR-024): a page is bounded at 50; `loadMore` extends it; `hasMore` is false at the end. Run it — MUST fail.
@@ -298,12 +335,14 @@ boundaries in the region's timezone.
 
 ### Implementation for User Story 3
 
-- [ ] T062 [US3] Implement the SQL body of `public.recompute_open_periods()` in `supabase/migrations/0002_leaderboard_honor_board.sql`, replacing the `null;` placeholder with the fold described in its own comment block. Working set is `leaderboard_periods where state <> 'CLOSED'` (Rule B). `points = sum(points_awarded)`, `days_engaged = count(distinct credited_date)`, both where `reversed_at is null`. `position = rank over (points desc, max(recorded_at) asc)` (FR-022). Join `leaderboard_participation on opted_in` so an opted-out account is never entered (FR-004b), and do **not** filter completions by consent date (FR-021a). **After editing, re-copy the file to the contract so the two stay byte-identical**, then re-verify with `git diff --no-index`.
+- [ ] T062 [US3] Implement the SQL body of `public.recompute_open_periods()` **in the contract** `specs/008-leaderboard-honor-board/contracts/remote-schema-008.sql`, replacing the `null;` placeholder, then copy contract → migration and apply per Conventions §4b. **Step 0 first, and it is not optional**: upsert the current period per region per kind into `leaderboard_periods` with `on conflict do nothing` — nothing else creates those rows, and both the fold below and the withdrawal delete join them, so an empty table makes opt-out silently no-op (FR-004). Then the fold: working set is `leaderboard_periods where state <> 'CLOSED'` (Rule B); `points = sum(points_awarded)`; `days_engaged = count(distinct credited_date)`; both where `reversed_at is null`; `position = rank over (points desc, max(recorded_at) asc)` (FR-022, FR-021). Join `leaderboard_participation on opted_in` so an opted-out account is never entered (FR-004b), and do **not** filter completions by consent date (FR-021a). WEEKLY period starts are Saturdays, matching `WeekBoundary` (FR-011).
 - [ ] T063 [US3] Add period closing to the same function: when a period's boundary has passed in its region's timezone, set `state = 'CLOSED'` and `closed_at = now()`. **No settlement window — the freeze is immediate** (FR-025). Re-apply the migration with `supabase db execute`.
 - [ ] T064 [US3] Implement `ownRank(kind)` in `SupabaseRemoteDataSource` as a direct lookup plus neighbours, not a page scan. Re-run T059 — MUST pass.
 - [ ] T065 [US3] Implement `loadMore(kind)` in `RoomLeaderboardRepository`, fetching the next bounded page and appending it to the cached payload. Appending a page is not computing a ranking — positions come from the service (Rule C). Re-run T060 — MUST pass.
 - [ ] T066 [US3] Create `GetOwnRank.kt` in `domain/src/main/kotlin/com/giraffe/mizanapp/domain/usecase/` and surface own-rank in `LeaderboardUiState`. Render it so the viewer's row is reachable without scrolling.
 - [ ] T067 [US3] Add the period selector to `LeaderboardSection.kt`. Three options, no default beyond `WEEKLY`. Re-run T061 — MUST pass.
+- [ ] T067a [P] [US3] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/ZoneChangeReassignsRegionTest.kt` (FR-013): opt in with one zone, confirm the assigned region; change the `FakeTimeProvider`'s zone to one mapped to a different region; assert the participant is reassigned and their leaderboard day still matches their device date (FR-012). Assert also that rankings already written for **closed** periods in the previous region are unchanged (Rule B). Run it — MUST fail.
+- [ ] T067b [US3] Call `ParticipationRepository.reportZone` whenever `TimeProvider.zone()` differs from the zone stored in `participation_state`. Check on app start and when the leaderboard section is opened — do **not** add a background worker or a broadcast receiver for this, which would be scope this increment has not justified. Re-run T067a — MUST pass.
 - [ ] T068 [US3] Re-run T056, T057 and T058 — all MUST pass. Then run all four suites.
 
 **Checkpoint**: rankings are correct in every period and every region.
@@ -324,7 +363,8 @@ listed, counted or alluded to.
 - [ ] T069 [P] [US4] Write `domain/src/test/kotlin/com/giraffe/mizanapp/domain/leaderboard/QualifiesForHonorBoardTest.kt` (SC-011): qualification depends only on `daysEngaged` and `threshold`; two participants with equal days and very different points both qualify or both do not. Run it — MUST fail.
 - [ ] T070 [P] [US4] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/HonorBoardQualificationTest.kt`: exactly those at or above the threshold appear; a member who later opts out is removed from an **open** board and retained on a **closed** one (FR-004a). Run it — MUST fail.
 - [ ] T071 [P] [US4] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/HonorBoardLeakTest.kt` (SC-012): inspect **everything the client can retrieve**, not what it renders. Assert the response carries no threshold, no distance, no non-qualifier count, no per-person days figure, and no identity of anyone who did not qualify. Run it — MUST fail.
-- [ ] T072 [P] [US4] Write `app/src/androidTest/java/com/giraffe/mizanapp/leaderboard/HonorBoardPanelTest.kt`: members render unordered with no points and no position; a non-qualifying viewer sees no statement about themselves; **selecting the daily period shows no Honor Board panel at all** — absent, not empty and not disabled (FR-027a). Run it — MUST fail.
+- [ ] T071a [P] [US4] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/NoEmailExposureTest.kt` (FR-006) — **the highest-consequence privacy rule in this increment.** Sign in two accounts with distinct, known email addresses. From account B, retrieve every leaderboard surface: a ranking page, own rank, the Honor Board, and the participation row. Serialise each response to a string and assert **A's email address appears in none of them**, and that no field is named `email` anywhere. Do the same for the DTOs in `LeaderboardDtos.kt` by reflection, so a field added later fails this test rather than shipping. Run it — MUST fail if any surface leaks.
+- [ ] T072 [P] [US4] Write `app/src/androidTest/java/com/giraffe/mizanapp/leaderboard/HonorBoardPanelTest.kt`: members render unordered with no points and no position (FR-029); a non-qualifying viewer sees no statement about themselves (FR-030); **selecting the daily period shows no Honor Board panel at all** — absent, not empty and not disabled (FR-027a). Run it — MUST fail.
 
 ### Implementation for User Story 4
 
@@ -341,18 +381,20 @@ listed, counted or alluded to.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T079 [P] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/ClosedPeriodImmutabilityTest.kt` — **the Principle III test this increment owes** (SC-010). Close a period, then: change catalogue points; reverse a completion in that period; add a late completion for a date inside it; and opt a member out. Assert the closed period's standings and Honor Board membership are byte-identical after every one of those four. Run it — MUST fail if any mutating path can reach a closed period.
+- [ ] T079 [P] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/ClosedPeriodImmutabilityTest.kt` — **the Principle III test this increment owes** (SC-010). Close a period, then: change catalogue points; reverse a completion in that period; add a late completion for a date inside it; and opt a member out. Assert the closed period's standings and Honor Board membership are byte-identical after every one of those four (FR-025, FR-031). Run it — MUST fail if any mutating path can reach a closed period.
 - [ ] T080 Make T079 pass. If it fails, the fault is in `recompute_open_periods()` or the withdrawal trigger, never in the test. Re-read Rule B.
 - [ ] T081 [P] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/LateSyncAfterFreezeTest.kt` (SC-016): record a full day offline, let the period boundary pass, reconnect. Assert **both**: the closed period's standings do not change, **and** Today, Week, Streak, History and Insights count the day in full (FR-025a). Both halves are required — the second is what keeps the tradeoff bounded.
 - [ ] T082 [P] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/DuplicateDisplayNameTest.kt` (SC-017): two participants in one region sharing a display name are both listed, neither name is altered or suffixed, and each can identify their own row (FR-007a).
-- [ ] T083 [P] Write `app/src/androidTest/java/com/giraffe/mizanapp/leaderboard/LeaderboardDegradationTest.kt` (SC-008, FR-034): with the remote unreachable, assert recording, Today, Week, Streak, History and Insights behave identically to a run with it available, and the leaderboard panel renders an unavailable state without blaming the person.
+- [ ] T083 [P] Write `app/src/androidTest/java/com/giraffe/mizanapp/leaderboard/LeaderboardDegradationTest.kt` (SC-008, FR-034): with the remote unreachable, assert recording, Today, Week, Streak, History and Insights behave identically to a run with it available, and the leaderboard panel renders an unavailable state without blaming the person (FR-035). Assert a cached page renders stamped with its age rather than presented as current (FR-036).
 - [ ] T084 Run `specs\008-leaderboard-honor-board\contracts\rls-verification-008.sql` against the project: `supabase db execute --file specs\008-leaderboard-honor-board\contracts\rls-verification-008.sql`. It MUST print `RLS OK 008`. This covers SC-006, SC-007 and part of SC-012. If §1 fails, this increment widened a 007 policy — re-read Rule A.
 - [ ] T085 [P] Audit every string this increment adds against Conventions §6 and the `CLAUDE.md` Principle IX list (SC-013): both opt-in and leave confirmations, every unavailable and cached state, the period labels, the Honor Board panel. Record the audit as a comment block at the top of `app/src/test/java/com/giraffe/mizanapp/leaderboard/LeaderboardCopyTest.kt`, following the pattern in `SyncStatusCopyTest.kt`.
 - [ ] T086 [P] Colour audit (SC-013): grep every file added by this increment for `Color(` and for red/orange/amber hex values. Confirm a last-place row is rendered with the same container, background and text colour as every other row. Record the result in the same comment block as T085.
-- [ ] T087 [P] Boundary and prohibition audit. `Grep` for `io.github.jan`, `io.ktor`, `androidx.work` and `org.koin` across `domain/src` — must return nothing. Then `git grep -nE "isLast|isBottom|positionChange|lastPosition|pointsBehind|gapToNext|thresholdDistance|daysShort|shortfall|nonQualifierCount"` — must return nothing outside this tasks file and the design documents (Rule D). Confirm `ModuleBoundaryTest` passes.
-- [ ] T088 [P] Remove the stale `tieBreak` row from the pure-functions table in `specs/008-leaderboard-honor-board/contracts/repositories.md`. The tie-break is implemented in SQL (T062) and asserted by `RankingAggregationTest`; a `:domain` copy would be dead code, which Principle VIII forbids. Add a one-line note saying where the rule actually lives.
+- [ ] T087 [P] Boundary and prohibition audit. `Grep` for `io.github.jan`, `io.ktor`, `androidx.work` and `org.koin` across `domain/src` — must return nothing. Then `git grep -nE "isLast|isBottom|positionChange|lastPosition|pointsBehind|gapToNext|thresholdDistance|daysShort|shortfall|nonQualifierCount"` — must return nothing outside this tasks file and the design documents (Rule D). Then, for FR-039, `git grep -nE "NotificationManager|NotificationCompat|createNotificationChannel|FirebaseMessaging|setSmallIcon"` across every file this increment adds — must return nothing: rank-drop notification is forbidden, not merely unimplemented, and notifications are Phase 9. Confirm `ModuleBoundaryTest` passes.
+- [ ] T087a [P] Confirm the Honor Board threshold appears in exactly one place (FR-028, C1): `git grep -rnE "threshold" --include=*.kt` must return nothing, and the only numeric threshold values in the repository must be the rows in `supabase/seed/honor_board_config.sql`. A hard-coded threshold in Kotlin or in `recompute_open_periods()` fails this task.
+- [ ] T088 [P] Remove the stale `tieBreak` entry from **both** places it appears: the pure-functions table in `specs/008-leaderboard-honor-board/contracts/repositories.md`, and the `### TieBreak` section in `specs/008-leaderboard-honor-board/data-model.md`. The tie-break is implemented in SQL (T062) and asserted by `RankingAggregationTest`; a `:domain` copy would be dead code, which Principle VIII forbids. In each file, replace it with a one-line note saying the rule lives in `recompute_open_periods()` and is tested by T057. Verify with `git grep -n "tieBreak\|TieBreak" specs/008-leaderboard-honor-board/` — only the note lines and this task may match.
 - [ ] T089 [P] Confirm `data/schemas/…/4.json` is committed and that `1.json`, `2.json` and `3.json` are byte-identical to `develop-v1`: `git diff develop-v1 -- data/schemas`.
 - [ ] T090 [P] Update `docs/PLAN.md` to mark Phase 8 as delivered, recording the regional model, the days-engaged Honor Board threshold, and the immediate-freeze tradeoff with its revisit trigger.
+- [ ] T090a Measure SC-014 by hand and record both numbers in the PR description: cold-open Progress on a working connection and time the first ranking (must be readable within 3 s, served from the precomputed table); then pause the Supabase project and time the unavailable state (must resolve within 10 s, not hang). If either misses, the cause is almost always aggregating on read instead of reading `leaderboard_entries` — re-read research R2.
 - [ ] T091 Run all four suites one final time and record the pass counts.
 - [ ] T092 Run the full quickstart §4 validation, all 17 success criteria, and record the result in the pull request description. Anything that cannot be validated here — the OTP-gated criteria in particular — must be recorded as a follow-up issue the way spec 007's were (issue #15), never silently skipped.
 - [ ] T093 Pre-merge gate check against `CLAUDE.md`: Constitution Check passes and names each principle touched; all four suites green; **the PR's commit history shows every test task committed before its implementation task** (Principle I); the Principle III test (T079) is present and passing; the Room migration is additive and its schema exported.
@@ -384,7 +426,12 @@ Phase 2 (Foundational, T007–T030)   ← BLOCKS EVERYTHING
 - T027 → T028, T029, T030: the interface before its three implementations.
 - **US2 depends on US1** for the opt-in path it reverses. Do US1 first.
 - **US4 depends on US3's T062** — the Honor Board is written by the same aggregation function.
-- T062 must be re-copied to the contract every time it is edited, or T084's byte-identity gate fails.
+- **T048a depends on T062**, not just on T053. It drives the real period-creation path, so it cannot
+  pass until the aggregation materialises period rows. If you are running US2 before US3, expect
+  T048a to stay red until T062 lands, and do not "fix" it by seeding rows in the test — that is
+  precisely the blind spot it exists to close.
+- **T003a before T074**: the threshold must be seeded before the Honor Board fold can read it.
+- Every SQL edit follows Conventions §4b, contract → migration, or T084's byte-identity gate fails.
 
 ## Parallel execution examples
 
@@ -419,4 +466,21 @@ Each phase ends with all four suites green. Do not start a phase with a red tree
 
 ## Task count
 
-93 tasks: 6 setup, 24 foundational, 17 US1, 8 US2, 13 US3, 10 US4, 15 polish.
+102 tasks: 7 setup, 24 foundational, 17 US1, 11 US2, 15 US3, 11 US4, 17 polish.
+
+Nine tasks carry a letter suffix (T003a, T048a, T054a, T054b, T067a, T067b, T071a, T087a, T090a).
+They were added by `/speckit-analyze` after the first draft, and the suffixes keep every original ID
+stable so no cross-reference in the design documents goes stale. Execute them in the position they
+appear.
+
+**What they fix**, so the additions are not mistaken for padding:
+
+| Task | Fixes |
+|---|---|
+| T003a | The Honor Board threshold had no storage anywhere — it existed only in SQL comments |
+| T048a | `leaderboard_periods` was never populated, so opt-out silently matched zero rows |
+| T054a, T054b | Signing out left an account opted-in and still visible in rankings |
+| T067a, T067b | A participant who travelled stayed in the wrong region, breaking the reason regions exist |
+| T071a | Nothing asserted an email address is never exposed to another participant |
+| T087a | Nothing stopped the threshold being hard-coded rather than configured |
+| T090a | SC-014's 3-second and 10-second timings had no task |

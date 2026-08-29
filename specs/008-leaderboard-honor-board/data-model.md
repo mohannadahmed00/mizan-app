@@ -250,7 +250,27 @@ This table exists so that "a closed period never changes" is a **join condition 
 convention**. Both mutating paths — the aggregation job and the withdrawal delete — are scoped to
 periods whose state is not `CLOSED`, so neither can reach a closed period even by mistake.
 
+**Rows are created by the aggregation job and by nothing else**, as its first step, upserting the
+current period per region per kind with `on conflict do nothing`. This matters more than it looks:
+the withdrawal delete joins this table, so an empty one makes opting out match zero rows and
+silently do nothing — a consent failure that presents as success. `rls-verification-008.sql` §9 and
+`WithdrawalReachesSomethingTest` both guard it.
+
 Readable by any signed-in client, so a ranking can say whether it is final. Writable by none.
+
+### `honor_board_config`
+
+The administrator-defined days-engaged threshold, `(period_kind, threshold_days)`, keyed by period
+kind because weekly and monthly need different bars. No `DAILY` row exists and the table's own
+constraint forbids one (FR-027a).
+
+**Readable by no client.** RLS is enabled with no policy, the same device used for
+`region_zone_map`. This is the single deliberate exception to the rule that nothing resembling a
+threshold may exist: it must live somewhere or it cannot be configured (FR-028), and the guarantee
+is that a participant can never retrieve it and turn "I am not on the board" into "I was N days
+short" (FR-030). `rls-verification-008.sql` §8 proves the denial.
+
+The threshold appears nowhere else — not in Kotlin, not as a constant in the aggregation function.
 
 ### `honor_board_closed`
 
