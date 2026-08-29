@@ -24,6 +24,7 @@ import com.giraffe.mizanapp.domain.sync.SyncStatus
 import com.giraffe.mizanapp.domain.usecase.GetOwnRank
 import com.giraffe.mizanapp.domain.usecase.GetParticipationState
 import com.giraffe.mizanapp.domain.usecase.GetRanking
+import com.giraffe.mizanapp.domain.usecase.ReconcileZone
 import com.giraffe.mizanapp.domain.usecase.SetParticipation
 import com.giraffe.mizanapp.today.FakeClock
 import java.time.Instant
@@ -109,6 +110,7 @@ class LeaderboardViewModelTest {
                 setParticipation = SetParticipation(participation, FakeClock()),
                 getRanking = GetRanking(leaderboard),
                 getOwnRank = GetOwnRank(leaderboard),
+                reconcileZone = ReconcileZone(participation, FakeClock()),
                 sync = sync,
             ),
             accounts,

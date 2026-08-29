@@ -45,15 +45,16 @@ import com.giraffe.mizanapp.domain.usecase.GetHistoryPage
 import com.giraffe.mizanapp.domain.usecase.GetMonthOverview
 import com.giraffe.mizanapp.domain.usecase.GetOwnRank
 import com.giraffe.mizanapp.domain.usecase.GetParticipationState
-import com.giraffe.mizanapp.domain.usecase.GetRanking
 import com.giraffe.mizanapp.domain.usecase.GetPersonalBests
+import com.giraffe.mizanapp.domain.usecase.GetRanking
 import com.giraffe.mizanapp.domain.usecase.GetSectionBreakdown
 import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeekSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeeklyTrend
+import com.giraffe.mizanapp.domain.usecase.ReconcileZone
 import com.giraffe.mizanapp.domain.usecase.RequestSignInCode
-import com.giraffe.mizanapp.domain.usecase.SignOut
 import com.giraffe.mizanapp.domain.usecase.SetParticipation
+import com.giraffe.mizanapp.domain.usecase.SignOut
 import com.giraffe.mizanapp.domain.usecase.UpdateDisplayName
 import com.giraffe.mizanapp.auth.SignInViewModel
 import com.giraffe.mizanapp.daysummary.DaySummaryViewModel
@@ -93,6 +94,7 @@ val domainModule = module {
     factory { SetParticipation(get(), get()) }
     factory { GetRanking(get()) }
     factory { GetOwnRank(get()) }
+    factory { ReconcileZone(get(), get()) }
 }
 
 val dataModule = module {
@@ -142,7 +144,7 @@ val appModule = module {
     viewModel { SignInViewModel(get(), get(), get(), isSupabaseConfigured()) }
     viewModel { SyncStatusViewModel(get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get()) }
-    viewModel { LeaderboardViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { LeaderboardViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }
 
 val mizanModules = listOf(domainModule, dataModule, appModule)

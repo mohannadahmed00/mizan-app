@@ -59,7 +59,15 @@ class RoomParticipationRepository(
         else -> result.toParticipationResult()
     }
 
-    override suspend fun reportZone(zone: ZoneId): ParticipationResult = ParticipationResult.Unreachable
+    override suspend fun reportZone(zone: ZoneId): ParticipationResult {
+        val assigned = when (val result = remote.reportZone(zone.id)) {
+            is RemoteResult.Ok -> result.value
+            else -> return result.toParticipationResult()
+        }
+        assignedZone = assigned.regionZone?.let(ZoneId::of) ?: zone
+        store(assigned)
+        return ParticipationResult.Applied
+    }
 
     private suspend fun store(value: RemoteParticipation) {
         db.participationStateDao().upsert(

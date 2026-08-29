@@ -13,6 +13,7 @@ import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.usecase.GetOwnRank
 import com.giraffe.mizanapp.domain.usecase.GetParticipationState
 import com.giraffe.mizanapp.domain.usecase.GetRanking
+import com.giraffe.mizanapp.domain.usecase.ReconcileZone
 import com.giraffe.mizanapp.domain.usecase.SetParticipation
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,7 @@ class LeaderboardViewModel(
     private val setParticipation: SetParticipation,
     private val getRanking: GetRanking,
     private val getOwnRank: GetOwnRank,
+    private val reconcileZone: ReconcileZone,
     sync: SyncRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(emptyState())
@@ -38,6 +40,9 @@ class LeaderboardViewModel(
     private val selectedPeriod = MutableStateFlow(PeriodKind.WEEKLY)
 
     init {
+        // FR-013: checked here (section opened) and covers app start, since this
+        // is the section's first composition — no background worker or receiver.
+        viewModelScope.launch { reconcileZone() }
         viewModelScope.launch {
             combine(
                 accounts.observeSession(),
