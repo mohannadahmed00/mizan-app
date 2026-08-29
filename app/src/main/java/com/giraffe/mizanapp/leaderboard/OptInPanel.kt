@@ -44,3 +44,12 @@ fun OptInPanel(
         }
     }
 }
+
+/** FR-003: the leave control, kept in this file, same place as the opt-in. */
+@Composable
+fun LeaveControl(
+    onLeave: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TODO("T054")
+}
