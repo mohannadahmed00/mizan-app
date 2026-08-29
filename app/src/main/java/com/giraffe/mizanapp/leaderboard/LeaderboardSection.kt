@@ -81,7 +81,7 @@ private fun PeriodOption(kind: PeriodKind, selected: PeriodKind, onSelect: (Peri
     }
 }
 
-private fun periodLabel(kind: PeriodKind): String = when (kind) {
+fun periodLabel(kind: PeriodKind): String = when (kind) {
     PeriodKind.DAILY -> "Today"
     PeriodKind.WEEKLY -> "This week, Saturday to Friday"
     PeriodKind.MONTHLY -> "This month"
