@@ -34,3 +34,16 @@ sealed interface RankingState {
     data class Cached(val ranking: Ranking) : RankingState
     data class Live(val ranking: Ranking) : RankingState
 }
+
+/** Represents whether the direct viewer lookup has produced a usable row. */
+sealed interface OwnRankState {
+    data object Unavailable : OwnRankState
+    data class Available(val ownRank: OwnRank) : OwnRankState
+}
+
+/** Reports bounded page-extension outcomes without attaching message text. */
+sealed interface LoadMoreResult {
+    data object Applied : LoadMoreResult
+    data object Unreachable : LoadMoreResult
+    data object SessionExpired : LoadMoreResult
+}
