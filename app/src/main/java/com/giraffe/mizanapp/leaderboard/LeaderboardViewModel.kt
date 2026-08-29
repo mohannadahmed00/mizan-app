@@ -10,6 +10,7 @@ import com.giraffe.mizanapp.domain.leaderboard.PeriodKind
 import com.giraffe.mizanapp.domain.leaderboard.RankingState
 import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
+import com.giraffe.mizanapp.domain.usecase.GetHonorBoard
 import com.giraffe.mizanapp.domain.usecase.GetOwnRank
 import com.giraffe.mizanapp.domain.usecase.GetParticipationState
 import com.giraffe.mizanapp.domain.usecase.GetRanking
@@ -32,6 +33,7 @@ class LeaderboardViewModel(
     private val setParticipation: SetParticipation,
     private val getRanking: GetRanking,
     private val getOwnRank: GetOwnRank,
+    private val getHonorBoard: GetHonorBoard,
     private val reconcileZone: ReconcileZone,
     sync: SyncRepository,
 ) : ViewModel() {
@@ -52,11 +54,16 @@ class LeaderboardViewModel(
             ) { session, participation, pending, period -> Context(session, participation, pending, period) }
                 .flatMapLatest { context ->
                     if (context.session is AccountSession.SignedIn && context.participation.optedIn) {
-                        combine(getRanking(context.period), getOwnRank(context.period)) { ranking, ownRank ->
-                            context.toState(ranking, ownRank)
+                        val honorBoard = if (context.period == PeriodKind.DAILY) {
+                            flowOf(HonorBoardState.Unavailable)
+                        } else {
+                            getHonorBoard(context.period)
+                        }
+                        combine(getRanking(context.period), getOwnRank(context.period), honorBoard) { ranking, ownRank, board ->
+                            context.toState(ranking, ownRank, board)
                         }
                     } else {
-                        flowOf(context.toState(RankingState.Unavailable, OwnRankState.Unavailable))
+                        flowOf(context.toState(RankingState.Unavailable, OwnRankState.Unavailable, HonorBoardState.Unavailable))
                     }
                 }
                 .collect { _state.value = it }
@@ -75,7 +82,7 @@ class LeaderboardViewModel(
         selectedPeriod.value = kind
     }
 
-    private fun Context.toState(ranking: RankingState, ownRank: OwnRankState): LeaderboardUiState {
+    private fun Context.toState(ranking: RankingState, ownRank: OwnRankState, honorBoard: HonorBoardState): LeaderboardUiState {
         val visibility = when {
             session is AccountSession.SignedOut -> Visibility.Hidden
             !participation.optedIn -> Visibility.Invitation
@@ -86,7 +93,7 @@ class LeaderboardViewModel(
             selectedPeriod = period,
             ranking = ranking.withProvisional(pending > 0),
             ownRank = ownRank,
-            honorBoard = HonorBoardState.Unavailable,
+            honorBoard = honorBoard,
             regionLabel = participation.region?.displayName,
             isRefreshing = false,
         )

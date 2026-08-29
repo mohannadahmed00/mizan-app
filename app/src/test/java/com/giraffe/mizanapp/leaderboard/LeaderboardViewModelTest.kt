@@ -2,6 +2,7 @@ package com.giraffe.mizanapp.leaderboard
 
 import com.giraffe.mizanapp.domain.identity.AccountSession
 import com.giraffe.mizanapp.domain.identity.SignOutMode
+import com.giraffe.mizanapp.domain.leaderboard.HonorBoardState
 import com.giraffe.mizanapp.domain.leaderboard.LeaderboardPeriod
 import com.giraffe.mizanapp.domain.leaderboard.LoadMoreResult
 import com.giraffe.mizanapp.domain.leaderboard.OwnRankState
@@ -16,11 +17,13 @@ import com.giraffe.mizanapp.domain.leaderboard.RegionId
 import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.CodeConfirmation
 import com.giraffe.mizanapp.domain.repository.CodeRequest
+import com.giraffe.mizanapp.domain.repository.HonorBoardRepository
 import com.giraffe.mizanapp.domain.repository.LeaderboardRepository
 import com.giraffe.mizanapp.domain.repository.LocalRecordCounts
 import com.giraffe.mizanapp.domain.repository.ParticipationRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.sync.SyncStatus
+import com.giraffe.mizanapp.domain.usecase.GetHonorBoard
 import com.giraffe.mizanapp.domain.usecase.GetOwnRank
 import com.giraffe.mizanapp.domain.usecase.GetParticipationState
 import com.giraffe.mizanapp.domain.usecase.GetRanking
@@ -110,6 +113,7 @@ class LeaderboardViewModelTest {
                 setParticipation = SetParticipation(participation, FakeClock()),
                 getRanking = GetRanking(leaderboard),
                 getOwnRank = GetOwnRank(leaderboard),
+                getHonorBoard = GetHonorBoard(FakeHonorBoard()),
                 reconcileZone = ReconcileZone(participation, FakeClock()),
                 sync = sync,
             ),
@@ -148,6 +152,11 @@ class LeaderboardViewModelTest {
         override fun observeRanking(kind: PeriodKind): Flow<RankingState> = state
         override fun observeOwnRank(kind: PeriodKind): Flow<OwnRankState> = MutableStateFlow(OwnRankState.Unavailable)
         override suspend fun loadMore(kind: PeriodKind) = LoadMoreResult.Applied
+        override suspend fun refresh(kind: PeriodKind) = Unit
+    }
+
+    private class FakeHonorBoard : HonorBoardRepository {
+        override fun observe(kind: PeriodKind): Flow<HonorBoardState> = MutableStateFlow(HonorBoardState.Unavailable)
         override suspend fun refresh(kind: PeriodKind) = Unit
     }
 
