@@ -1,5 +1,6 @@
 package com.giraffe.mizanapp.data.db.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -10,6 +11,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "participation_state")
 data class ParticipationStateEntity(
     @PrimaryKey val id: Int = 1,
+    @ColumnInfo(defaultValue = "0")
     val optedIn: Boolean = false,
     val regionId: String?,
     val regionDisplayName: String?,
