@@ -62,8 +62,14 @@ All three questions raised at specification time were answered by the user and f
 - **Honor Board qualification** → days-engaged consistency threshold, administrator-defined, points
   excluded from qualification (FR-027, FR-028, SC-011). The leaderboard already rewards points; the
   Honor Board deliberately does not duplicate it.
-- **Opt-out reach** → removed from all rankings including closed periods, removed from open Honor
-  Boards, retained on closed Honor Boards (FR-004, FR-004a, SC-002).
+- **Opt-out reach** → **revised by the user after the first answer.** Leaving clears every period
+  still open and keeps the participant out of periods opening afterwards; periods that have already
+  closed stand exactly as they are, rankings and Honor Board alike (FR-004, FR-004a, FR-004b,
+  SC-002). This removed the last exception from "a closed period never changes", which is why
+  Principle III is stronger in the design than it was in the gate. The tradeoff — a participant
+  cannot erase past standings — is handled by **FR-002a**, which requires that to be disclosed
+  before anyone opts in. Consent a person would not have given had they understood it is not
+  consent.
 
 ## Notes
 

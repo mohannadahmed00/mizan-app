@@ -85,35 +85,40 @@ switching — a single period is enough to deliver value.
 ### User Story 2 - Leaving, and staying gone (Priority: P1)
 
 A participant decides they would rather not compete. They turn participation off from the same
-place they turned it on. Their row disappears from every ranking other participants can see — past
-periods included — and from any Honor Board still open. Recognition they already earned on a closed
-Honor Board remains. Nothing they recorded is lost.
+place they turned it on. They leave every period still running, and are not entered into any period
+that opens afterwards. Periods that already finished stand as they were. Nothing they recorded is
+lost.
 
 **Why this priority**: Equal in priority to opting in, and deliberately so. An opt-in that cannot be
-cleanly reversed is not consent. Principle IX means a person who finds comparison discouraging must
-be able to remove it completely and immediately, and the constitution's prohibition on shame makes
-this a correctness requirement rather than a nicety.
+reversed is not consent. Principle IX means a person who finds comparison discouraging must be able
+to stop it immediately, which makes this a correctness requirement rather than a nicety.
+
+The boundary is deliberate and is the one place two principles pull against each other. Leaving stops
+comparison from here on; it does not rewrite periods that have already closed, because a closed
+period is a historical record (Principle III). The cost is that a participant cannot erase their
+past standings — which is exactly why FR-002a requires them to be told so before they join.
 
 **Independent Test**: Opt in, confirm the row is visible to a second participant in the same region,
-opt out, confirm the row is gone from that second participant's view for every period, and that the
-first person's own records and streak are untouched.
+opt out, confirm the row is gone from the open period and absent from the next period to open, that
+a closed period is unchanged, and that the first person's own records and streak are untouched.
 
 **Acceptance Scenarios**:
 
 1. **Given** a participant, **When** they turn participation off, **Then** their row no longer
-   appears in any ranking any other participant can retrieve, for any period, including periods that
-   have already closed.
+   appears in the ranking for any period still open.
 2. **Given** a participant who appears on the Honor Board for the period currently open, **When**
    they turn participation off, **Then** they are removed from it.
-3. **Given** a participant who appears on the Honor Board for a period that has already closed,
-   **When** they turn participation off, **Then** that recognition remains — it is a historical
-   record of something achieved, not an ongoing comparison (Principle III).
-4. **Given** a participant who turns participation off, **When** they return to Progress, **Then**
+3. **Given** a participant who appears in the ranking or on the Honor Board for a period that has
+   already closed, **When** they turn participation off, **Then** that period is unchanged — a
+   closed period is a historical record and is not rewritten by a later change of mind.
+4. **Given** a person who has opted out, **When** a new period opens, **Then** they do not appear in
+   it.
+5. **Given** a participant who turns participation off, **When** they return to Progress, **Then**
    their own recorded history, points, streak and insights are exactly as before — opting out
    affects visibility only, never the record.
-5. **Given** a person who has opted out, **When** they later opt back in, **Then** they reappear in
+6. **Given** a person who has opted out, **When** they later opt back in, **Then** they appear in
    the current period's ranking with their correct server-derived total and no duplicate row.
-6. **Given** a participant with no display name set, **When** they opt in, **Then** they are shown
+7. **Given** a participant with no display name set, **When** they opt in, **Then** they are shown
    under a neutral placeholder identity and are never identified by email address.
 
 ---
@@ -227,13 +232,18 @@ it are not listed, counted or alluded to.
 - **FR-002**: The system MUST present, before any opt-in choice is made, a plain-language statement
   of exactly what becomes visible to other participants, and that visibility is limited to the
   participant's region.
+- **FR-002a**: That statement MUST also say that entries for periods which have already completed
+  remain visible after leaving. Because opting out reaches only periods still open (FR-004), a
+  participant who is not told this before joining has not given informed consent.
 - **FR-003**: Users MUST be able to turn participation on and off from the same place, at any time,
   without confirmation friction that discourages leaving.
-- **FR-004**: When participation is off, the account MUST NOT appear in any ranking retrievable by
-  any other participant, for any period, including periods that have already closed.
-- **FR-004a**: When participation is off, the account MUST be removed from the Honor Board of any
-  period still open, and MUST remain on the Honor Board of any period that has already closed.
-  Recognition already earned is a historical record (Principle III); ongoing comparison is not.
+- **FR-004**: When participation is off, the account MUST NOT appear in any ranking or Honor Board
+  for a period that is still open.
+- **FR-004a**: Periods that have already closed MUST be left exactly as they stand — both their
+  rankings and their Honor Board membership. A closed period is a historical record and is not
+  rewritten by a later change of mind (Principle III).
+- **FR-004b**: While participation is off, the account MUST NOT be added to any newly opening
+  period. Opting out ends ongoing comparison; it does not revise comparison that already happened.
 - **FR-005**: Turning participation off MUST NOT alter, hide or delete any of the person's own
   recorded history, points, streak or insights.
 - **FR-006**: A participant MUST be identified by display name only. Email addresses MUST NOT be
@@ -281,8 +291,9 @@ it are not listed, counted or alluded to.
   scrolling through an unbounded list.
 - **FR-024**: Rankings MUST load a bounded portion of a large regional population and extend on
   demand.
-- **FR-025**: A completed period's standings MUST NOT change after the period ends, except to remove
-  a participant who has opted out (Principle III).
+- **FR-025**: A completed period's standings MUST NOT change after the period ends, for any reason —
+  including a late-arriving completion, a catalogue change, or a participant opting out
+  (Principle III). A closed period admits no mutation at all.
 - **FR-026**: The system MUST state which period a displayed ranking covers, unambiguously enough
   that a total can be reconciled against the person's own records.
 
@@ -298,7 +309,8 @@ it are not listed, counted or alluded to.
 - **FR-030**: The Honor Board MUST NOT display, imply or enable derivation of who failed to qualify,
   how many did not qualify, or any individual's distance from the threshold.
 - **FR-031**: A completed period's Honor Board membership MUST NOT be recomputed or altered
-  afterwards, including when a member later opts out (FR-004a).
+  afterwards, including when a member later opts out (FR-004a). This is the same guarantee as
+  FR-025, applied to recognition rather than ranking.
 
 #### Placement, degradation and tone
 
@@ -343,9 +355,9 @@ it are not listed, counted or alluded to.
 - **SC-001**: A person who never opts in can use every part of the product indefinitely without
   encountering a ranking, another participant's name, or any invitation beyond the single opt-in
   entry point inside Progress.
-- **SC-002**: Turning participation off removes the participant from every ranking visible to every
-  other participant, across all periods including closed ones, within one refresh — while their
-  membership of any already-closed Honor Board is preserved exactly.
+- **SC-002**: Turning participation off removes the participant from every open period's ranking and
+  Honor Board within one refresh, and keeps them out of every period that opens afterwards — while
+  every closed period's rankings and Honor Board membership remain exactly as they were.
 - **SC-003**: Opting out leaves the person's own recorded history, points, streak and insights
   byte-for-byte unchanged.
 - **SC-004**: Every ranking position and points total matches an independent recomputation from the
