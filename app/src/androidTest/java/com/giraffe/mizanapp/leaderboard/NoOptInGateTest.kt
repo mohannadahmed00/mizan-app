@@ -51,6 +51,7 @@ class NoOptInGateTest {
                 ),
                 onJoin = {},
                 onLeave = {},
+                onPeriodSelected = {},
             )
         }
     }

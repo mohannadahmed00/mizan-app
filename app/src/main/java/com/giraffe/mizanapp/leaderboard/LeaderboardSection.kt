@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.giraffe.mizanapp.domain.leaderboard.PeriodKind
 import com.giraffe.mizanapp.domain.leaderboard.Ranking
 import com.giraffe.mizanapp.domain.leaderboard.RankingState
 
@@ -21,6 +22,7 @@ fun LeaderboardSection(
     state: LeaderboardUiState,
     onJoin: () -> Unit,
     onLeave: () -> Unit,
+    onPeriodSelected: (PeriodKind) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (state.visibility) {
@@ -32,6 +34,7 @@ fun LeaderboardSection(
         ) {
             Text("Regional standings", style = MaterialTheme.typography.titleLarge)
             state.regionLabel?.let { Text(it, modifier = Modifier.testTag("leaderboard-region")) }
+            PeriodSelector(selected = state.selectedPeriod, onSelect = onPeriodSelected)
             LeaveControl(onLeave = onLeave)
             when (val ranking = state.ranking) {
                 RankingState.Unavailable -> Text("Standings aren't available right now")
@@ -40,6 +43,16 @@ fun LeaderboardSection(
             }
         }
     }
+}
+
+/** FR-011, FR-026: three period options, no default beyond WEEKLY; the weekly label states its Saturday-to-Friday span. */
+@Composable
+private fun PeriodSelector(
+    selected: PeriodKind,
+    onSelect: (PeriodKind) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TODO("T067")
 }
 
 @Composable

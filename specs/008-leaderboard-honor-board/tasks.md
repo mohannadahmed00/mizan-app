@@ -331,7 +331,7 @@ boundaries in the region's timezone.
 - [X] T058 [P] [US3] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/MidPeriodOptInTest.kt` (SC-015): record several days without opting in, then opt in on the last day of the period; assert the published total covers **every** day of the period, not only days after opting in (FR-021a). Run it — MUST fail.
 - [X] T059 [P] [US3] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/OwnRankLookupTest.kt` (SC-009, FR-023): seed a region with 10 000 entries; assert `ownRank` returns the viewer's row plus neighbours **without** fetching intervening pages, and that `totalParticipants` is present. Run it — MUST fail.
 - [X] T060 [P] [US3] Write `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/RankingPaginationTest.kt` (FR-024): a page is bounded at 50; `loadMore` extends it; `hasMore` is false at the end. Run it — MUST fail.
-- [ ] T061 [P] [US3] Write `app/src/androidTest/java/com/giraffe/mizanapp/leaderboard/PeriodSwitchTest.kt`: switching period re-renders the ranking and the period label; the weekly label states a Saturday-to-Friday span (FR-011, FR-026). Run it — MUST fail.
+- [X] T061 [P] [US3] Write `app/src/androidTest/java/com/giraffe/mizanapp/leaderboard/PeriodSwitchTest.kt`: switching period re-renders the ranking and the period label; the weekly label states a Saturday-to-Friday span (FR-011, FR-026). Run it — MUST fail.
 
 ### Implementation for User Story 3
 

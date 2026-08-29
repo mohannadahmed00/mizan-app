@@ -61,6 +61,10 @@ class LeaderboardViewModel(
         viewModelScope.launch { setParticipation(false) }
     }
 
+    fun selectPeriod(kind: PeriodKind) {
+        TODO("T067")
+    }
+
     private fun Context.toState(ranking: RankingState): LeaderboardUiState {
         val visibility = when {
             session is AccountSession.SignedOut -> Visibility.Hidden
