@@ -42,8 +42,11 @@ shame mechanic regardless of what the copy says (research R9).
 
 ### Fetch the Honor Board
 
-**In**: period kind.
+**In**: period kind — `WEEKLY` or `MONTHLY` only (FR-027a).
 **Out**: qualifying members as `(displayName)`, and whether the caller is among them.
+
+There is no daily Honor Board. A days-engaged threshold over one day can only be 0 or 1, so the
+surface would recognise everyone active and devalue the weekly board beside it.
 
 ### Report a zone
 

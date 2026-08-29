@@ -122,23 +122,32 @@ task completed), so the Honor Board and the streak cannot disagree about what a 
 
 ## R5 — When does a period close, and what closes it?
 
-**Decision**: A period is open while the region's current local time is within it, plus a bounded
-settlement window to let late-arriving offline records land. When the window passes, the job stops
-recomputing that period and it becomes immutable.
+**Decision**: A period is open while the region's current local time is within it, and closes at its
+boundary. **No settlement window.** Records arriving after the boundary never alter it. The period
+state machine is therefore `OPEN → CLOSED`, with no intermediate state.
 
-**Rationale**: Principle IV guarantees a participant can record a full day offline and sync later;
-Phase 7's own SC-010 contemplates a year offline. If a period froze exactly at its boundary, every
-offline participant would be permanently under-counted, and the feature would systematically
-penalise the users the constitution most wants to protect. A settlement window is the honest
-reconciliation of Principle III (a closed period never changes) with Principle IV (offline recording
-is not second-class).
+**Rationale**: The user's decision, taken against the alternative below and with the cost stated.
+The gain is that a period is final and unambiguous the moment it ends — a participant who looks at
+a ranking at the boundary sees the result, not a provisional one that may move for another two days.
+It also removes a whole state from the model, which makes "a closed period never changes" simpler to
+enforce.
 
-The window is configuration, not a constant in code, so it can be tuned without a release.
+**The cost is real and is recorded in the spec rather than buried here.** Principle IV exists to
+keep offline recording from being second-class, and immediate freeze makes it exactly that on this
+one surface: a participant who records a full day offline and syncs the next morning scores nothing
+for it on the leaderboard. FR-025a confines the damage — their own records, points, streak and
+insights are untouched, so nothing about their history is lost — and FR-025b requires the tradeoff
+to be disclosed before anyone opts in, because a person who records offline routinely may reasonably
+decline to join on these terms.
+
+The spec's Assumptions section flags this as the one place the leaderboard disadvantages offline
+users, and says to revisit if it proves observable in practice.
 
 **Alternatives considered**:
 
-- *Freeze at the boundary instant.* Rejected — silently penalises offline use, which is the
-  product's core promise.
+- *A bounded settlement window (48 hours was proposed).* Would have let ordinary offline stretches
+  land before freezing, reconciling Principle III with Principle IV. Rejected by the user in favour
+  of periods being final immediately.
 - *Never freeze; always recompute.* Rejected — violates Principle III and FR-025, and would let a
   ranking a participant saw last month change underneath them.
 

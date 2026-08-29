@@ -105,6 +105,9 @@ interface HonorBoardRepository {
     fun observe(kind: PeriodKind): Flow<HonorBoardState>
 
     suspend fun refresh(kind: PeriodKind)
+
+    // WEEKLY and MONTHLY only (FR-027a). Passing DAILY is a programming error,
+    // not a runtime state — the daily period has a ranking and no Honor Board.
 }
 ```
 
@@ -134,8 +137,8 @@ Testable without a fake, a database or a clock.
 | Function | Signature | Guarantee |
 |---|---|---|
 | `periodFor` | `(PeriodKind, LocalDate, ZoneId) -> LeaderboardPeriod` | `WEEKLY` delegates to the existing `WeekBoundary`; FR-011 forbids a second week definition |
-| `tieBreak` | `(RankingEntry, RankingEntry) -> Int` | Total, stable, deterministic (FR-022) |
-| `qualifiesForHonorBoard` | `(daysEngaged: Int, threshold: Int) -> Boolean` | Points are **not a parameter** — the function cannot consult them even by accident (FR-027) |
+| `tieBreak` | `(RankingEntry, RankingEntry) -> Int` | Equal totals order by who reached them earliest (FR-022); total, stable, deterministic |
+| `qualifiesForHonorBoard` | `(daysEngaged: Int, threshold: Int) -> Boolean` | Points are **not a parameter** — the function cannot consult them even by accident (FR-027). Defined for `WEEKLY` and `MONTHLY` only (FR-027a) |
 | `markViewer` | `(List<RankingEntry>, userId: String) -> List<RankingEntry>` | Sets `isViewer`; sets no `isLast`, no `isBottom` (FR-038) |
 
 ---

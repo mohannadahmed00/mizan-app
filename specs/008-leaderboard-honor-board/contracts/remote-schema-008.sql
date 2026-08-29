@@ -111,7 +111,7 @@ create table public.leaderboard_periods (
     period_start  date not null,
     region_id     text not null references public.regions (id),
     state         text not null default 'OPEN'
-                       check (state in ('OPEN', 'SETTLING', 'CLOSED')),
+                       check (state in ('OPEN', 'CLOSED')),  -- no settlement window (FR-025)
     closed_at     timestamptz,
     primary key (period_kind, period_start, region_id)
 );
@@ -163,12 +163,14 @@ create policy leaderboard_entries_select_own_region on public.leaderboard_entrie
 -- SC-006 structural rather than procedural — there is no client write path to defend.
 
 -- ---------------------------------------------------------------------------
--- 5. Honor Board for CLOSED periods. Written once at settlement, then frozen.
+-- 5. Honor Board for CLOSED periods. Written once at freeze, then never altered.
 --    Like closed rankings, it is outside every mutating path (FR-004a, FR-031).
+--    WEEKLY and MONTHLY only — a days-engaged threshold over a single day can
+--    only be 0 or 1, so there is no daily Honor Board (FR-027a).
 -- ---------------------------------------------------------------------------
 
 create table public.honor_board_closed (
-    period_kind   text not null check (period_kind in ('DAILY', 'WEEKLY', 'MONTHLY')),
+    period_kind   text not null check (period_kind in ('WEEKLY', 'MONTHLY')),  -- FR-027a
     period_start  date not null,
     region_id     text not null references public.regions (id),
     user_id       uuid not null references auth.users (id),
@@ -194,7 +196,7 @@ create policy honor_board_select_own_region on public.honor_board_closed
 -- ---------------------------------------------------------------------------
 -- 6. Withdrawal. Fires when a participant clears consent.
 --
---    Removes the participant from every period still OPEN or SETTLING (FR-004).
+--    Removes the participant from every period still OPEN (FR-004).
 --    Leaves every CLOSED period exactly as it stands — rankings and Honor Board
 --    alike (FR-004a). The scope is a join on leaderboard_periods rather than a
 --    conditional, so a closed period is not merely skipped: it is not selected.
@@ -256,19 +258,32 @@ begin
     --
     --   points       = sum(points_awarded)              where reversed_at is null
     --   days_engaged = count(distinct credited_date)    where reversed_at is null
-    --   position     = rank over (points desc, tie-break)
+    --   position     = rank over (points desc, max(recorded_at) asc)
     --
-    -- then, for any period whose settlement window has closed, insert qualifying
-    -- members (days_engaged >= threshold) into honor_board_closed and set that
+    -- The tie-break is "who reached the total earliest" (FR-022). recorded_at is
+    -- device-reported, so a forged clock can reorder a tie — FR-022a bounds that
+    -- to exactly that and no more: it cannot change any total, days_engaged or
+    -- region, and cannot lift anyone above a higher total.
+    --
+    -- A participant who opts in mid-period is scored over the WHOLE period
+    -- (FR-021a), so the fold does not filter completions by consent date.
+    --
+    -- then, for any period whose boundary has passed in its region's timezone,
+    -- insert qualifying members (days_engaged >= threshold) into
+    -- honor_board_closed — WEEKLY and MONTHLY only (FR-027a) — and set that
     -- period's state to 'CLOSED', which removes it from this working set and
     -- from the withdrawal delete's scope permanently.
+    --
+    -- The freeze is immediate: there is no settlement window (FR-025). A
+    -- completion that arrives after the boundary does not enter the closed
+    -- period, and still counts in full in the participant's own records
+    -- (FR-025a).
     --
     -- A participant who is currently opted out is not entered into any newly
     -- opening period (FR-004b): the fold joins leaderboard_participation on
     -- opted_in.
     --
-    -- The settlement window and the Honor Board threshold are configuration, not
-    -- constants (research R5, FR-028).
+    -- The Honor Board threshold is configuration, not a constant (FR-028).
     null;
 end;
 $$;

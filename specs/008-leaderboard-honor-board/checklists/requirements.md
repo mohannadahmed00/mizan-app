@@ -71,11 +71,37 @@ All three questions raised at specification time were answered by the user and f
   before anyone opts in. Consent a person would not have given had they understood it is not
   consent.
 
+## Clarification session 2026-08-29
+
+Five further questions asked and integrated after planning. All five were genuine gaps — each one
+had no defined answer in the spec and would have been decided by whoever wrote the code first.
+
+| Question | Answer | Where it landed |
+|---|---|---|
+| Do points earned before opting in count toward the current period? | Whole period counts | FR-021a, FR-002b, SC-015 |
+| Does the Honor Board exist for all three period lengths? | Weekly and monthly only | FR-027a, US4 scenario 5 |
+| What breaks a tie on equal points? | Who reached the total earliest | FR-022, FR-022a |
+| How long a grace period before a period freezes? | None — freeze at the boundary | FR-025, FR-025a, FR-025b, SC-016 |
+| How are duplicate display names disambiguated? | Not at all; own row is marked | FR-007a, SC-017 |
+
+Two of these carry costs that are now recorded rather than discovered later:
+
+- **Immediate freeze** disadvantages offline participants on the leaderboard, which is a live
+  tension with Principle IV. Bounded by FR-025a, disclosed by FR-025b, asserted by SC-016, and
+  logged in the plan's Complexity Tracking with a revisit trigger.
+- **The tie-break trusts a device timestamp**, so a forged clock can reorder ties. FR-022a bounds
+  that to ties alone — no total, days-engaged figure or region can move, and nobody can be lifted
+  above a higher total.
+
 ## Notes
 
-No open items. Specification is ready for `/speckit-plan`.
+No open items. Ran out of order: `/speckit-clarify` is meant to precede `/speckit-plan`, and here it
+followed. All five answers were therefore propagated back through `plan.md`, `research.md`,
+`data-model.md` and all five contracts — the immediate-freeze answer removed the `SETTLING` state
+from the period lifecycle entirely.
 
-The riskiest areas for planning, in order: region assignment and re-evaluation under timezone change
-(FR-012, FR-013, SC-005, SC-007), server-side recomputation and tamper resistance (FR-018, FR-019,
-SC-006), and the Principle IX surface audit (SC-013), which has to be done by reading strings and
-colours rather than by test assertion alone.
+The riskiest areas for task breakdown, in order: region assignment and re-evaluation under timezone
+change (FR-012, FR-013, SC-005, SC-007), server-side recomputation and tamper resistance (FR-018,
+FR-019, SC-006), the offline-freeze tradeoff (SC-016) which is the one place a real user may feel
+treated unfairly, and the Principle IX surface audit (SC-013), which has to be done by reading
+strings and colours rather than by test assertion alone.

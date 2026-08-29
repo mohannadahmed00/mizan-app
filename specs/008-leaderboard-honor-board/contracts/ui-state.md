@@ -67,16 +67,24 @@ Must state, before any choice is made:
 1. What becomes visible to others — display name and period points total (FR-002).
 2. That visibility is limited to the participant's region (FR-002).
 3. **That entries for periods which have already finished remain visible after leaving** (FR-002a).
+4. **That the current period's total includes what is already recorded in it** (FR-002b).
+5. **That days synced after a period ends do not count toward it** (FR-025b).
 
-Point 3 is not optional copy. Opting out reaches only open periods, so a participant who is not told
-this has not given informed consent — it is the one commitment they cannot take back (research R7).
+Points 3–5 are not optional copy. Each is something the participant cannot undo once they have
+joined, and a person told none of them has not given informed consent. Point 5 matters most to
+exactly the users the product is built for — someone who records offline routinely may reasonably
+decline on these terms, and they are entitled to decide that before joining rather than discover it
+from a standing that looks wrong.
 
 Suggested copy, to be audited against the Principle IX list before shipping (SC-013):
 
 > **Join the leaderboard**
-> Other people in your region will see your name and your points for the current period.
+> Other people in your region will see your name and your points for the current period,
+> including what you have already recorded in it.
 > You can leave at any time. Leaving takes you out of the period running now and any that
 > follow — periods that have already finished stay as they are.
+> Periods close when they end, so anything you record offline and sync afterwards counts in
+> your own record but not toward that period's standings.
 
 No urgency, no social proof ("847 people in your region are competing"), no streak-loss framing, no
 count of who is ahead. Joining is a choice, not a nudge.
@@ -95,6 +103,10 @@ changes nothing backwards.
 ---
 
 ## The Honor Board panel
+
+Rendered for the **weekly and monthly** periods only. When the daily period is selected the panel is
+absent — not empty, not disabled, not "no Honor Board today", which would read as a shortfall.
+Consistency needs a span to be sustained across (FR-027a).
 
 Renders qualifying members only. No ordering that reads as ranking, no points, no days count, no
 position.

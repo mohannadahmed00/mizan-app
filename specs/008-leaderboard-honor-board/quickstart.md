@@ -33,8 +33,9 @@ supabase db execute --file specs\008-leaderboard-honor-board\contracts\remote-sc
 supabase db execute --file supabase\seed\regions.sql
 ```
 
-Then schedule `public.recompute_open_periods()` — cadence is an operator decision; the settlement
-window and the Honor Board threshold are configuration, not constants in code (research R5, FR-028).
+Then schedule `public.recompute_open_periods()` — cadence is an operator decision. The Honor Board
+threshold is configuration, not a constant in code (FR-028). There is no settlement window: periods
+freeze at their boundary (FR-025).
 
 Verify the migration matches the contract, as the merge gate requires:
 
@@ -137,6 +138,38 @@ nothing else changes.
 period, then change catalogue points, reverse a completion, add a late completion for that date, and
 opt a member out. Assert the closed period's standings and Honor Board membership are byte-identical
 throughout.
+
+Periods freeze at their boundary with no settlement window (FR-025), so "a late completion" here
+means one arriving even seconds after the boundary — the test should use exactly that, since it is
+the realistic case, not a contrived one.
+
+### SC-015 — a mid-period joiner is scored over the whole period
+
+*Automated*: `MidPeriodOptInTest`.
+
+*By hand*: record several days without opting in, then opt in on the last day of the period. The
+published total must cover every day of the period, not only the days after opting in (FR-021a), and
+the opt-in copy must have said so beforehand (FR-002b).
+
+### SC-016 — a late sync misses the leaderboard but not the record
+
+*Automated*: `LateSyncAfterFreezeTest`.
+
+*By hand*: **the tradeoff worth seeing with your own eyes.** Record a full day offline, let the
+period boundary pass, then reconnect. Assert both halves:
+
+- The closed period's standings do not change — the day scores nothing there.
+- Today, Week, Streak, History and Insights count the day in full (FR-025a).
+
+If this feels wrong in practice, that is the signal to revisit the no-grace-period decision; the
+spec's Assumptions section flags it as the one place the leaderboard disadvantages offline users.
+
+### SC-017 — duplicate display names
+
+*Automated*: `DuplicateDisplayNameTest`.
+
+*By hand*: two participants in one region with the same display name. Both listed, neither name
+altered or suffixed, and each can find their own row (FR-007a).
 
 ### SC-011 — the Honor Board is consistency, not points
 

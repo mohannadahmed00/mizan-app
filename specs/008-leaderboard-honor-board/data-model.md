@@ -86,9 +86,15 @@ Returned by a dedicated lookup so SC-009 does not require paging (research R9).
 
 ### `TieBreak`
 
-A pure, total ordering for equal totals (FR-022). Ordering is by `points` descending, then by a
-stable server-side discriminator; the function is pure so the same inputs always produce the same
-order, and no comparison is expressed as one participant beating another.
+A pure, total ordering for equal totals (FR-022). Ordering is by `points` descending, then by
+**who reached the total earliest** — the recorded time of the last completion contributing to it.
+The function is pure, so the same inputs always produce the same order, and no comparison is
+expressed as one participant beating another.
+
+The recorded time is device-reported, so a manipulated client could reorder a tie. FR-022a bounds
+that exposure explicitly: it cannot change any total, days-engaged figure or region, and cannot put
+a participant above anyone with a higher total. Ordering *within* an identical total is all it
+reaches.
 
 ### `HonorBoardMember`
 
@@ -122,6 +128,11 @@ qualifiesForHonorBoard(daysEngaged: Int, threshold: Int): Boolean  =  daysEngage
 
 Pure. Points are not a parameter — the function cannot consult them even by accident, the same
 device `buildStreakSummary` uses to keep the catalogue out of streak logic.
+
+**Defined for `WEEKLY` and `MONTHLY` only** (FR-027a). The daily period has a ranking and no Honor
+Board: a days-engaged threshold over one day can only be 0 or 1, so a daily board would recognise
+everyone active and devalue the weekly board beside it. `HonorBoardState` for `DAILY` is therefore
+not a thing the read model can express.
 
 ### `Participation`
 
@@ -227,13 +238,12 @@ Policies:
 
 ### `leaderboard_periods` — the period lifecycle, made explicit
 
-`(period_kind, period_start, region_id, state, closed_at)` where `state` is `OPEN`, `SETTLING` or
-`CLOSED`.
+`(period_kind, period_start, region_id, state, closed_at)` where `state` is `OPEN` or
+`CLOSED`. There is no intermediate state: a period freezes at its boundary (FR-025).
 
 This table exists so that "a closed period never changes" is a **join condition rather than a
 convention**. Both mutating paths — the aggregation job and the withdrawal delete — are scoped to
-periods whose state is not `CLOSED`, so neither can reach a closed period even by mistake. R5 needed
-period state tracked anyway for the settlement window; one table serves both.
+periods whose state is not `CLOSED`, so neither can reach a closed period even by mistake.
 
 Readable by any signed-in client, so a ranking can say whether it is final. Writable by none.
 
@@ -254,8 +264,10 @@ Runs on a schedule. For each region and each **open** period:
    grouped by `(user_id, period)` over the stored `credited_date`.
 2. Compute `points` and `days_engaged`; assign `position` with the tie-break.
 3. Replace that period's rows for that region.
-4. When a period's settlement window closes, write qualifying members into `honor_board_closed`, set
-   the period's state to `CLOSED`, and stop recomputing it.
+4. When the period's boundary passes in the region's timezone, write qualifying members into
+   `honor_board_closed` — for `WEEKLY` and `MONTHLY` only (FR-027a) — set the period's state to
+   `CLOSED`, and stop recomputing it. There is no settlement window: the freeze is immediate
+   (FR-025).
 
 The job's working set is `leaderboard_periods` where `state <> 'CLOSED'`, so a closed period is not
 merely skipped by convention — it is not selected. The job **reads** completions and **writes** only
@@ -291,12 +303,18 @@ Signing out ends participation for the session (FR-008); `LocalRecordWipe` clear
 ### Period
 
 ```
-OPEN ──region-local boundary passes──▶ SETTLING ──window closes──▶ CLOSED (immutable)
+OPEN ──region-local boundary passes──▶ CLOSED (immutable)
 ```
 
-Only `OPEN` and `SETTLING` periods are in the job's working set, and only they are in the withdrawal
-delete's. **A `CLOSED` period admits no mutation whatsoever** — not a late completion, not a
-catalogue change, not an opt-in, not an opt-out (FR-025, FR-031, FR-004a, research R5).
+No intermediate state and no settlement window: the freeze is immediate (FR-025). Only `OPEN`
+periods are in the job's working set, and only they are in the withdrawal delete's. **A `CLOSED`
+period admits no mutation whatsoever** — not a late completion, not a catalogue change, not an
+opt-in, not an opt-out (FR-025, FR-031, FR-004a, research R5).
+
+The cost of an immediate freeze is that a participant who records offline and syncs after the
+boundary scores nothing for those days here. FR-025a keeps that confined to the leaderboard — their
+own records, points, streak and insights count the days in full — and FR-025b requires it to be
+disclosed before they opt in.
 
 There is no exception to that sentence, and that is deliberate. The earlier draft carved out one —
 withdrawal could delete closed ranking rows but not closed Honor Board rows — and a rule with a

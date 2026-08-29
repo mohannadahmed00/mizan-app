@@ -44,6 +44,16 @@ Regional grouping resolves this. A region's timezone defines its period boundari
 are grouped so that the region's calendar date matches their own. Comparison therefore always happens
 between people who were on the same weekday, with the same day-specific tasks available.
 
+## Clarifications
+
+### Session 2026-08-29
+
+- Q: When someone opts in partway through a period, should the points they already earned earlier in that same period count toward their standing? → A: A — the whole period counts; joining mid-period publishes the full period total, including days recorded before opting in.
+- Q: Should the Honor Board exist for all three period lengths, given that a days-engaged threshold on a single day can only ever be 0 or 1? → A: B — weekly and monthly only; the daily period has a ranking but no Honor Board.
+- Q: When two participants finish a period with exactly the same points, what decides which one is listed first? → A: A — whoever reached the total earliest, by the recorded time of the last completion contributing to it.
+- Q: How long after a period ends should late-arriving offline records still be allowed to change its standings before it is frozen? → A: No grace period — a period freezes at its boundary, and records arriving afterwards never alter it.
+- Q: If two participants in the same region have chosen the same display name, how should the ranking tell them apart? → A: A — duplicates are allowed; the viewer's own row is marked regardless, so self-identification never depends on name uniqueness.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Opting in and seeing where I stand (Priority: P1)
@@ -184,6 +194,8 @@ it are not listed, counted or alluded to.
 4. **Given** the Honor Board for a completed period, **When** it is viewed later, **Then** its
    membership is unchanged — a past period's recognition is a historical record and is never
    recomputed (Principle III).
+5. **Given** the daily period is selected, **When** the participant views it, **Then** a ranking is
+   shown and no Honor Board is offered — consistency needs a span to be sustained across (FR-027a).
 
 ---
 
@@ -195,6 +207,10 @@ it are not listed, counted or alluded to.
 - **The device is offline.** The most recently retrieved ranking is shown, clearly marked as of a
   known point in time rather than presented as current. Absence of a cached ranking shows an
   unavailable state, never an empty list that reads as "nobody is ahead of you."
+- **A participant records offline across a period boundary.** Days recorded before the boundary that
+  sync after it do not count toward that period, which has frozen (FR-025a). Their own records,
+  points, streak and insights are unaffected and show the full total. No surface characterises the
+  gap as a failure, and no copy attributes it to the person having been offline.
 - **A participant travels to a different timezone.** Their region is re-evaluated so that the
   leaderboard day continues to match their own calendar day. Standings already recorded in the
   previous region for closed periods are not rewritten.
@@ -218,6 +234,9 @@ it are not listed, counted or alluded to.
   a favourable comparison.
 - **A participant changes display name.** Rankings reflect the new name on the next refresh; past
   Honor Board membership continues to identify the same person.
+- **Two participants in one region share a display name.** Both are listed under that name, and the
+  viewer's own row is marked so they can still find themselves (FR-007a). Nothing is appended to
+  either name and neither opt-in is refused.
 - **Sign-out with records removed.** Participation ends with the session; the person does not remain
   visible in any ranking after signing out.
 
@@ -235,6 +254,9 @@ it are not listed, counted or alluded to.
 - **FR-002a**: That statement MUST also say that entries for periods which have already completed
   remain visible after leaving. Because opting out reaches only periods still open (FR-004), a
   participant who is not told this before joining has not given informed consent.
+- **FR-002b**: That statement MUST also say that the current period's total includes what the person
+  has already recorded in it before opting in (FR-021a), so joining does not publish a figure they
+  did not expect.
 - **FR-003**: Users MUST be able to turn participation on and off from the same place, at any time,
   without confirmation friction that discourages leaving.
 - **FR-004**: When participation is off, the account MUST NOT appear in any ranking or Honor Board
@@ -250,6 +272,10 @@ it are not listed, counted or alluded to.
   exposed to other participants on any surface.
 - **FR-007**: A participant with no display name set MUST be shown under a neutral placeholder
   identity rather than being excluded or identified by any other personal attribute.
+- **FR-007a**: Display names MUST NOT be required to be unique within a region. The system MUST NOT
+  append a disambiguating suffix, expose any fragment of an account identifier, or refuse an opt-in
+  because another participant shares the name. A viewer MUST be able to identify their own row
+  without relying on the name being unique.
 - **FR-008**: Signing out MUST end participation for that device's session, and a signed-out account
   MUST NOT remain visible in rankings.
 
@@ -285,15 +311,33 @@ it are not listed, counted or alluded to.
 - **FR-020**: The system MUST provide rankings for daily, weekly and monthly periods.
 - **FR-021**: Ranking MUST be by raw points earned within the period, using the same points the rest
   of the product awards.
-- **FR-022**: Equal totals MUST be ordered by a stated, stable, deterministic tie-break rule that
-  produces the same order on every retrieval.
+- **FR-021a**: A participant who opts in partway through a period MUST be scored over the **whole**
+  period, including days recorded before they opted in. Every participant in a period is therefore
+  measured over the same span, and a late joiner is never shown a partial total that reads as a low
+  position they did not earn (Principle IX). FR-002b requires this to be disclosed before opting in.
+- **FR-022**: Equal totals MUST be ordered by whoever reached the total earliest — the recorded time
+  of the last completion contributing to it — and the rule MUST produce the same order on every
+  retrieval. Neither participant may be presented as having beaten the other.
+- **FR-022a**: The recorded time used by FR-022 is reported by the device, so a manipulated client
+  could reorder a tie. This exposure MUST be bounded to exactly that: a forged clock MUST NOT be
+  able to change any participant's points total, days engaged or region, and MUST NOT be able to
+  place a participant above anyone with a higher total. Ordering *within* an identical total is the
+  only thing it can affect.
 - **FR-023**: A participant MUST be able to see their own position within the ranking without
   scrolling through an unbounded list.
 - **FR-024**: Rankings MUST load a bounded portion of a large regional population and extend on
   demand.
-- **FR-025**: A completed period's standings MUST NOT change after the period ends, for any reason —
-  including a late-arriving completion, a catalogue change, or a participant opting out
-  (Principle III). A closed period admits no mutation at all.
+- **FR-025**: A period MUST freeze at its boundary in the region's timezone, with no grace period. A
+  completed period's standings MUST NOT change afterwards for any reason — including a late-arriving
+  completion, a catalogue change, or a participant opting out (Principle III). A closed period admits
+  no mutation at all.
+- **FR-025a**: Completions that reach the account after their period has frozen MUST NOT alter that
+  period's standings, and MUST still be counted in full in the participant's own records, points,
+  streak and insights. The leaderboard is the only thing a late sync fails to reach; nothing about
+  the person's own history is affected.
+- **FR-025b**: Because of FR-025a, a participant who records offline and syncs after a period ends
+  scores nothing for those days on the leaderboard. The opt-in statement MUST disclose this before
+  the person joins, alongside FR-002a and FR-002b.
 - **FR-026**: The system MUST state which period a displayed ranking covers, unambiguously enough
   that a total can be reconciled against the person's own records.
 
@@ -302,6 +346,10 @@ it are not listed, counted or alluded to.
 - **FR-027**: Honor Board qualification MUST be a days-engaged consistency threshold: the number of
   days within the period on which the participant completed at least one applicable task. Points
   MUST NOT affect qualification.
+- **FR-027a**: The Honor Board MUST exist for the **weekly and monthly** periods only. The daily
+  period has a ranking and no Honor Board: a days-engaged threshold over a single day can only be 0
+  or 1, so a daily board would list every active participant and recognise nothing — and would
+  devalue the weekly board beside it.
 - **FR-028**: The threshold MUST be administrator-defined and MUST NOT be user-configurable
   (Principle VI).
 - **FR-029**: The Honor Board MUST recognise every participant meeting the threshold for a period,
@@ -387,6 +435,13 @@ it are not listed, counted or alluded to.
 - **SC-014**: A first ranking is readable within 3 seconds of opening the leaderboard surface on a
   working connection, and an unavailable ranking resolves to its unavailable state within 10 seconds
   rather than hanging.
+- **SC-015**: A participant who opts in on the last day of a period is scored over the whole period,
+  and their total equals an independent recomputation across every day of it — not only the days
+  after they opted in.
+- **SC-016**: A completion synced after its period has frozen changes no figure in that period's
+  standings, and is counted in full in the participant's own records, points, streak and insights.
+- **SC-017**: Two participants in one region sharing a display name are both listed, neither name is
+  modified, and each can identify their own row.
 
 ## Assumptions
 
@@ -407,6 +462,14 @@ it are not listed, counted or alluded to.
   engagement is.
 - **Anti-cheat is server-side recomputation only.** Behavioural detection, rate limiting beyond basic
   validation, and account-reputation systems are out of scope per PLAN.md.
+- **Immediate freeze is an accepted tradeoff against Principle IV, taken deliberately.** Periods
+  freeze at their boundary with no settlement window (FR-025), so a participant who records offline
+  and syncs later scores nothing for those days on the leaderboard. This favours a period being
+  final and unambiguous over accommodating offline sync, and it is the one place in this increment
+  where the leaderboard treats an offline user less favourably than an online one. It is confined to
+  the leaderboard: the person's own records, points, streak and insights are untouched (FR-025a),
+  and FR-025b requires the tradeoff to be disclosed before anyone opts in. Revisit if offline
+  participants are observably disadvantaged in practice.
 - **The leaderboard adds a read-only remote surface.** It introduces no new authoring affordance and
   no new local source of truth (Principles IV and VI).
 - **Notifications are Phase 9.** Nothing here sends a push, and FR-039 makes the absence of
