@@ -19,6 +19,8 @@ import com.giraffe.mizanapp.domain.leaderboard.OwnRankState
 import com.giraffe.mizanapp.domain.leaderboard.PeriodKind
 import com.giraffe.mizanapp.domain.leaderboard.Ranking
 import com.giraffe.mizanapp.domain.leaderboard.RankingState
+import java.time.Instant
+import java.time.ZoneId
 
 @Composable
 fun LeaderboardSection(
@@ -42,7 +44,10 @@ fun LeaderboardSection(
             LeaveControl(onLeave = onLeave)
             when (val ranking = state.ranking) {
                 RankingState.Unavailable -> Text("Standings aren't available right now")
-                is RankingState.Cached -> RankingRows(ranking.ranking)
+                is RankingState.Cached -> {
+                    CacheAgeLabel(ranking.ranking.retrievedAt, ranking.ranking.region.zone)
+                    RankingRows(ranking.ranking)
+                }
                 is RankingState.Live -> RankingRows(ranking.ranking)
             }
             HonorBoardPanel(kind = state.selectedPeriod, state = state.honorBoard)
@@ -95,6 +100,16 @@ private fun OwnRankRow(ownRank: OwnRankState) {
             Text("${ownRank.ownRank.entry.points} points")
         }
     }
+}
+
+/** FR-036: a cached page states its age rather than rendering silently as current. */
+@Composable
+private fun CacheAgeLabel(retrievedAt: Instant, zone: ZoneId) {
+    val local = retrievedAt.atZone(zone).toLocalTime()
+    Text(
+        "As of %02d:%02d".format(local.hour, local.minute),
+        modifier = Modifier.testTag("leaderboard-cache-age"),
+    )
 }
 
 @Composable
