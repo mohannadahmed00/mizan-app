@@ -10,6 +10,7 @@ import com.giraffe.mizanapp.domain.leaderboard.PeriodKind
 import com.giraffe.mizanapp.domain.leaderboard.RankingState
 import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
+import com.giraffe.mizanapp.domain.usecase.GetOwnRank
 import com.giraffe.mizanapp.domain.usecase.GetParticipationState
 import com.giraffe.mizanapp.domain.usecase.GetRanking
 import com.giraffe.mizanapp.domain.usecase.SetParticipation
@@ -20,7 +21,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** Owns one immutable state for the leaderboard section embedded in Progress. */
@@ -30,10 +30,12 @@ class LeaderboardViewModel(
     getParticipationState: GetParticipationState,
     private val setParticipation: SetParticipation,
     private val getRanking: GetRanking,
+    private val getOwnRank: GetOwnRank,
     sync: SyncRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(emptyState())
     val state: StateFlow<LeaderboardUiState> = _state.asStateFlow()
+    private val selectedPeriod = MutableStateFlow(PeriodKind.WEEKLY)
 
     init {
         viewModelScope.launch {
@@ -41,12 +43,15 @@ class LeaderboardViewModel(
                 accounts.observeSession(),
                 getParticipationState(),
                 sync.observePendingCount(),
-            ) { session, participation, pending -> Context(session, participation, pending) }
+                selectedPeriod,
+            ) { session, participation, pending, period -> Context(session, participation, pending, period) }
                 .flatMapLatest { context ->
                     if (context.session is AccountSession.SignedIn && context.participation.optedIn) {
-                        getRanking(PeriodKind.WEEKLY).map { ranking -> context.toState(ranking) }
+                        combine(getRanking(context.period), getOwnRank(context.period)) { ranking, ownRank ->
+                            context.toState(ranking, ownRank)
+                        }
                     } else {
-                        flowOf(context.toState(RankingState.Unavailable))
+                        flowOf(context.toState(RankingState.Unavailable, OwnRankState.Unavailable))
                     }
                 }
                 .collect { _state.value = it }
@@ -62,10 +67,10 @@ class LeaderboardViewModel(
     }
 
     fun selectPeriod(kind: PeriodKind) {
-        TODO("T067")
+        selectedPeriod.value = kind
     }
 
-    private fun Context.toState(ranking: RankingState): LeaderboardUiState {
+    private fun Context.toState(ranking: RankingState, ownRank: OwnRankState): LeaderboardUiState {
         val visibility = when {
             session is AccountSession.SignedOut -> Visibility.Hidden
             !participation.optedIn -> Visibility.Invitation
@@ -73,9 +78,9 @@ class LeaderboardViewModel(
         }
         return LeaderboardUiState(
             visibility = visibility,
-            selectedPeriod = PeriodKind.WEEKLY,
+            selectedPeriod = period,
             ranking = ranking.withProvisional(pending > 0),
-            ownRank = OwnRankState.Unavailable,
+            ownRank = ownRank,
             honorBoard = HonorBoardState.Unavailable,
             regionLabel = participation.region?.displayName,
             isRefreshing = false,
@@ -92,6 +97,7 @@ class LeaderboardViewModel(
         val session: AccountSession,
         val participation: Participation,
         val pending: Int,
+        val period: PeriodKind,
     )
 
     private companion object {

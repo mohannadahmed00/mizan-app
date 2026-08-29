@@ -43,6 +43,7 @@ import com.giraffe.mizanapp.domain.usecase.GetDayDetail
 import com.giraffe.mizanapp.domain.usecase.GetDaySummary
 import com.giraffe.mizanapp.domain.usecase.GetHistoryPage
 import com.giraffe.mizanapp.domain.usecase.GetMonthOverview
+import com.giraffe.mizanapp.domain.usecase.GetOwnRank
 import com.giraffe.mizanapp.domain.usecase.GetParticipationState
 import com.giraffe.mizanapp.domain.usecase.GetRanking
 import com.giraffe.mizanapp.domain.usecase.GetPersonalBests
@@ -91,6 +92,7 @@ val domainModule = module {
     factory { GetParticipationState(get()) }
     factory { SetParticipation(get(), get()) }
     factory { GetRanking(get()) }
+    factory { GetOwnRank(get()) }
 }
 
 val dataModule = module {
@@ -140,7 +142,7 @@ val appModule = module {
     viewModel { SignInViewModel(get(), get(), get(), isSupabaseConfigured()) }
     viewModel { SyncStatusViewModel(get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get()) }
-    viewModel { LeaderboardViewModel(get(), get(), get(), get(), get()) }
+    viewModel { LeaderboardViewModel(get(), get(), get(), get(), get(), get()) }
 }
 
 val mizanModules = listOf(domainModule, dataModule, appModule)

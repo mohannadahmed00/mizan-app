@@ -21,6 +21,7 @@ import com.giraffe.mizanapp.domain.repository.LocalRecordCounts
 import com.giraffe.mizanapp.domain.repository.ParticipationRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.sync.SyncStatus
+import com.giraffe.mizanapp.domain.usecase.GetOwnRank
 import com.giraffe.mizanapp.domain.usecase.GetParticipationState
 import com.giraffe.mizanapp.domain.usecase.GetRanking
 import com.giraffe.mizanapp.domain.usecase.SetParticipation
@@ -107,6 +108,7 @@ class LeaderboardViewModelTest {
                 getParticipationState = GetParticipationState(participation),
                 setParticipation = SetParticipation(participation, FakeClock()),
                 getRanking = GetRanking(leaderboard),
+                getOwnRank = GetOwnRank(leaderboard),
                 sync = sync,
             ),
             accounts,

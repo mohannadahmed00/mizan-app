@@ -17,6 +17,7 @@ import com.giraffe.mizanapp.domain.leaderboard.RankingEntry
 import com.giraffe.mizanapp.domain.leaderboard.RankingState
 import com.giraffe.mizanapp.domain.leaderboard.Region
 import com.giraffe.mizanapp.domain.leaderboard.RegionId
+import com.giraffe.mizanapp.domain.leaderboard.OwnRank
 import com.giraffe.mizanapp.domain.leaderboard.markViewer
 import com.giraffe.mizanapp.domain.leaderboard.periodFor
 import com.giraffe.mizanapp.domain.repository.LeaderboardRepository
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -59,7 +61,31 @@ class RoomLeaderboardRepository(
             }
         }
 
-    override fun observeOwnRank(kind: PeriodKind): Flow<OwnRankState> = flowOf(OwnRankState.Unavailable)
+    override fun observeOwnRank(kind: PeriodKind): Flow<OwnRankState> =
+        db.participationStateDao().observe().flatMapLatest { participation ->
+            val regionId = participation?.regionId?.takeIf { participation.optedIn }
+                ?: return@flatMapLatest flowOf(OwnRankState.Unavailable)
+            val start = periodFor(kind, time.today(), time.zone(), RegionId(regionId)).start
+            val id = "${kind.name}:$start:$regionId"
+            db.leaderboardCacheDao().observeById(id).map { entity ->
+                if (entity == null) return@map OwnRankState.Unavailable
+                when (val result = remote.ownRank(kind)) {
+                    is RemoteResult.Ok -> {
+                        val own = result.value.entry ?: return@map OwnRankState.Unavailable
+                        OwnRankState.Available(
+                            OwnRank(
+                                entry = RankingEntry(own.userId, own.displayName, own.points, own.position, isViewer = true),
+                                neighbours = result.value.neighbours.map {
+                                    RankingEntry(it.userId, it.displayName, it.points, it.position, isViewer = false)
+                                },
+                                totalParticipants = result.value.totalParticipants,
+                            ),
+                        )
+                    }
+                    RemoteResult.NotAuthenticated, RemoteResult.Unreachable, is RemoteResult.Rejected -> OwnRankState.Unavailable
+                }
+            }
+        }
 
     override suspend fun loadMore(kind: PeriodKind): LoadMoreResult {
         val participation = db.participationStateDao().observe().first()

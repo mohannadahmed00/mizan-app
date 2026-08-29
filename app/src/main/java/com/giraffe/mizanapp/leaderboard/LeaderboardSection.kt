@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.giraffe.mizanapp.domain.leaderboard.OwnRankState
 import com.giraffe.mizanapp.domain.leaderboard.PeriodKind
 import com.giraffe.mizanapp.domain.leaderboard.Ranking
 import com.giraffe.mizanapp.domain.leaderboard.RankingState
@@ -35,6 +36,7 @@ fun LeaderboardSection(
             Text("Regional standings", style = MaterialTheme.typography.titleLarge)
             state.regionLabel?.let { Text(it, modifier = Modifier.testTag("leaderboard-region")) }
             PeriodSelector(selected = state.selectedPeriod, onSelect = onPeriodSelected)
+            OwnRankRow(state.ownRank)
             LeaveControl(onLeave = onLeave)
             when (val ranking = state.ranking) {
                 RankingState.Unavailable -> Text("Standings aren't available right now")
@@ -53,6 +55,21 @@ private fun PeriodSelector(
     modifier: Modifier = Modifier,
 ) {
     TODO("T067")
+}
+
+/** FR-023, SC-009: the viewer's own row, reachable without scrolling through the page. */
+@Composable
+private fun OwnRankRow(ownRank: OwnRankState) {
+    if (ownRank !is OwnRankState.Available) return
+    Card(modifier = Modifier.fillMaxWidth().testTag("leaderboard-own-rank")) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(ownRank.ownRank.entry.position.toString())
+            Text("${ownRank.ownRank.entry.points} points")
+        }
+    }
 }
 
 @Composable
