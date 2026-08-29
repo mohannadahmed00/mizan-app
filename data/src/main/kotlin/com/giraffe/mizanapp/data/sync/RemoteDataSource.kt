@@ -2,8 +2,13 @@ package com.giraffe.mizanapp.data.sync
 
 import com.giraffe.mizanapp.data.sync.dto.RemoteCompletion
 import com.giraffe.mizanapp.data.sync.dto.RemoteDayRecord
+import com.giraffe.mizanapp.data.sync.dto.RemoteHonorBoard
+import com.giraffe.mizanapp.data.sync.dto.RemoteOwnRank
+import com.giraffe.mizanapp.data.sync.dto.RemoteParticipation
 import com.giraffe.mizanapp.data.sync.dto.RemoteProfile
 import com.giraffe.mizanapp.data.sync.dto.RemotePublication
+import com.giraffe.mizanapp.data.sync.dto.RemoteRankingPage
+import com.giraffe.mizanapp.domain.leaderboard.PeriodKind
 import java.time.Instant
 import java.time.LocalDate
 
@@ -40,6 +45,21 @@ interface RemoteDataSource {
 
     /** Published catalogue versions this app might understand. */
     suspend fun catalogues(knownFormatVersions: Set<Int>): RemoteResult<List<RemotePublication>>
+
+    /** A bounded server-ranked page for the caller's service-derived region. */
+    suspend fun rankingPage(kind: PeriodKind, cursor: Int?): RemoteResult<RemoteRankingPage>
+
+    /** The caller's row and immediate neighbours without scanning pages. */
+    suspend fun ownRank(kind: PeriodKind): RemoteResult<RemoteOwnRank>
+
+    /** Qualifying weekly or monthly members with no non-qualifier details. */
+    suspend fun honorBoard(kind: PeriodKind): RemoteResult<RemoteHonorBoard>
+
+    /** Changes consent while leaving every closed period untouched. */
+    suspend fun setParticipation(optedIn: Boolean): RemoteResult<RemoteParticipation>
+
+    /** Reports an IANA zone id so the service, never the client, assigns a region. */
+    suspend fun reportZone(zoneId: String): RemoteResult<RemoteParticipation>
 }
 
 data class RemoteChanges(
