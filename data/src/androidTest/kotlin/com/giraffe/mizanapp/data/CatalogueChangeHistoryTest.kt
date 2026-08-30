@@ -75,7 +75,7 @@ class CatalogueChangeHistoryTest : DbTestBase() {
         val dayBefore = (dayUseCase(week.start) as DayDetailOutcome.Ready).summary
         val recordStart = dayPlans.earliestPlanDate()
         val datesBefore = completions.observeConsistencyDates().first()
-        val streakBefore = buildStreakSummary(datesBefore, time.today(), time.now(), time.zone(), recordStart)
+        val streakBefore = buildStreakSummary(datesBefore, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), recordStart)
 
         // Introduce v2: different points, a changed schedule, effective in the future.
         v2()
@@ -102,7 +102,7 @@ class CatalogueChangeHistoryTest : DbTestBase() {
         )
 
         val datesAfter = completions.observeConsistencyDates().first()
-        val streakAfter = buildStreakSummary(datesAfter, time.today(), time.now(), time.zone(), recordStart)
+        val streakAfter = buildStreakSummary(datesAfter, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), recordStart)
         assertEquals("streak figures must not move after a catalogue change", streakBefore.current, streakAfter.current)
         assertEquals(streakBefore.longest, streakAfter.longest)
 

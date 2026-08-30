@@ -728,19 +728,19 @@ opt-in, revocation-safe, and erasable.
       instant to a date itself and route it through `TimeProvider` instead. Do **not** add a second
       conversion.
 
-- [ ] T064 [TEST] [US5] Create
+- [X] T064 [TEST] [US5] Create
       `domain/src/test/kotlin/com/giraffe/mizanapp/domain/streak/StreakClockTest.kt` (replace it if it
       exists) asserting: `atRiskPointIsAlwaysInsideItsOwnDay` across a full year at a high and a low
       latitude, and `nextBoundaryIsTheEarlierOfAtRiskAndDayEnd`.
 
-- [ ] T065 [US5] Change `domain/src/main/kotlin/com/giraffe/mizanapp/domain/streak/StreakClock.kt`:
+- [X] T065 [US5] Change `domain/src/main/kotlin/com/giraffe/mizanapp/domain/streak/StreakClock.kt`:
       replace `AT_RISK_FROM: LocalTime = 20:00` with `AT_RISK_BEFORE_END: Duration` (use 4 hours);
       change `isAtRiskWindow(now, zone)` to `isAtRiskWindow(now, dayEndsAt)` returning
       `!now.isBefore(dayEndsAt.minus(AT_RISK_BEFORE_END))`; change
       `nextBoundaryAfter(now, zone)` to `nextBoundaryAfter(now, dayEndsAt)` returning the earlier of
       the at-risk instant and `dayEndsAt` that is strictly after `now`.
 
-- [ ] T066 [US5] Update the callers of the changed `StreakClock` methods:
+- [X] T066 [US5] Update the callers of the changed `StreakClock` methods:
       `domain/src/main/kotlin/com/giraffe/mizanapp/domain/streak/BuildStreakSummary.kt` and
       `domain/src/main/kotlin/com/giraffe/mizanapp/domain/usecase/GetStreakSummary.kt`. They now need
       the day's end, which comes from `BoundaryState.expiresAt` — pass it in as a parameter rather

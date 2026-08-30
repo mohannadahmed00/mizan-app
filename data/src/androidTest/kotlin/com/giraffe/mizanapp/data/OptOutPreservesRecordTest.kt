@@ -29,7 +29,7 @@ class OptOutPreservesRecordTest : DbTestBase() {
         val recordStart = dayPlans.earliestPlanDate()
         val scoresBefore = dates.map { scoreFor(it) }
         val datesEngagedBefore = completions.observeConsistencyDates().first()
-        val streakBefore = buildStreakSummary(datesEngagedBefore, time.today(), time.now(), time.zone(), recordStart)
+        val streakBefore = buildStreakSummary(datesEngagedBefore, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), recordStart)
 
         val fake = FakeRemoteDataSource()
         fake.currentUserId = "viewer"
@@ -39,7 +39,7 @@ class OptOutPreservesRecordTest : DbTestBase() {
 
         val scoresAfter = dates.map { scoreFor(it) }
         val datesEngagedAfter = completions.observeConsistencyDates().first()
-        val streakAfter = buildStreakSummary(datesEngagedAfter, time.today(), time.now(), time.zone(), recordStart)
+        val streakAfter = buildStreakSummary(datesEngagedAfter, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), recordStart)
 
         assertEquals(scoresBefore, scoresAfter)
         assertEquals(streakBefore, streakAfter)

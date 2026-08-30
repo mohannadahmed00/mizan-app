@@ -6,6 +6,7 @@ import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.streak.StreakClock
 import com.giraffe.mizanapp.domain.streak.StreakSummary
 import com.giraffe.mizanapp.domain.streak.buildStreakSummary
+import com.giraffe.mizanapp.domain.time.BoundaryStatus
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.Duration
 import kotlinx.coroutines.delay
@@ -34,6 +35,7 @@ class GetStreakSummary(
     private val dayPlans: DayPlanRepository,
     private val time: TimeProvider,
     private val recordCoverage: RecordCoverageRepository,
+    private val boundaryStatus: BoundaryStatus,
 ) {
     operator fun invoke(): Flow<StreakSummary> =
         combine(
@@ -42,7 +44,8 @@ class GetStreakSummary(
         ) { dates, _ -> dates }
             .map { dates ->
                 val coverage = recordCoverage.coverage()
-                buildStreakSummary(dates, time.today(), time.now(), time.zone(), dayPlans.earliestPlanDate())
+                val dayEndsAt = boundaryStatus.current().expiresAt
+                buildStreakSummary(dates, time.today(), time.now(), dayEndsAt, dayPlans.earliestPlanDate())
                     .copy(provisional = !coverage.complete)
             }
             .distinctUntilChanged()
@@ -56,7 +59,8 @@ class GetStreakSummary(
         emit(Unit)
         while (true) {
             val now = time.now()
-            val wait = Duration.between(now, StreakClock.nextBoundaryAfter(now, time.zone()))
+            val dayEndsAt = boundaryStatus.current().expiresAt
+            val wait = Duration.between(now, StreakClock.nextBoundaryAfter(now, dayEndsAt))
             // Guards against a zero wait; unreachable while nextBoundaryAfter
             // stays strict, so a mistake there degrades into a slow loop
             // rather than a hang.

@@ -53,7 +53,7 @@ class LateSyncAfterFreezeTest : DbTestBase() {
         plan.plannedTasks.forEach { syncing.record(today, it.taskSlug) }
         val scoreBefore = scoreDay(plan, completions.liveBetween(today, today))
         val datesBefore = completions.observeConsistencyDates().first()
-        val streakBefore = buildStreakSummary(datesBefore, time.today(), time.now(), time.zone(), dayPlans.earliestPlanDate())
+        val streakBefore = buildStreakSummary(datesBefore, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), dayPlans.earliestPlanDate())
 
         // Reconnect: the day's completions upload, then the aggregation runs.
         fake.unreachable = false
@@ -66,7 +66,7 @@ class LateSyncAfterFreezeTest : DbTestBase() {
 
         val scoreAfter = scoreDay(requireNotNull(dayPlans.planFor(today)), completions.liveBetween(today, today))
         val datesAfter = completions.observeConsistencyDates().first()
-        val streakAfter = buildStreakSummary(datesAfter, time.today(), time.now(), time.zone(), dayPlans.earliestPlanDate())
+        val streakAfter = buildStreakSummary(datesAfter, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), dayPlans.earliestPlanDate())
         assertEquals("Today/Week/History must still count the day in full", scoreBefore, scoreAfter)
         assertEquals("the streak must still count the day in full", streakBefore, streakAfter)
         assertTrue("at least one task must have been recorded", scoreAfter.earned > 0)

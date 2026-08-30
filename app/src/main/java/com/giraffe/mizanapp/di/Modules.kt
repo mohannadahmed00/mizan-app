@@ -94,7 +94,7 @@ val domainModule = module {
     factory { DayWritePolicy(get()) }
     factory { GetWeekSummary(get(), get(), get(), get(), get()) }
     factory { GetDaySummary(get(), get()) }
-    factory { GetStreakSummary(get(), get(), get(), get()) }
+    factory { GetStreakSummary(get(), get(), get(), get(), get()) }
     factory { GetHistoryPage(get(), get(), get(), get(), get()) }
     factory { GetDayDetail(get(), get(), get(), get()) }
     factory { GetWeeklyTrend(get()) }

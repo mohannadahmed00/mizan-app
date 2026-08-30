@@ -100,7 +100,7 @@ class DayOpenMaterialisationTest : DbTestBase() {
         completions.record(time.today(), "fajr-1")
 
         val datesBefore = completions.observeConsistencyDates().first()
-        val streakBefore = buildStreakSummary(datesBefore, time.today(), time.now(), time.zone(), dayPlans.earliestPlanDate())
+        val streakBefore = buildStreakSummary(datesBefore, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), dayPlans.earliestPlanDate())
 
         // Browse the whole record and open ten unplanned days.
         val historyUseCase = GetHistoryPage(dayPlans, completions, catalogue, time, coverageRepo)
@@ -116,7 +116,7 @@ class DayOpenMaterialisationTest : DbTestBase() {
         (1..10).forEach { i -> dayUseCase(recordStart.plusDays(i.toLong())) }
 
         val datesAfter = completions.observeConsistencyDates().first()
-        val streakAfter = buildStreakSummary(datesAfter, time.today(), time.now(), time.zone(), dayPlans.earliestPlanDate())
+        val streakAfter = buildStreakSummary(datesAfter, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), dayPlans.earliestPlanDate())
 
         assertEquals(streakBefore, streakAfter)
     }

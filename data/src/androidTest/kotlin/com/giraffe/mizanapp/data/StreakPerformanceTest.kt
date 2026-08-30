@@ -64,7 +64,7 @@ class StreakPerformanceTest : DbTestBase() {
 
         val elapsed = measureTimeMillis {
             val consistencyDates = completions.observeConsistencyDates().first()
-            buildStreakSummary(consistencyDates, time.today(), time.now(), time.zone(), dates.first())
+            buildStreakSummary(consistencyDates, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), dates.first())
         }
 
         android.util.Log.i("StreakPerformanceTest", "figures resolved in ${elapsed}ms over ${dates.size} dates")

@@ -41,7 +41,7 @@ class LocationPromptStateTest {
             dayPlans = plans,
             completions = completions,
             time = clock,
-            getStreakSummary = GetStreakSummary(completions, plans, clock, FakeRecordCoverageRepository()),
+            getStreakSummary = GetStreakSummary(completions, plans, clock, FakeRecordCoverageRepository(), boundaryStatus),
             boundaryStatus = boundaryStatus,
         )
     }

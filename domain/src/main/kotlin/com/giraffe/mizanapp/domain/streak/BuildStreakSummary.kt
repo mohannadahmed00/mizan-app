@@ -2,7 +2,6 @@ package com.giraffe.mizanapp.domain.streak
 
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 /**
  * The pure fold over Consistency Days.
@@ -11,15 +10,16 @@ import java.time.ZoneId
  * consult it even by accident (FR-005). Every rule here is one linear pass
  * over the retained, sorted, distinct dates.
  *
- * [now] and [zone] are parameters rather than a pre-computed at-risk flag:
- * passing a flag would put the 20:00 rule in the caller and give
- * Principle VII two homes.
+ * [now] and [dayEndsAt] are parameters rather than a pre-computed at-risk flag:
+ * passing a flag would put the at-risk rule in the caller and give
+ * Principle VII two homes. [dayEndsAt] is the boundary's own `expiresAt`
+ * (FR-029) — the day's actual length, not a fixed 20:00-to-midnight assumption.
  */
 fun buildStreakSummary(
     consistencyDates: List<LocalDate>,
     today: LocalDate,
     now: Instant,
-    zone: ZoneId,
+    dayEndsAt: Instant,
     recordStart: LocalDate?,
 ): StreakSummary {
     val retained = consistencyDates
@@ -57,7 +57,7 @@ fun buildStreakSummary(
     // with no run at all.
     val showBreakNotice = current == 0 && longest > 0 && !lastActiveDate.isBefore(today.minusDays(7))
 
-    val isAtRisk = current >= 1 && !todayCounted && StreakClock.isAtRiskWindow(now, zone)
+    val isAtRisk = current >= 1 && !todayCounted && StreakClock.isAtRiskWindow(now, dayEndsAt)
 
     return StreakSummary(
         current = current,
