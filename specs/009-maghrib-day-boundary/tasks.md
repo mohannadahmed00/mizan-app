@@ -627,16 +627,16 @@ opt-in, revocation-safe, and erasable.
 
 ### 5c. First-launch prompt
 
-- [ ] T049 [TEST] [US3] Add to `app/src/test/java/com/giraffe/mizanapp/today/` a
+- [X] T049 [TEST] [US3] Add to `app/src/test/java/com/giraffe/mizanapp/today/` a
       `LocationPromptStateTest.kt` asserting: the prompt is visible on first launch and invisible once
       `promptShown` is true; `DismissLocationPrompt` hides it and changes nothing else; the Today
       state is fully populated while the prompt is visible (it is a field, never a gate).
 
-- [ ] T050 [US3] Add the `LocationPrompt` field to
+- [X] T050 [US3] Add the `LocationPrompt` field to
       `app/src/main/java/com/giraffe/mizanapp/today/TodayUiState.kt` and the two events to its event
       sealed interface, exactly as in [contracts/ui-state.md](./contracts/ui-state.md) §1.
 
-- [ ] T051 [US3] Handle both events in
+- [X] T051 [US3] Handle both events in
       `app/src/main/java/com/giraffe/mizanapp/today/TodayViewModel.kt`. `EnableLocation` calls
       `requestLocation()`; `DismissLocationPrompt` sets `promptShown` and hides it. The permission
       dialog must be raised **only** from `EnableLocation` — never on launch, never as a side effect.

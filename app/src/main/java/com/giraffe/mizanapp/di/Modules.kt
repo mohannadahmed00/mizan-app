@@ -157,7 +157,7 @@ val dataModule = module {
 }
 
 val appModule = module {
-    viewModel { TodayViewModel(get(), get(), get(), get(), get()) }
+    viewModel { TodayViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { WeekViewModel(get(), get(), get(), get()) }
     viewModel { (date: LocalDate) -> DaySummaryViewModel(get<GetDayDetail>(), date) }
     viewModel { HistoryViewModel(get(), get()) }

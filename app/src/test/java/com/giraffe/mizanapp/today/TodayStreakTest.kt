@@ -72,6 +72,7 @@ class TodayStreakTest {
             completions = completions,
             time = clock,
             getStreakSummary = getStreakSummary,
+            boundaryStatus = FakeBoundaryStatus(),
         )
         return Triple(vm, plans, completions)
     }

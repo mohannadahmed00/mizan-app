@@ -46,6 +46,7 @@ class TodayViewModelTest {
             completions = completions,
             time = clock,
             getStreakSummary = GetStreakSummary(completions, plans, clock, FakeRecordCoverageRepository()),
+            boundaryStatus = FakeBoundaryStatus(),
         )
     }
 
