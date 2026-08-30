@@ -5,6 +5,7 @@ import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.data.sync.LocalRecordWipe
 import com.giraffe.mizanapp.data.sync.Outbox
 import com.giraffe.mizanapp.data.sync.OutboxEntry
+import com.giraffe.mizanapp.data.sync.RemoteDataSource
 import com.giraffe.mizanapp.data.sync.createSupabaseClient
 import com.giraffe.mizanapp.data.sync.dto.RemoteProfile
 import com.giraffe.mizanapp.domain.identity.AccountSession
@@ -52,6 +53,7 @@ class SupabaseAccountRepository(
     private val db: MizanDatabase,
     private val outbox: Outbox,
     private val time: TimeProvider,
+    private val remote: RemoteDataSource,
 ) : AccountRepository {
 
     private val wipe = LocalRecordWipe(db)
@@ -129,6 +131,8 @@ class SupabaseAccountRepository(
     }
 
     override suspend fun signOut(mode: SignOutMode) {
+        // Result ignored: the leaderboard being unreachable must never block a sign-out (FR-008).
+        remote.setParticipation(false)
         client?.auth?.signOut()
         if (mode == SignOutMode.REMOVE_LOCAL_RECORDS) wipe.wipe()
     }
@@ -168,4 +172,5 @@ fun createAccountRepository(
     db: MizanDatabase,
     outbox: Outbox,
     time: TimeProvider,
-): AccountRepository = SupabaseAccountRepository(createSupabaseClient(), accountScope, db, outbox, time)
+    remote: RemoteDataSource,
+): AccountRepository = SupabaseAccountRepository(createSupabaseClient(), accountScope, db, outbox, time, remote)

@@ -3,6 +3,7 @@ package com.giraffe.mizanapp.data
 import com.giraffe.mizanapp.data.repository.SupabaseAccountRepository
 import com.giraffe.mizanapp.data.sync.AccountScope
 import com.giraffe.mizanapp.data.sync.Outbox
+import com.giraffe.mizanapp.data.sync.RemoteDataSource
 import com.giraffe.mizanapp.data.sync.SyncEngine
 import com.giraffe.mizanapp.domain.day.scoreDay
 import com.giraffe.mizanapp.domain.identity.SignOutMode
@@ -24,12 +25,13 @@ class SignOutModesTest : DbTestBase() {
     private val userId = "user-1"
     private val email = "user@example.test"
 
-    private fun newAccountRepository() = SupabaseAccountRepository(
+    private fun newAccountRepository(remote: RemoteDataSource) = SupabaseAccountRepository(
         client = null,
         accountScope = AccountScope(db.accountScopeDao(), time),
         db = db,
         outbox = Outbox(db, time),
         time = time,
+        remote = remote,
     )
 
     private suspend fun seedSignedInHistory(fake: FakeRemoteDataSource): Map<LocalDate, Pair<Int, Int>> {
@@ -55,7 +57,7 @@ class SignOutModesTest : DbTestBase() {
         val fake = FakeRemoteDataSource().apply { currentUserId = userId }
         val before = seedSignedInHistory(fake)
 
-        newAccountRepository().signOut(SignOutMode.KEEP_LOCAL_RECORDS)
+        newAccountRepository(fake).signOut(SignOutMode.KEEP_LOCAL_RECORDS)
 
         for ((date, expected) in before) {
             val plan = requireNotNull(dayPlans.planFor(date))
@@ -80,7 +82,7 @@ class SignOutModesTest : DbTestBase() {
         seedSignedInHistory(fake)
         val (remoteDaysBefore, remoteCompletionsBefore) = fake.rows()
 
-        newAccountRepository().signOut(SignOutMode.REMOVE_LOCAL_RECORDS)
+        newAccountRepository(fake).signOut(SignOutMode.REMOVE_LOCAL_RECORDS)
 
         assertEquals(0, db.dayPlanDao().countPlans())
         assertEquals(0, db.completionDao().countAll())
@@ -98,7 +100,7 @@ class SignOutModesTest : DbTestBase() {
     fun signing_the_same_account_back_in_returns_the_full_record_with_no_duplication() = runBlocking {
         val fake = FakeRemoteDataSource().apply { currentUserId = userId }
         val before = seedSignedInHistory(fake)
-        newAccountRepository().signOut(SignOutMode.REMOVE_LOCAL_RECORDS)
+        newAccountRepository(fake).signOut(SignOutMode.REMOVE_LOCAL_RECORDS)
 
         val accountScope = AccountScope(db.accountScopeDao(), time)
         accountScope.set(userId, email, null)

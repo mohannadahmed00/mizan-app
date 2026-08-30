@@ -42,6 +42,7 @@ fun WeekScreen(
     state: WeekUiState,
     onEvent: (WeekEvent) -> Unit,
     syncStatus: SyncStatus = SyncStatus.NotSignedIn,
+    progressContent: @Composable () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     when (val status = state.status) {
@@ -50,7 +51,7 @@ fun WeekScreen(
             "The task list could not be loaded.", status.detail, modifier,
         )
         is WeekUiState.Status.CouldNotLoad -> CouldNotLoadState(status, onEvent, modifier)
-        is WeekUiState.Status.Ready -> ReadyState(state, onEvent, syncStatus, modifier)
+        is WeekUiState.Status.Ready -> ReadyState(state, onEvent, syncStatus, progressContent, modifier)
     }
 }
 
@@ -106,6 +107,7 @@ private fun ReadyState(
     state: WeekUiState,
     onEvent: (WeekEvent) -> Unit,
     syncStatus: SyncStatus = SyncStatus.NotSignedIn,
+    progressContent: @Composable () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().padding(16.dp)) {
@@ -129,6 +131,7 @@ private fun ReadyState(
             onClick = { onEvent(WeekEvent.OpenInsights) },
             modifier = Modifier.testTag("open-insights-button"),
         ) { Text("Insights") }
+        progressContent()
     }
 }
 

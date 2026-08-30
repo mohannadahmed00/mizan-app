@@ -411,6 +411,20 @@ Rankings are correct and server-derived, participation is opt-in and revocable, 
 ### Why now
 Impossible before identity and sync exist, and it introduces social pressure — which is best added to a product whose numbers are already trustworthy.
 
+### Delivered (spec 008)
+- **Regions, not raw timezones.** Period boundaries are pinned to an administrator-seeded region
+  (an IANA zone, one row per zone in `region_zone_map`), never to the device's own offset — so the
+  leaderboard day always matches the participant's own calendar day (FR-010–FR-013, SC-005).
+- **Honor Board qualification is days-engaged, not points.** A per-period-kind threshold
+  (`honor_board_config`, WEEKLY 5 / MONTHLY 20) lives server-side only — no client can read it
+  (FR-027–FR-030).
+- **Immediate freeze, no settlement window.** `recompute_open_periods()` closes a period on its own
+  region-local boundary the moment it is next scheduled to run; nothing waits for stragglers
+  (FR-025). Tradeoff: a participant recording offline right at a boundary can lose that period's
+  ranking window even though their own record still counts in full (FR-025a, SC-016). Revisit
+  trigger: if offline recording near a boundary turns out to be common enough that participants
+  perceive this as unfair, consider a short settlement window before closing — not before then.
+
 ---
 
 ## Phase 9 — Notifications & Weekly Summaries

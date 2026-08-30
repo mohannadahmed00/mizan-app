@@ -23,5 +23,7 @@ class LocalRecordWipe(private val database: MizanDatabase) {
         database.outboxDao().clear()
         database.syncCursorDao().clear()
         database.accountScopeDao().clear()
+        database.leaderboardCacheDao().deleteAll()
+        database.participationStateDao().deleteAll()
     }
 }

@@ -2,8 +2,13 @@ package com.giraffe.mizanapp.data.sync
 
 import com.giraffe.mizanapp.data.sync.dto.RemoteCompletion
 import com.giraffe.mizanapp.data.sync.dto.RemoteDayRecord
+import com.giraffe.mizanapp.data.sync.dto.RemoteHonorBoard
+import com.giraffe.mizanapp.data.sync.dto.RemoteOwnRank
+import com.giraffe.mizanapp.data.sync.dto.RemoteParticipation
 import com.giraffe.mizanapp.data.sync.dto.RemoteProfile
 import com.giraffe.mizanapp.data.sync.dto.RemotePublication
+import com.giraffe.mizanapp.data.sync.dto.RemoteRankingPage
+import com.giraffe.mizanapp.domain.leaderboard.PeriodKind
 import java.time.Instant
 import java.time.LocalDate
 
@@ -34,5 +39,20 @@ class NoOpRemoteDataSource : RemoteDataSource {
         RemoteResult.Unreachable
 
     override suspend fun catalogues(knownFormatVersions: Set<Int>): RemoteResult<List<RemotePublication>> =
+        RemoteResult.Unreachable
+
+    override suspend fun rankingPage(kind: PeriodKind, cursor: Int?): RemoteResult<RemoteRankingPage> =
+        RemoteResult.Unreachable
+
+    override suspend fun ownRank(kind: PeriodKind): RemoteResult<RemoteOwnRank> =
+        RemoteResult.Unreachable
+
+    override suspend fun honorBoard(kind: PeriodKind): RemoteResult<RemoteHonorBoard> =
+        RemoteResult.Unreachable
+
+    override suspend fun setParticipation(optedIn: Boolean): RemoteResult<RemoteParticipation> =
+        RemoteResult.Unreachable
+
+    override suspend fun reportZone(zoneId: String): RemoteResult<RemoteParticipation> =
         RemoteResult.Unreachable
 }
