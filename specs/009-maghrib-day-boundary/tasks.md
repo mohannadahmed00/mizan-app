@@ -543,7 +543,7 @@ editing `WeekBoundary.kt`, stop — you have misunderstood the design.
 
       **Both passed with no production change.**
 
-- [ ] T038a [TEST] [US2] Create
+- [X] T038a [TEST] [US2] Create
       `domain/src/test/kotlin/com/giraffe/mizanapp/domain/leaderboard/LeaderboardPeriodBoundaryTest.kt`,
       covering FR-032a and FR-033 — the requirement the clarification session narrowed this whole
       feature down to, and the only no-change-expected claim with no test of its own. Take the
