@@ -108,6 +108,23 @@ class BoundaryStateStoreTest {
         assertEquals(resolvedBeforeReload.toString(), persisted?.lastResolvedDate)
     }
 
+    @Test
+    fun dateAdvancesAtMaghribAndNotAtMidnight() = runTest {
+        val day = LocalDate.of(2026, 3, 14)
+        storeCoordinates()
+        prayerTimes.setMaghrib(day, Instant.parse("2026-03-14T16:00:00Z")) // 18:00 Cairo
+        prayerTimes.setMaghrib(day.plusDays(1), Instant.parse("2026-03-15T16:00:00Z"))
+
+        store.refresh(Instant.parse("2026-03-14T15:59:00Z"), zone) // 17:59 Cairo
+        assertEquals(day, store.current().resolvedDate)
+
+        store.refresh(Instant.parse("2026-03-14T16:01:00Z"), zone) // 18:01 Cairo
+        assertEquals(day.plusDays(1), store.current().resolvedDate)
+
+        store.refresh(Instant.parse("2026-03-14T22:30:00Z"), zone) // 00:30 Cairo, past local midnight
+        assertEquals(day.plusDays(1), store.current().resolvedDate)
+    }
+
     private companion object {
         const val TEST_DB = "boundary-state-test.db"
     }

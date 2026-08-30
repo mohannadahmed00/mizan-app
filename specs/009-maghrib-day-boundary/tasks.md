@@ -465,13 +465,15 @@ the date advance; advance across midnight and see it not.
       are the Phase 5 surfaces. Nothing outside `:data` may depend on the concrete store; `:app`
       injects `BoundaryStatus`, which is what T035, T051, T055 and T066 reach the boundary through.
 
-- [ ] T031 [TEST] [US1] Add to `BoundaryStateStoreTest.kt`:
+- [X] T031 [TEST] [US1] Add to `BoundaryStateStoreTest.kt`:
       `dateAdvancesAtMaghribAndNotAtMidnight` — set coordinates and a fake Maghrib of 18:00, step the
       clock to 17:59 and assert date D, step to 18:01 and assert date D+1, step across midnight and
       assert the date does not change again.
 
-- [ ] T032 [US1] Make T031 pass. If it already passes from T030, say so and move on — do not add code
+- [X] T032 [US1] Make T031 pass. If it already passes from T030, say so and move on — do not add code
       that no test required.
+
+      **Already passed from T030 — no production change made.**
 
 - [ ] T033 [US1] Change
       `data/src/main/kotlin/com/giraffe/mizanapp/data/time/SystemTimeProvider.kt` so `today()` returns
