@@ -650,17 +650,17 @@ opt-in, revocation-safe, and erasable.
 
 ### 5d. Settings section
 
-- [ ] T053 [TEST] [US3] Create
+- [X] T053 [TEST] [US3] Create
       `app/src/test/java/com/giraffe/mizanapp/profile/LocationSettingsStateTest.kt` asserting a
       distinct, non-empty `statement` for each of the four regimes in
       [contracts/ui-state.md](./contracts/ui-state.md) §2, and that
       `Fallback(ZONE_CHANGED_AWAITING_FIX)` produces one — that case must never be silent (FR-012d).
 
-- [ ] T054 [US3] Add `LocationSettings` to
+- [X] T054 [US3] Add `LocationSettings` to
       `app/src/main/java/com/giraffe/mizanapp/profile/ProfileUiState.kt` and the four events to
       `ProfileEvent`, per the contract.
 
-- [ ] T055 [US3] Handle the events in
+- [X] T055 [US3] Handle the events in
       `app/src/main/java/com/giraffe/mizanapp/profile/ProfileViewModel.kt`, observing
       `BoundaryStatus.observe()`. Erasing goes through a confirmation, following the existing sign-out
       confirmation pattern already in this file.
