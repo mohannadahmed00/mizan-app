@@ -718,12 +718,12 @@ opt-in, revocation-safe, and erasable.
 
 **Goal**: no leftover second opinion in the window between Maghrib and midnight.
 
-- [ ] T062 [TEST] [US5] Create
+- [X] T062 [TEST] [US5] Create
       `app/src/test/java/com/giraffe/mizanapp/BoundaryAgreementTest.kt`: with the clock between
       Maghrib and midnight, build the Today, Week, Streak, History and Insights states from the same
       fakes and assert all report the same accountability date and the same week key.
 
-- [ ] T063 [US5] Make T062 pass. Expected outcome: **no production change is needed** — every consumer
+- [X] T063 [US5] Make T062 pass. Expected outcome: **no production change is needed** — every consumer
       already reads `TimeProvider.today()` (research R2). If one fails, find the code converting an
       instant to a date itself and route it through `TimeProvider` instead. Do **not** add a second
       conversion.
