@@ -427,7 +427,7 @@ still behaves exactly as before, because nothing yet feeds a real Maghrib into `
 **Independent test**: with a fixed location and a controllable clock, advance across Maghrib and see
 the date advance; advance across midnight and see it not.
 
-- [ ] T029 [TEST] [US1] Create
+- [X] T029 [TEST] [US1] Create
       `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/BoundaryStateStoreTest.kt` asserting:
       a fresh database resolves a date with no coordinates; storing coordinates and refreshing moves
       the regime to `Maghrib`; `resolvedDate` and `expiresAt` are populated in both cases;
