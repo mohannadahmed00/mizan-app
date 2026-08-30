@@ -641,7 +641,7 @@ opt-in, revocation-safe, and erasable.
       `requestLocation()`; `DismissLocationPrompt` sets `promptShown` and hides it. The permission
       dialog must be raised **only** from `EnableLocation` — never on launch, never as a side effect.
 
-- [ ] T052 [US3] Render the prompt in
+- [X] T052 [US3] Render the prompt in
       `app/src/main/java/com/giraffe/mizanapp/today/TodayScreen.kt` as a dismissible card above the
       existing content. Copy: say that location enables accurate local prayer times and the
       Maghrib-based Islamic day boundary; buttons "Enable location" and "Not now". **No warning
