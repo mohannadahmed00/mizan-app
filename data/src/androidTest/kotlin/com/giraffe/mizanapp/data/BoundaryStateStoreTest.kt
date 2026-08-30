@@ -282,6 +282,18 @@ class BoundaryStateStoreTest {
         assertEquals(listOf(completion), db.completionDao().liveByDate("2026-03-14"))
     }
 
+    @Test
+    fun promptShownDefaultsToFalseAndPersistsOnceMarked() = runTest {
+        assertFalse(store.promptShown())
+
+        store.markPromptShown()
+        assertTrue(store.promptShown())
+
+        val reopened = BoundaryStateStore(db.boundaryStateDao(), locationSource, prayerTimes)
+        reopened.refresh(Instant.parse("2026-03-14T09:00:00Z"), zone)
+        assertTrue(reopened.promptShown())
+    }
+
     private companion object {
         const val TEST_DB = "boundary-state-test.db"
     }

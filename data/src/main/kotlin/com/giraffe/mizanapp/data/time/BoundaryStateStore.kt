@@ -44,13 +44,25 @@ class BoundaryStateStore(
 
     private val mutex = Mutex()
     private val stateFlow = MutableStateFlow(TRANSIENT_STARTUP_STATE)
+    private val promptShownFlow = MutableStateFlow(false)
 
     override fun current(): BoundaryState = stateFlow.value
 
     override fun observe(): Flow<BoundaryState> = stateFlow.asStateFlow()
 
+    override fun promptShown(): Boolean = promptShownFlow.value
+
+    override suspend fun markPromptShown(): Unit = mutex.withLock {
+        val entity = dao.get()
+        dao.upsert(
+            (entity ?: emptyEntity()).copy(promptShown = true),
+        )
+        promptShownFlow.value = true
+    }
+
     override suspend fun refresh(now: Instant, zone: ZoneId): Unit = mutex.withLock {
         val entity = dao.get()
+        promptShownFlow.value = entity?.promptShown ?: false
         val lastResolvedDate = entity?.lastResolvedDate?.let(LocalDate::parse)
         val lastResolvedRegime = entity?.lastResolvedRegime?.let(::regimeFromLabel)
 
@@ -216,6 +228,15 @@ class BoundaryStateStore(
         } else {
             BoundaryRegime.Fallback(FallbackReason.valueOf(label.removePrefix("FALLBACK:")))
         }
+
+    private fun emptyEntity() = BoundaryStateEntity(
+        latitude = null,
+        longitude = null,
+        zoneIdWhenObtained = null,
+        obtainedAt = null,
+        lastResolvedDate = null,
+        lastResolvedRegime = null,
+    )
 
     private companion object {
         val TRANSIENT_STARTUP_STATE = BoundaryState(
