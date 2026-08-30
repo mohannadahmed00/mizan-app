@@ -683,29 +683,31 @@ opt-in, revocation-safe, and erasable.
 
 **Goal**: nothing already closed changes. Principle III, non-negotiable.
 
-- [ ] T058 [TEST] [US4] Create
+- [X] T058 [TEST] [US4] Create
       `data/src/androidTest/kotlin/com/giraffe/mizanapp/data/BoundaryChangeHistoryImmutabilityTest.kt`
       — **this is the FR-025 test the constitution requires and it gates completion.** Seed several
       day plans and completions and one closed week under the fallback regime; capture every day's
       earned points, available points, percentage and Hijri label plus the weekly total; switch to the
       Maghrib regime with coordinates; re-read everything and assert byte-identical figures.
 
-- [ ] T059 [TEST] [US4] Add `completionCreditedDateIsNeverRewritten` to the same file: assert every
+- [X] T059 [TEST] [US4] Add `completionCreditedDateIsNeverRewritten` to the same file: assert every
       `completions.creditedDate` value is unchanged after the regime switch (FR-031).
 
-- [ ] T060 [US4] Make T058 and T059 pass. Expected outcome: **no production change is needed** — the
+- [X] T060 [US4] Make T058 and T059 pass. Expected outcome: **no production change is needed** — the
       clamp changes only future resolution and `DayPlanRepository` has no update method. If either
       test fails, you have written a code path that rewrites history; delete it rather than adjusting
       the test.
 
-- [ ] T058a [TEST] [US4] Add `hijriLabelsAreStillComputedLocallyForMaghribBoundaryDays` to the same
+      **Both passed with no production change.**
+
+- [X] T058a [TEST] [US4] Add `hijriLabelsAreStillComputedLocallyForMaghribBoundaryDays` to the same
       file, covering FR-034 and FR-035: a day plan created under the `Maghrib` regime carries exactly
       the label `HijriLabel.forDate` returns for its accountability date — computed on-device, with
       no network call and no synced calendar lookup — so the label follows the accountability date
       rather than defining it. Together with T058's assertion that stored labels never change
       (FR-036), this is the whole of the Hijri requirement group.
 
-- [ ] T061 [TEST] [US4] Add `changingTheRegionConventionMappingLeavesClosedDaysUnchanged` (FR-003e,
+- [X] T061 [TEST] [US4] Add `changingTheRegionConventionMappingLeavesClosedDaysUnchanged` (FR-003e,
       SC-016).
 
 **Checkpoint**: `./gradlew :data:connectedAndroidTest` passes. This phase gates the increment.
