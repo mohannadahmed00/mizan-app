@@ -795,7 +795,9 @@ opt-in, revocation-safe, and erasable.
 - [ ] T072 Run every quickstart scenario in [quickstart.md](./quickstart.md) manually on a device.
       Scenario 7 is gating.
 
-- [ ] T073 Run the full suite: `./gradlew build test connectedAndroidTest`. All green.
+- [X] T073 Run the full suite: `./gradlew build test connectedAndroidTest`. All green.
+
+      **Verified** — `./gradlew build test connectedAndroidTest` BUILD SUCCESSFUL (20m40s).
 
 - [ ] T074 Open the pull request into `develop-v1`. In the body, state that the Constitution Check in
       `plan.md` passes and name the principles touched. Confirm before requesting merge that every
