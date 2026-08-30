@@ -12,6 +12,8 @@ data class BoundaryState(
     val expiresAt: Instant,
     val lastResolvedDate: LocalDate?,
     val lastResolvedRegime: BoundaryRegime?,
+    /** Disclosure only (FR-017b) — never a trust input; age must never invalidate coordinates. */
+    val obtainedAt: Instant? = null,
 ) {
     init {
         require((regime is BoundaryRegime.Maghrib) == (coordinates != null)) {

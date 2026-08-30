@@ -127,6 +127,7 @@ class BoundaryStateStore(
             expiresAt = expiresAt,
             lastResolvedDate = resolvedDate,
             lastResolvedRegime = regime,
+            obtainedAt = if (heldCoordinates != null) obtainedAt?.let(Instant::ofEpochMilli) else null,
         )
 
         dao.upsert(
@@ -182,6 +183,7 @@ class BoundaryStateStore(
             coordinates = null,
             zoneIdWhenObtained = null,
             lastResolvedRegime = BoundaryRegime.Fallback(FallbackReason.ERASED),
+            obtainedAt = null,
         )
     }
 
