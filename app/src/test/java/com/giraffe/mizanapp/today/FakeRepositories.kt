@@ -17,11 +17,18 @@ import com.giraffe.mizanapp.domain.repository.RecordOutcome
 import com.giraffe.mizanapp.domain.repository.SeedOutcome
 import com.giraffe.mizanapp.domain.repository.UndoOutcome
 import com.giraffe.mizanapp.domain.sync.RecordCoverage
+import com.giraffe.mizanapp.domain.time.BoundaryRegime
+import com.giraffe.mizanapp.domain.time.BoundaryState
+import com.giraffe.mizanapp.domain.time.BoundaryStatus
+import com.giraffe.mizanapp.domain.time.FallbackReason
+import com.giraffe.mizanapp.domain.time.LocationRequestOutcome
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 
 /** The real seed, read from the domain module's resources. */
@@ -162,6 +169,51 @@ class FakeClock(
     override fun zone(): java.time.ZoneId = zone
     fun setDate(date: LocalDate) { instant = date.atTime(9, 0).atZone(zone).toInstant() }
     fun advanceBy(duration: java.time.Duration) { instant = instant.plus(duration) }
+}
+
+/**
+ * Test double for [BoundaryStatus]. Duplicated in every consuming source set (see
+ * contracts/prayer-times-provider.md's precedent for test doubles); keep behaviour identical.
+ */
+class FakeBoundaryStatus(
+    regime: BoundaryRegime = BoundaryRegime.Fallback(FallbackReason.NEVER_HAD_LOCATION),
+    resolvedDate: LocalDate = LocalDate.parse("2026-03-14"),
+) : BoundaryStatus {
+    private val stateFlow = MutableStateFlow(
+        BoundaryState(
+            regime = regime,
+            coordinates = null,
+            zoneIdWhenObtained = null,
+            resolvedDate = resolvedDate,
+            expiresAt = Instant.parse("2026-03-15T00:00:00Z"),
+            lastResolvedDate = null,
+            lastResolvedRegime = null,
+        ),
+    )
+    private var shown = false
+    var requestLocationOutcome: LocationRequestOutcome = LocationRequestOutcome.Obtained
+    var refreshCallCount = 0
+        private set
+
+    override fun current(): BoundaryState = stateFlow.value
+    override fun observe(): Flow<BoundaryState> = stateFlow.asStateFlow()
+    override suspend fun refresh(now: Instant, zone: ZoneId) { refreshCallCount++ }
+    override suspend fun requestLocation(): LocationRequestOutcome = requestLocationOutcome
+    override suspend fun eraseLocation() {
+        stateFlow.value = stateFlow.value.copy(
+            regime = BoundaryRegime.Fallback(FallbackReason.ERASED),
+            coordinates = null,
+            zoneIdWhenObtained = null,
+        )
+    }
+    override fun promptShown(): Boolean = shown
+    override suspend fun markPromptShown() { shown = true }
+
+    fun setRegime(newRegime: BoundaryRegime) {
+        stateFlow.value = stateFlow.value.copy(regime = newRegime)
+    }
+
+    fun setPromptShown(value: Boolean) { shown = value }
 }
 
 /** Complete by default — matches the signed-out / backfill-finished product unchanged. */
