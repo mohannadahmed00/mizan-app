@@ -1,6 +1,7 @@
 package com.giraffe.mizanapp.data.prayer
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -8,6 +9,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.CancellationSignal
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.giraffe.mizanapp.domain.prayer.Coordinates
 import com.giraffe.mizanapp.domain.prayer.LocationSource
@@ -31,6 +33,7 @@ class AndroidLocationSource(private val context: Context) : LocationSource {
             Manifest.permission.ACCESS_COARSE_LOCATION,
         ) == PackageManager.PERMISSION_GRANTED
 
+    @SuppressLint("MissingPermission") // guarded by hasPermission() above
     override suspend fun current(): Coordinates? {
         if (!hasPermission()) return null
         val manager = locationManager
@@ -57,6 +60,8 @@ class AndroidLocationSource(private val context: Context) : LocationSource {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
+    @SuppressLint("MissingPermission") // guarded by hasPermission() in current()
     private suspend fun awaitCurrentLocation(manager: LocationManager): Coordinates? =
         suspendCancellableCoroutine { continuation ->
             val cancellationSignal = CancellationSignal()
@@ -70,6 +75,7 @@ class AndroidLocationSource(private val context: Context) : LocationSource {
             }
         }
 
+    @SuppressLint("MissingPermission") // guarded by hasPermission() in current()
     private suspend fun awaitLegacySingleUpdate(manager: LocationManager): Coordinates? =
         suspendCancellableCoroutine { continuation ->
             val listener = object : LocationListener {

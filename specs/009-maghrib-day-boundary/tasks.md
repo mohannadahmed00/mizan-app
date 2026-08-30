@@ -475,7 +475,7 @@ the date advance; advance across midnight and see it not.
 
       **Already passed from T030 — no production change made.**
 
-- [ ] T033 [US1] Change
+- [X] T033 [US1] Change
       `data/src/main/kotlin/com/giraffe/mizanapp/data/time/SystemTimeProvider.kt` so `today()` returns
       `boundaryStateStore.current().resolvedDate`, replacing the whole
       `DayBoundary.dateAt(now(), zone(), null)` body T012 left there. `DayBoundary` is no longer
@@ -486,7 +486,7 @@ the date advance; advance across midnight and see it not.
       `BoundaryStateStore` (both live in `:data`) and may call **only** `current()` — never
       `refresh()`, which would re-enter the cycle rule 5 exists to prevent.
 
-- [ ] T034 [US1] Wire the new types into Koin in
+- [X] T034 [US1] Wire the new types into Koin in
       `app/src/main/java/com/giraffe/mizanapp/di/Modules.kt`: `LocationSource` →
       `AndroidLocationSource`, `PrayerTimesProvider` → `AdhanPrayerTimes`, and `BoundaryStateStore` as
       a **singleton** (it holds state; a factory would defeat the whole design). Bind `BoundaryStatus`
