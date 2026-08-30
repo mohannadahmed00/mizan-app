@@ -25,7 +25,7 @@ class TestTimeProvider(
     private var zone: ZoneId = ZoneId.of("Africa/Cairo"),
 ) : TimeProvider {
     override fun now(): Instant = instant
-    override fun today(): LocalDate = DayBoundary.dateAt(instant, zone)
+    override fun today(): LocalDate = DayBoundary.dateAt(instant, zone, null)
     override fun zone(): ZoneId = zone
     fun advanceBy(duration: Duration) { instant = instant.plus(duration) }
     fun setDate(date: LocalDate) { instant = date.atTime(9, 0).atZone(zone).toInstant() }

@@ -1,56 +1,30 @@
 package com.giraffe.mizanapp.domain.time
 
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
-/**
- * The accountability day runs local midnight to local midnight (FR-030).
- *
- * This rule exists in exactly one place, and this is the test of that place.
- */
 class DayBoundaryTest {
+    private val cairo = ZoneId.of("Africa/Cairo")
+    private val date = LocalDate.of(2026, 3, 13)
+    private val maghrib = instantAt(date, 18, 0)
 
-    private val cairo: ZoneId = ZoneId.of("Africa/Cairo")
+    @Test fun instantBeforeMaghribBelongsToTheCivilDate() =
+        assertEquals(date, DayBoundary.dateAt(instantAt(date, 17, 59), cairo, maghrib))
+    @Test fun instantExactlyAtMaghribBelongsToTheNextDate() =
+        assertEquals(date.plusDays(1), DayBoundary.dateAt(maghrib, cairo, maghrib))
+    @Test fun instantAfterMaghribBelongsToTheNextDate() =
+        assertEquals(date.plusDays(1), DayBoundary.dateAt(instantAt(date, 18, 1), cairo, maghrib))
+    @Test fun instantAfterMidnightButBeforeMaghribStillBelongsToTheCivilDate() =
+        assertEquals(date.plusDays(1), DayBoundary.dateAt(instantAt(date.plusDays(1), 1, 0), cairo, instantAt(date.plusDays(1), 18, 0)))
+    @Test fun nullMaghribFallsBackToTheCivilDate() =
+        assertEquals(date, DayBoundary.dateAt(instantAt(date, 21, 0), cairo, null))
+    @Test fun midnightDoesNotAdvanceTheDateWhenMaghribIsSupplied() =
+        assertEquals(date.plusDays(1), DayBoundary.dateAt(instantAt(date.plusDays(1), 0, 0), cairo, instantAt(date.plusDays(1), 18, 0)))
 
-    private fun instantAt(date: LocalDate, hour: Int, minute: Int, second: Int, zone: ZoneId) =
-        LocalDateTime.of(date, java.time.LocalTime.of(hour, minute, second)).atZone(zone).toInstant()
-
-    @Test
-    fun `an instant maps to its local civil date`() {
-        val noon = instantAt(LocalDate.of(2026, 3, 14), 12, 0, 0, cairo)
-
-        assertEquals(LocalDate.of(2026, 3, 14), DayBoundary.dateAt(noon, cairo))
-    }
-
-    @Test
-    fun `one second before local midnight belongs to the earlier day`() {
-        val justBefore = instantAt(LocalDate.of(2026, 3, 14), 23, 59, 59, cairo)
-
-        assertEquals(LocalDate.of(2026, 3, 14), DayBoundary.dateAt(justBefore, cairo))
-    }
-
-    @Test
-    fun `local midnight itself belongs to the later day`() {
-        val midnight = instantAt(LocalDate.of(2026, 3, 15), 0, 0, 0, cairo)
-
-        assertEquals(LocalDate.of(2026, 3, 15), DayBoundary.dateAt(midnight, cairo))
-    }
-
-    @Test
-    fun `the same instant can be two different dates in two zones`() {
-        // 00:30 on the 15th in Cairo (UTC+2) is still the afternoon of the 14th
-        // in Los Angeles. The accountability date follows the device's zone.
-        val justAfterMidnight = instantAt(LocalDate.of(2026, 3, 15), 0, 30, 0, cairo)
-
-        val inCairo = DayBoundary.dateAt(justAfterMidnight, cairo)
-        val inLosAngeles = DayBoundary.dateAt(justAfterMidnight, ZoneId.of("America/Los_Angeles"))
-
-        assertEquals(LocalDate.of(2026, 3, 15), inCairo)
-        assertEquals(LocalDate.of(2026, 3, 14), inLosAngeles)
-        assertNotEquals("the day must follow the device's zone", inCairo, inLosAngeles)
-    }
+    private fun instantAt(localDate: LocalDate, hour: Int, minute: Int): Instant =
+        LocalDateTime.of(localDate, java.time.LocalTime.of(hour, minute)).atZone(cairo).toInstant()
 }

@@ -19,7 +19,7 @@ class FakeTimeProvider(
 
     override fun now(): Instant = instant
 
-    override fun today(): LocalDate = DayBoundary.dateAt(instant, zone)
+    override fun today(): LocalDate = DayBoundary.dateAt(instant, zone, null)
 
     override fun zone(): ZoneId = zone
 
