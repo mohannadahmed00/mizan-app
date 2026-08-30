@@ -64,3 +64,8 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         db.execSQL("ALTER TABLE completions ADD COLUMN syncedAt INTEGER")
     }
 }
+
+/** Purely additive boundary state; absent row means no coordinates were held. */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) { db.execSQL("CREATE TABLE IF NOT EXISTS boundary_state (id INTEGER NOT NULL PRIMARY KEY, latitude REAL, longitude REAL, zoneIdWhenObtained TEXT, obtainedAt INTEGER, lastResolvedDate TEXT, lastResolvedRegime TEXT, promptShown INTEGER NOT NULL DEFAULT 0)") }
+}

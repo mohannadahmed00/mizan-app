@@ -7,6 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.giraffe.mizanapp.data.db.dao.LeaderboardCacheDao
 import com.giraffe.mizanapp.data.db.dao.ParticipationStateDao
 import com.giraffe.mizanapp.data.db.daos.AccountScopeDao
+import com.giraffe.mizanapp.data.db.daos.BoundaryStateDao
 import com.giraffe.mizanapp.data.db.daos.CatalogueDao
 import com.giraffe.mizanapp.data.db.daos.CompletionDao
 import com.giraffe.mizanapp.data.db.daos.DayPlanDao
@@ -15,6 +16,7 @@ import com.giraffe.mizanapp.data.db.daos.SyncCursorDao
 import com.giraffe.mizanapp.data.db.entity.LeaderboardCacheEntity
 import com.giraffe.mizanapp.data.db.entity.ParticipationStateEntity
 import com.giraffe.mizanapp.data.db.entities.AccountScopeEntity
+import com.giraffe.mizanapp.data.db.entities.BoundaryStateEntity
 import com.giraffe.mizanapp.data.db.entities.CatalogueVersionEntity
 import com.giraffe.mizanapp.data.db.entities.CompletionEntity
 import com.giraffe.mizanapp.data.db.entities.DayPlanEntity
@@ -45,8 +47,9 @@ import com.giraffe.mizanapp.data.db.entities.TaskVersionEntity
         AccountScopeEntity::class,
         LeaderboardCacheEntity::class,
         ParticipationStateEntity::class,
+        BoundaryStateEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class MizanDatabase : RoomDatabase() {
@@ -66,6 +69,7 @@ abstract class MizanDatabase : RoomDatabase() {
     abstract fun leaderboardCacheDao(): LeaderboardCacheDao
 
     abstract fun participationStateDao(): ParticipationStateDao
+    abstract fun boundaryStateDao(): BoundaryStateDao
 
     companion object {
         const val NAME = "mizan.db"
