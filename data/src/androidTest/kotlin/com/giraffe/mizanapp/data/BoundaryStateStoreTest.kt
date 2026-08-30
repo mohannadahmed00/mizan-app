@@ -4,6 +4,8 @@ import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.db.entities.BoundaryStateEntity
+import com.giraffe.mizanapp.data.db.entities.CompletionEntity
+import com.giraffe.mizanapp.data.db.entities.DayPlanEntity
 import com.giraffe.mizanapp.data.prayer.FakeLocationSource
 import com.giraffe.mizanapp.data.prayer.FakePrayerTimes
 import com.giraffe.mizanapp.data.time.BoundaryStateStore
@@ -221,6 +223,63 @@ class BoundaryStateStoreTest {
         store.refresh(Instant.parse("2026-03-14T09:00:00Z"), riyadh)
 
         assertEquals(BoundaryRegime.Maghrib, store.current().regime)
+    }
+
+    @Test
+    fun revokedPermissionKeepsTheMaghribRegimeFromRetainedCoordinates() = runTest {
+        storeCoordinates()
+        prayerTimes.setDefaultMaghribLocalTime(LocalTime.of(18, 0))
+        locationSource.setPermission(false)
+
+        store.refresh(Instant.parse("2026-03-14T09:00:00Z"), zone)
+
+        assertEquals(BoundaryRegime.Maghrib, store.current().regime)
+    }
+
+    @Test
+    fun erasingCoordinatesMovesToTheFallbackWithReasonErased() = runTest {
+        storeCoordinates()
+        prayerTimes.setDefaultMaghribLocalTime(LocalTime.of(18, 0))
+        store.refresh(Instant.parse("2026-03-14T09:00:00Z"), zone)
+        assertEquals(BoundaryRegime.Maghrib, store.current().regime)
+
+        store.eraseLocation()
+
+        val regime = store.current().regime as BoundaryRegime.Fallback
+        assertEquals(FallbackReason.ERASED, regime.reason)
+    }
+
+    @Test
+    fun erasingCoordinatesLeavesDayPlansAndCompletionsUnchanged() = runTest {
+        storeCoordinates()
+        prayerTimes.setDefaultMaghribLocalTime(LocalTime.of(18, 0))
+        store.refresh(Instant.parse("2026-03-14T09:00:00Z"), zone)
+
+        val plan = DayPlanEntity(
+            id = "plan-1",
+            date = "2026-03-14",
+            catalogueVersion = 1,
+            hijriLabel = "hijri-label",
+            availablePoints = 10,
+            updatedAt = 1L,
+        )
+        db.dayPlanDao().insertPlan(plan)
+        val completion = CompletionEntity(
+            id = "completion-1",
+            dayPlanId = "plan-1",
+            taskSlug = "fajr-1",
+            creditedDate = "2026-03-14",
+            pointsAwarded = 2,
+            recordedAt = 1L,
+            updatedAt = 1L,
+        )
+        db.completionDao().insert(completion)
+
+        store.eraseLocation()
+
+        val storedPlan = db.dayPlanDao().planByDate("2026-03-14")
+        assertEquals(plan, storedPlan?.plan)
+        assertEquals(listOf(completion), db.completionDao().liveByDate("2026-03-14"))
     }
 
     private companion object {

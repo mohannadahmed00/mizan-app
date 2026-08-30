@@ -605,21 +605,25 @@ opt-in, revocation-safe, and erasable.
 
 ### 5b. Permission revocation and erasure
 
-- [ ] T045 [TEST] [US3] Add `revokedPermissionKeepsTheMaghribRegimeFromRetainedCoordinates`
+- [X] T045 [TEST] [US3] Add `revokedPermissionKeepsTheMaghribRegimeFromRetainedCoordinates`
       (FR-017a) — set `hasPermission()` false on the fake while coordinates are stored, and assert the
       regime does not change.
 
-- [ ] T046 [TEST] [US3] Add `erasingCoordinatesMovesToTheFallbackWithReasonErased` and
+- [X] T046 [TEST] [US3] Add `erasingCoordinatesMovesToTheFallbackWithReasonErased` and
       `erasingCoordinatesLeavesDayPlansAndCompletionsUnchanged` — the second inserts a day plan and
       completions, erases, and asserts every stored row is identical afterwards (FR-017d).
 
-- [ ] T047 [US3] Implement `eraseLocation()` in `BoundaryStateStore`: null `latitude`, `longitude`,
+- [X] T047 [US3] Implement `eraseLocation()` in `BoundaryStateStore`: null `latitude`, `longitude`,
       `zoneIdWhenObtained` and `obtainedAt` in place; set the regime to `Fallback(ERASED)`; re-resolve
       through the clamp. It must not delete the row and must not touch any other table.
 
-- [ ] T048 [US3] Implement `requestLocation()` returning the `LocationRequestOutcome` from
+      **Already implemented in T030 — no production change made.**
+
+- [X] T048 [US3] Implement `requestLocation()` returning the `LocationRequestOutcome` from
       [contracts/boundary-provider.md](./contracts/boundary-provider.md). It may only be reached from
       an explicit user action.
+
+      **Already implemented in T030 — no production change made.**
 
 ### 5c. First-launch prompt
 
