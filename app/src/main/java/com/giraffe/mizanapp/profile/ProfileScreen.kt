@@ -35,6 +35,10 @@ fun ProfileScreen(state: ProfileUiState, onEvent: (ProfileEvent) -> Unit, modifi
             ConfirmationContent(confirming, onEvent)
             return@Column
         }
+        if (state.confirmingEraseLocation) {
+            EraseLocationConfirmationContent(onEvent)
+            return@Column
+        }
 
         Text(state.displayName ?: state.email)
         OutlinedTextField(
@@ -57,6 +61,8 @@ fun ProfileScreen(state: ProfileUiState, onEvent: (ProfileEvent) -> Unit, modifi
         SyncStatusBar(state.syncStatus)
 
         Text(state.conflictPolicy, modifier = Modifier.testTag("profile-conflict-policy"))
+
+        LocationSettingsSection(state.locationSettings, onEvent)
 
         Button(
             onClick = { onEvent(ProfileEvent.SignOut) },
@@ -96,5 +102,46 @@ private fun ConfirmationContent(confirming: SignOutConfirmation, onEvent: (Profi
     TextButton(
         onClick = { onEvent(ProfileEvent.CancelSignOut) },
         modifier = Modifier.testTag("profile-cancel-sign-out"),
+    ) { Text("Cancel") }
+}
+
+/**
+ * The statement is always populated, whatever the regime (FR-016, FR-012d, FR-017b) -- there is
+ * no state here that reads as an error, only a description of which rule is currently in force.
+ */
+@Composable
+private fun LocationSettingsSection(settings: LocationSettings, onEvent: (ProfileEvent) -> Unit) {
+    Text(settings.statement, modifier = Modifier.testTag("profile-location-statement"))
+    if (settings.canEnable) {
+        TextButton(
+            onClick = { onEvent(ProfileEvent.EnableLocation) },
+            modifier = Modifier.testTag("profile-enable-location"),
+        ) { Text("Enable location") }
+    }
+    if (settings.locationHeld) {
+        TextButton(
+            onClick = { onEvent(ProfileEvent.EraseLocation) },
+            modifier = Modifier.testTag("profile-erase-location"),
+        ) { Text("Erase location") }
+    }
+}
+
+/**
+ * States what erasing does -- the boundary returns to local midnight -- and never suggests any
+ * recorded history changes, because none does (FR-017d).
+ */
+@Composable
+private fun EraseLocationConfirmationContent(onEvent: (ProfileEvent) -> Unit) {
+    Text(
+        "Erase the location held on this device? The Islamic day boundary returns to local " +
+            "midnight until location is enabled again. Nothing you have already recorded changes.",
+    )
+    Button(
+        onClick = { onEvent(ProfileEvent.ConfirmEraseLocation) },
+        modifier = Modifier.testTag("profile-confirm-erase-location"),
+    ) { Text("Erase") }
+    TextButton(
+        onClick = { onEvent(ProfileEvent.CancelEraseLocation) },
+        modifier = Modifier.testTag("profile-cancel-erase-location"),
     ) { Text("Cancel") }
 }

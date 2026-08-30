@@ -1,33 +1,27 @@
 package com.giraffe.mizanapp.domain.streak
 
+import java.time.Duration
 import java.time.Instant
-import java.time.LocalTime
-import java.time.ZoneId
 
 /**
- * The single home of the 20:00 rule (Principle VII).
+ * The single home of the at-risk rule (Principle VII).
  *
- * Reads no clock itself — the instant and zone are always passed in, exactly
- * as `DayBoundary.dateAt` takes them. The threshold is a constant rather than
- * a setting, because settings are outside the MVP.
+ * Reads no clock itself, and no longer reads a zone either: a fixed 20:00 local assumed a
+ * midnight-length day, which a Maghrib-anchored one no longer is (FR-029). [isAtRiskWindow] and
+ * [nextBoundaryAfter] instead take [dayEndsAt] — the boundary's own `expiresAt` — so the window is
+ * always measured backward from when *this* day actually ends, whatever its length. The duration
+ * is a constant rather than a setting, because settings are outside the MVP.
  */
 object StreakClock {
 
-    val AT_RISK_FROM: LocalTime = LocalTime.of(20, 0)
+    val AT_RISK_BEFORE_END: Duration = Duration.ofHours(4)
 
-    fun isAtRiskWindow(now: Instant, zone: ZoneId): Boolean {
-        val localTime = now.atZone(zone).toLocalTime()
-        return !localTime.isBefore(AT_RISK_FROM)
-    }
+    fun isAtRiskWindow(now: Instant, dayEndsAt: Instant): Boolean =
+        !now.isBefore(dayEndsAt.minus(AT_RISK_BEFORE_END))
 
-    /** The next of today's 20:00 and tomorrow's midnight, strictly after [now]. */
-    fun nextBoundaryAfter(now: Instant, zone: ZoneId): Instant {
-        val zoned = now.atZone(zone)
-        val todayAtRisk = zoned.toLocalDate().atTime(AT_RISK_FROM).atZone(zone).toInstant()
-        return if (now.isBefore(todayAtRisk)) {
-            todayAtRisk
-        } else {
-            zoned.toLocalDate().plusDays(1).atStartOfDay(zone).toInstant()
-        }
+    /** The earlier of the at-risk instant and [dayEndsAt], whichever is strictly after [now]. */
+    fun nextBoundaryAfter(now: Instant, dayEndsAt: Instant): Instant {
+        val atRiskInstant = dayEndsAt.minus(AT_RISK_BEFORE_END)
+        return if (now.isBefore(atRiskInstant)) atRiskInstant else dayEndsAt
     }
 }

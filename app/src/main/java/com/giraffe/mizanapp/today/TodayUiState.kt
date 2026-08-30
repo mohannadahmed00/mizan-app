@@ -18,6 +18,7 @@ data class TodayUiState(
     val earnedPoints: Int = 0,
     val availablePoints: Int = 0,
     val streak: StreakPanelUi = StreakPanelUi.Resolving,
+    val locationPrompt: LocationPrompt = LocationPrompt(visible = false, explanation = ""),
 ) {
     val progressFraction: Float
         get() = if (availablePoints == 0) 0f else earnedPoints.toFloat() / availablePoints
@@ -34,6 +35,15 @@ data class TodayUiState(
         data class CatalogueUnavailable(val detail: String) : Status
     }
 }
+
+/**
+ * A field on an already-populated state, never a gate (FR-007a): the screen renders and records
+ * with no location at all, prompt visible or not.
+ */
+data class LocationPrompt(
+    val visible: Boolean,
+    val explanation: String,
+)
 
 data class SectionUi(
     val id: String,
@@ -70,6 +80,12 @@ sealed interface TodayEvent {
 
     /** Re-subscribes to the streak read. Can author nothing (Principle VI). */
     data object RetryStreak : TodayEvent
+
+    /** Raises the system permission dialog only here — never on launch (FR-007c). */
+    data object EnableLocation : TodayEvent
+
+    /** Hides the prompt and nothing else (FR-007d). Never shown again after this. */
+    data object DismissLocationPrompt : TodayEvent
 }
 
 /**

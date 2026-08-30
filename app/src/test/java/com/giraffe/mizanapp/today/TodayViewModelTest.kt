@@ -40,12 +40,14 @@ class TodayViewModelTest {
         val plans = FakeDayPlanRepository()
         val policy = DayWritePolicy(clock)
         val completions = FakeCompletionRepository(plans, policy, clock)
+        val boundaryStatus = FakeBoundaryStatus()
         return TodayViewModel(
             catalogue = catalogue,
             dayPlans = plans,
             completions = completions,
             time = clock,
-            getStreakSummary = GetStreakSummary(completions, plans, clock, FakeRecordCoverageRepository()),
+            getStreakSummary = GetStreakSummary(completions, plans, clock, FakeRecordCoverageRepository(), boundaryStatus),
+            boundaryStatus = boundaryStatus,
         )
     }
 

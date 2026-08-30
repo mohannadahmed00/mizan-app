@@ -22,9 +22,9 @@ class BuildStreakSummaryTest {
         consistencyDates: List<LocalDate>,
         today: LocalDate = this.today,
         now: Instant = noon,
-        zone: ZoneId = this.zone,
+        dayEndsAt: Instant = today.plusDays(1).atStartOfDay(zone).toInstant(),
         recordStart: LocalDate? = this.recordStart,
-    ) = buildStreakSummary(consistencyDates, today, now, zone, recordStart)
+    ) = buildStreakSummary(consistencyDates, today, now, dayEndsAt, recordStart)
 
     @Test
     fun run_of_five_ending_today() {

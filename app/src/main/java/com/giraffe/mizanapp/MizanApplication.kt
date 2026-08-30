@@ -5,6 +5,11 @@ import androidx.work.Configuration
 import androidx.work.WorkerFactory
 import com.giraffe.mizanapp.data.sync.SyncScheduler
 import com.giraffe.mizanapp.di.mizanModules
+import com.giraffe.mizanapp.domain.time.BoundaryStatus
+import com.giraffe.mizanapp.domain.time.TimeProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.component.KoinComponent
@@ -35,5 +40,13 @@ class MizanApplication : Application(), Configuration.Provider, KoinComponent {
         // Picks up anything already queued from a previous run — e.g. a
         // change recorded just before the app was last closed offline.
         get<SyncScheduler>().schedule()
+
+        // Resolves the boundary regime off the UI path (research R3): today() reads whatever
+        // this leaves behind, stale until this completes, which is why it must never block here.
+        val boundaryStatus = get<BoundaryStatus>()
+        val timeProvider = get<TimeProvider>()
+        CoroutineScope(Dispatchers.Default).launch {
+            boundaryStatus.refresh(timeProvider.now(), timeProvider.zone())
+        }
     }
 }

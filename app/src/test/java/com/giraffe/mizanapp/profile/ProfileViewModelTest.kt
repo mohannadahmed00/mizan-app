@@ -10,6 +10,7 @@ import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.sync.SyncStatus
 import com.giraffe.mizanapp.domain.usecase.SignOut
 import com.giraffe.mizanapp.domain.usecase.UpdateDisplayName
+import com.giraffe.mizanapp.today.FakeBoundaryStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -80,7 +81,13 @@ class ProfileViewModelTest {
     ): Triple<ProfileViewModel, ScriptedAccountRepository, ScriptedSyncRepository> {
         val accounts = ScriptedAccountRepository(session, counts)
         val sync = ScriptedSyncRepository(pending)
-        val viewModel = ProfileViewModel(accounts, sync, SignOut(accounts, sync), UpdateDisplayName(accounts))
+        val viewModel = ProfileViewModel(
+            accounts,
+            sync,
+            SignOut(accounts, sync),
+            UpdateDisplayName(accounts),
+            FakeBoundaryStatus(),
+        )
         return Triple(viewModel, accounts, sync)
     }
 

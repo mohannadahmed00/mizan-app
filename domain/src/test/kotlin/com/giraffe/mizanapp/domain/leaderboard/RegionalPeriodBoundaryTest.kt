@@ -31,7 +31,7 @@ class RegionalPeriodBoundaryTest {
     @Test
     fun daily_leaderboard_day_is_the_regions_own_zone_local_date() {
         listOf(HONOLULU, RIYADH, CAIRO, KARACHI).forEach { zone ->
-            val deviceToday = DayBoundary.dateAt(instant, zone)
+            val deviceToday = DayBoundary.dateAt(instant, zone, null)
             val period = periodFor(PeriodKind.DAILY, deviceToday, zone, RegionId(zone.id))
 
             assertEquals("region $zone", deviceToday, period.start)
@@ -41,8 +41,8 @@ class RegionalPeriodBoundaryTest {
 
     @Test
     fun the_chosen_instant_actually_straddles_midnight_between_the_widest_offset_pair() {
-        val honoluluDate = DayBoundary.dateAt(instant, HONOLULU)
-        val karachiDate = DayBoundary.dateAt(instant, KARACHI)
+        val honoluluDate = DayBoundary.dateAt(instant, HONOLULU, null)
+        val karachiDate = DayBoundary.dateAt(instant, KARACHI, null)
 
         assertNotEquals("a weak instant would make every other assertion vacuous", honoluluDate, karachiDate)
         assertEquals(DayOfWeek.FRIDAY, honoluluDate.dayOfWeek)
@@ -51,9 +51,9 @@ class RegionalPeriodBoundaryTest {
 
     @Test
     fun weekly_period_lands_each_region_in_its_own_correct_week_at_the_same_instant() {
-        val honoluluToday = DayBoundary.dateAt(instant, HONOLULU)
-        val riyadhToday = DayBoundary.dateAt(instant, RIYADH)
-        val karachiToday = DayBoundary.dateAt(instant, KARACHI)
+        val honoluluToday = DayBoundary.dateAt(instant, HONOLULU, null)
+        val riyadhToday = DayBoundary.dateAt(instant, RIYADH, null)
+        val karachiToday = DayBoundary.dateAt(instant, KARACHI, null)
 
         val honoluluWeek = periodFor(PeriodKind.WEEKLY, honoluluToday, HONOLULU, RegionId("hawaii-honolulu"))
         val riyadhWeek = periodFor(PeriodKind.WEEKLY, riyadhToday, RIYADH, RegionId("arabia-riyadh"))

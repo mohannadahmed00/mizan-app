@@ -3,6 +3,7 @@ package com.giraffe.mizanapp.data.db
 import android.content.Context
 import androidx.room.Room
 import com.giraffe.mizanapp.data.db.daos.AccountScopeDao
+import com.giraffe.mizanapp.data.db.daos.BoundaryStateDao
 
 /**
  * Builds the database.
@@ -17,7 +18,7 @@ import com.giraffe.mizanapp.data.db.daos.AccountScopeDao
  */
 fun createMizanDatabase(context: Context): MizanDatabase =
     Room.databaseBuilder(context, MizanDatabase::class.java, MizanDatabase.NAME)
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
         .build()
 
 /**
@@ -29,3 +30,6 @@ fun createMizanDatabase(context: Context): MizanDatabase =
  * `:data`, same as [createMizanDatabase].
  */
 fun accountScopeDaoOf(database: MizanDatabase): AccountScopeDao = database.accountScopeDao()
+
+/** Same resolution as [accountScopeDaoOf], for [com.giraffe.mizanapp.data.db.daos.BoundaryStateDao]. */
+fun boundaryStateDaoOf(database: MizanDatabase): BoundaryStateDao = database.boundaryStateDao()

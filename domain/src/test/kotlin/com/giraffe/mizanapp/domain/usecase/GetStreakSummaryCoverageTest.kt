@@ -2,6 +2,7 @@ package com.giraffe.mizanapp.domain.usecase
 
 import com.giraffe.mizanapp.domain.sync.RecordCoverage
 import com.giraffe.mizanapp.domain.time.FakeTimeProvider
+import com.giraffe.mizanapp.domain.time.MidnightBoundaryStatus
 import java.time.LocalDate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -23,7 +24,7 @@ class GetStreakSummaryCoverageTest {
         val coverage = FakeRecordCoverageRepository(
             RecordCoverage(knownFrom = LocalDate.parse("2026-08-01"), complete = false),
         )
-        val useCase = GetStreakSummary(FakeWeekCompletionRepository(), FakeWeekDayPlanRepository(time = time), time, coverage)
+        val useCase = GetStreakSummary(FakeWeekCompletionRepository(), FakeWeekDayPlanRepository(time = time), time, coverage, MidnightBoundaryStatus(time))
 
         val summary = useCase().first()
 
@@ -33,7 +34,7 @@ class GetStreakSummaryCoverageTest {
     @Test
     fun `not provisional once coverage is complete`() = runTest {
         val coverage = FakeRecordCoverageRepository(RecordCoverage.completeFrom(LocalDate.parse("2026-01-01")))
-        val useCase = GetStreakSummary(FakeWeekCompletionRepository(), FakeWeekDayPlanRepository(time = time), time, coverage)
+        val useCase = GetStreakSummary(FakeWeekCompletionRepository(), FakeWeekDayPlanRepository(time = time), time, coverage, MidnightBoundaryStatus(time))
 
         val summary = useCase().first()
 

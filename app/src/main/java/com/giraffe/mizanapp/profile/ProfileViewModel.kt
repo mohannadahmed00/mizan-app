@@ -6,6 +6,7 @@ import com.giraffe.mizanapp.domain.identity.AccountSession
 import com.giraffe.mizanapp.domain.identity.SignOutMode
 import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
+import com.giraffe.mizanapp.domain.time.BoundaryStatus
 import com.giraffe.mizanapp.domain.usecase.SignOut
 import com.giraffe.mizanapp.domain.usecase.UpdateDisplayName
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,7 @@ class ProfileViewModel(
     private val sync: SyncRepository,
     private val signOut: SignOut,
     private val updateDisplayName: UpdateDisplayName,
+    private val boundaryStatus: BoundaryStatus,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProfileUiState())
@@ -47,6 +49,11 @@ class ProfileViewModel(
         viewModelScope.launch {
             sync.observePendingCount().collect { count -> _state.value = _state.value.copy(pendingCount = count) }
         }
+        viewModelScope.launch {
+            boundaryStatus.observe().collect { boundaryState ->
+                _state.value = _state.value.copy(locationSettings = locationSettingsFor(boundaryState))
+            }
+        }
     }
 
     fun onEvent(event: ProfileEvent) {
@@ -64,6 +71,13 @@ class ProfileViewModel(
                 pendingMode = null
                 _state.value = _state.value.copy(confirming = null)
             }
+            ProfileEvent.EnableLocation -> viewModelScope.launch { boundaryStatus.requestLocation() }
+            ProfileEvent.EraseLocation -> _state.value = _state.value.copy(confirmingEraseLocation = true)
+            ProfileEvent.ConfirmEraseLocation -> {
+                _state.value = _state.value.copy(confirmingEraseLocation = false)
+                viewModelScope.launch { boundaryStatus.eraseLocation() }
+            }
+            ProfileEvent.CancelEraseLocation -> _state.value = _state.value.copy(confirmingEraseLocation = false)
         }
     }
 

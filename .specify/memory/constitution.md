@@ -1,6 +1,91 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.0.0 → 2.0.1 (2026-08-30)
+Bump rationale: PATCH. No principle is added, removed, or redefined. One bullet inside Principle VII
+is reworded so that the fixed calculation convention is fixed *per region* rather than globally. The
+rule's substance is unchanged and is in fact tightened: administrator-fixed, no per-user choice,
+on-device, no network all survive intact, and the amendment adds two requirements the old wording
+left unstated — that the region be resolvable entirely on-device, and that a documented default
+apply where no mapping entry matches. This is a clarification of scope within an existing principle.
+
+Amendment rationale: spec 009 (Maghrib-anchored day and week boundary) is the spec that introduces
+the single location and prayer-time provider Principle VII requires. Its clarification session on
+2026-08-30 settled that the calculation convention should follow the person's region rather than
+being fixed globally, because a user in Egypt and a user in Saudi Arabia follow different
+authorities and one global convention would be wrong for one of them. That decision satisfies the
+existing rule's intent — the mapping is administrator-defined and offers the user no choice at all —
+but contradicts its literal word "single", which reads as one convention for the whole product. Spec
+010 recorded this as FR-003d and blocked its own planning on this amendment, on the grounds that a
+plan may not pass a Constitution Check against a rule it contradicts on its face.
+
+Modified principles:
+  - VII. Deterministic Time (one bullet reworded: calculation convention is now per-region, with
+    on-device region resolution and a documented default added)
+
+Added sections: none.
+Removed sections: none.
+
+Invalidates: nothing. No merged spec and no shipped code implements prayer-time calculation at all —
+spec 009 is the first, and it is still at planning stage. Spec 010 (Notifications & Weekly
+Summaries) consumes this provider and is unaffected in substance, since it never assumed a
+particular convention.
+
+Deferred items / TODOs: none. The contents of the region-to-convention mapping, and the mechanism by
+which a region is resolved on-device, are spec 009's planning decisions and deliberately not fixed
+here (Principle VIII).
+
+Branch note: the v2.0.0 amendment reached this branch by cherry-pick and has still never been merged
+to develop-v1. This branch's pull request lands v2.0.0 and v2.0.1 together.
+
+---- PRIOR VERSIONS ----
+
+Version change: 1.1.1 → 2.0.0 (2026-08-30)
+Bump rationale: MAJOR. Principle VII (Deterministic Time) is redefined, not merely clarified: the
+accountability day moves from local midnight-to-midnight to a calculated Maghrib-to-Maghrib boundary,
+and the week moves from Saturday-to-Friday to Maghrib-Friday-to-Maghrib-Friday. This invalidates
+existing work per the versioning policy's own MAJOR trigger.
+
+Amendment rationale: requested directly by the product owner, for spec 010 (Notifications & Weekly
+Summaries) and beyond — the app's accountability day should follow the Islamic day (Maghrib to
+Maghrib), calculated from the user's location, rather than the civil calendar day. The
+Hijri-date-is-a-label-only rule and the single-source-of-truth rule are preserved in substance: the
+boundary is still computed by exactly one injected provider and still never read off a separate
+Hijri calendar sync, even though the boundary instant itself is now the traditional Hijri one.
+
+Consequences flagged explicitly, not silently absorbed:
+  - Invalidates the current implementation of `DayBoundary` and `WeekBoundary` and every dependent in
+    specs 002-008 (Today, Week, Streaks, History, Insights, and the already-merged spec 008
+    leaderboard, whose regional periods, RLS-verified SQL, and Honor Board close timing are all
+    midnight/Saturday-Friday anchored).
+  - Principle III (Immutable Historical Records) tension: days and weeks already recorded and closed
+    under the old boundary were true statements under that boundary. This amendment does not itself
+    decide whether to leave already-closed history alone (a boundary-definition change, not a data
+    correction) or attempt any reprocessing — that decision belongs to the foundational spec that
+    implements this change, and MUST be made explicitly there, not by default.
+  - Principle IV (Offline-First) tension: a device's own midnight has zero dependencies; a Maghrib
+    boundary depends on a resolved location and a successful calculation. This principle now requires
+    an explicit, deterministic fallback for when that resolution fails, but the dependency itself is a
+    real, accepted cost — see the new "Recorded tension with Principle IV" note inside Principle VII.
+  - The already-merged spec 008 pull request is not reopened or reverted by this amendment alone; it
+    remains correct under the constitution version it was built against. Bringing it into compliance
+    with v2.0.0 is the foundational spec's job.
+
+Modified principles:
+  - VII. Deterministic Time (redefined: day/week boundary basis, plus new location/calculation
+    determinism and fallback requirements)
+
+Added sections: none (expansion within existing Principle VII).
+Removed sections: none.
+
+Deferred items / TODOs:
+  - The exact fallback behavior when location/Maghrib cannot be resolved is deliberately left to the
+    foundational spec's planning phase, per Principle VIII (no speculative abstraction in the
+    constitution itself).
+  - Whether/how already-closed history under the old boundary is handled is deferred to the same spec.
+
+---- PRIOR VERSIONS ----
+
 Version change: 1.1.0 → 1.1.1 (2026-08-09)
 Bump rationale: PATCH. Clarifies the wording of one technology constraint. No principle is added,
 removed, or redefined; no requirement is loosened or tightened in substance.
@@ -178,22 +263,65 @@ prevents the data model drifting toward user-owned content.
 ### VII. Deterministic Time
 
 No code outside a single injected time provider may read the system clock, current date, or default
-timezone. Day boundaries, week boundaries, rollover, and streak logic MUST be testable by advancing
-a fake clock.
+timezone. No code outside a single injected location/calculation provider may read device location
+or compute a prayer time. Day boundaries, week boundaries, rollover, and streak logic MUST be
+testable by advancing a fake clock and substituting a fake location and calculation result — never
+by calling a real clock, a real location API, or a real astronomical calculation in a test.
 
-- The accountability day runs local midnight to local midnight.
+- The accountability day runs from Maghrib (the calculated sunset prayer time for the user's
+  current location) to the next Maghrib. A day that would previously have been read off the device
+  calendar as, for example, "Saturday the 4th" begins the moment Friday's Maghrib is reached, not at
+  the following midnight.
+- The week runs from Maghrib on Friday to Maghrib on the following Friday. The previous week's
+  standings, totals, and records freeze at that instant; the new week begins immediately at the same
+  instant, with no gap and no overlap.
 - The Hijri date is a label attached to a day, never the thing that defines the day's boundaries.
-- The week runs Saturday to Friday.
+  This holds even though Maghrib-to-Maghrib is the traditional Hijri day: the boundary is still
+  computed independently, from the injected location/calculation provider, and MUST NOT be read off
+  any separately synced Hijri calendar lookup or calendar API.
+- Prayer-time calculation MUST use a single administrator-fixed calculation convention **per
+  region**, selected automatically from an administrator-defined mapping of region to convention —
+  Egypt to the Egyptian General Authority of Survey, Saudi Arabia to Umm al-Qura, and so on. Exactly
+  one convention applies in any given region; there is no second opinion within a region. Where no
+  mapping entry matches, a single documented default convention applies, so the result is never
+  undefined. There MUST be no per-user choice of calculation method, calculation authority, or Asr
+  madhab anywhere in the product: selection is automatic and is never exposed as a setting. The
+  region itself MUST be resolved entirely on-device, with no network call and no reverse-geocoding
+  service — a convention resolvable only online would put the day boundary behind connectivity,
+  which Principle IV forbids. The calculation itself MUST likewise be computed entirely on-device
+  from the injected location, never fetched from a server, and never requiring a network call to
+  resolve. The mapping is fixed, administrator-defined content in the sense Principle VI already
+  uses for the task catalogue, and a change to it affects future days only.
+- When a location or a Maghrib calculation cannot be obtained, the boundary provider MUST still
+  return a deterministic, previously-specified result — the exact fallback (for example, the last
+  successfully calculated boundary, or another explicit rule) is a planning-time decision for the
+  spec that introduces this provider, not a decision this principle makes for it. What this
+  principle forbids is an *undefined* result: silently guessing, blocking indefinitely, or crashing
+  are all violations regardless of which explicit fallback is chosen.
 
 Each of these rules MUST live in exactly one place in the codebase; there may be no second opinion
-about when a day or week begins.
+about when a day or week begins, or about what a location or a prayer time currently is.
 
 **Rationale**: Every hard bug in an app like this is a date bug, and date bugs are untestable
 without an injectable clock. Duplicated boundary logic guarantees two screens will eventually
-disagree about the same day.
+disagree about the same day. Anchoring the boundary to a calculated, location-dependent instant
+instead of the device's own midnight adds a second axis of nondeterminism (location, and the prayer
+calculation over it) that must be held to exactly the same discipline as the clock, or the same class
+of bug returns in a harder-to-reproduce form.
 
-**Check that can fail**: Any direct use of the system clock or "now" outside the provider; any
-second implementation of a boundary rule.
+**Recorded tension with Principle IV (Offline-First)**: a device's own midnight is always computable
+with zero dependencies. A Maghrib boundary depends on a resolved location and a successful
+calculation, both of which can be transiently or permanently unavailable — meaning "what day is it"
+is no longer a fact the app can derive from nothing. This principle requires the fallback to be
+explicit and deterministic (see above) specifically so that this dependency never becomes silent
+unavailability of the core app; but the dependency itself is a real, accepted cost of this boundary
+choice, not a solved one, and any plan introducing this provider MUST show its Constitution Check
+addressing Principle IV directly rather than treating this as a routine pass.
+
+**Check that can fail**: Any direct use of the system clock, a location API, or a prayer-time
+calculation outside the provider; any second implementation of a boundary rule; any code path where
+an unresolvable location or calculation produces an undefined or unhandled result instead of the
+provider's specified fallback.
 
 ### VIII. Vertical Slices, No Speculative Abstraction
 
@@ -288,4 +416,4 @@ conflicts with it, this constitution wins.
 Constitution Check, and again before an increment is considered complete. An increment that violates
 Principle I or Principle III is not complete, regardless of whether it works.
 
-**Version**: 1.1.1 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-09
+**Version**: 2.0.1 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-30

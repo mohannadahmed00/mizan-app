@@ -2,7 +2,10 @@ package com.giraffe.mizanapp.di
 
 import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.db.accountScopeDaoOf
+import com.giraffe.mizanapp.data.db.boundaryStateDaoOf
 import com.giraffe.mizanapp.data.db.createMizanDatabase
+import com.giraffe.mizanapp.data.prayer.AdhanPrayerTimes
+import com.giraffe.mizanapp.data.prayer.AndroidLocationSource
 import com.giraffe.mizanapp.data.repository.OutboxSyncRepository
 import com.giraffe.mizanapp.data.repository.RemoteCataloguePublicationRepository
 import com.giraffe.mizanapp.data.repository.RoomCatalogueRepository
@@ -28,8 +31,12 @@ import com.giraffe.mizanapp.data.sync.createRemoteDataSource
 import com.giraffe.mizanapp.data.sync.endSupabaseSession
 import com.giraffe.mizanapp.data.sync.isSupabaseConfigured
 import com.giraffe.mizanapp.domain.repository.CataloguePublicationRepository
+import com.giraffe.mizanapp.data.time.BoundaryStateStore
 import com.giraffe.mizanapp.data.time.SystemTimeProvider
 import com.giraffe.mizanapp.domain.policy.DayWritePolicy
+import com.giraffe.mizanapp.domain.prayer.LocationSource
+import com.giraffe.mizanapp.domain.prayer.PrayerTimesProvider
+import com.giraffe.mizanapp.domain.prayer.loadRegionConventionMapping
 import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.CatalogueRepository
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
@@ -39,6 +46,7 @@ import com.giraffe.mizanapp.domain.repository.LeaderboardRepository
 import com.giraffe.mizanapp.domain.repository.ParticipationRepository
 import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
+import com.giraffe.mizanapp.domain.time.BoundaryStatus
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.usecase.ConfirmSignInCode
 import com.giraffe.mizanapp.domain.usecase.GetDayDetail
@@ -82,11 +90,11 @@ import org.koin.dsl.module
  */
 
 val domainModule = module {
-    single<TimeProvider> { SystemTimeProvider() }
+    single<TimeProvider> { SystemTimeProvider(get()) }
     factory { DayWritePolicy(get()) }
     factory { GetWeekSummary(get(), get(), get(), get(), get()) }
     factory { GetDaySummary(get(), get()) }
-    factory { GetStreakSummary(get(), get(), get(), get()) }
+    factory { GetStreakSummary(get(), get(), get(), get(), get()) }
     factory { GetHistoryPage(get(), get(), get(), get(), get()) }
     factory { GetDayDetail(get(), get(), get(), get()) }
     factory { GetWeeklyTrend(get()) }
@@ -104,6 +112,14 @@ val domainModule = module {
 val dataModule = module {
     // Construction lives in :data so Room stays behind that boundary.
     single<MizanDatabase> { createMizanDatabase(androidContext()) }
+
+    // spec 009: the Maghrib day boundary. BoundaryStatus binds to the same BoundaryStateStore
+    // singleton `today()` reads through -- never a second construction, or the app would
+    // observe one state while today() reads another.
+    single<LocationSource> { AndroidLocationSource(androidContext()) }
+    single<PrayerTimesProvider> { AdhanPrayerTimes(loadRegionConventionMapping()) }
+    single { BoundaryStateStore(boundaryStateDaoOf(get()), get(), get()) }
+    single<BoundaryStatus> { get<BoundaryStateStore>() }
 
     single { CatalogueSeeder(get(), get()) }
     single<CatalogueRepository> { RoomCatalogueRepository(get(), get()) }
@@ -141,14 +157,14 @@ val dataModule = module {
 }
 
 val appModule = module {
-    viewModel { TodayViewModel(get(), get(), get(), get(), get()) }
+    viewModel { TodayViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { WeekViewModel(get(), get(), get(), get()) }
     viewModel { (date: LocalDate) -> DaySummaryViewModel(get<GetDayDetail>(), date) }
     viewModel { HistoryViewModel(get(), get()) }
     viewModel { InsightsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get(), get(), get(), isSupabaseConfigured()) }
     viewModel { SyncStatusViewModel(get()) }
-    viewModel { ProfileViewModel(get(), get(), get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
     viewModel { LeaderboardViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }
 

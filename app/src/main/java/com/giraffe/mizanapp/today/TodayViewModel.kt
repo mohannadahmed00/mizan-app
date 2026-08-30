@@ -14,6 +14,7 @@ import com.giraffe.mizanapp.domain.repository.DayPlanRepository
 import com.giraffe.mizanapp.domain.repository.EnsureOutcome
 import com.giraffe.mizanapp.domain.repository.SeedOutcome
 import com.giraffe.mizanapp.domain.streak.StreakSummary
+import com.giraffe.mizanapp.domain.time.BoundaryStatus
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import java.time.LocalDate
@@ -39,6 +40,7 @@ class TodayViewModel(
     private val completions: CompletionRepository,
     private val time: TimeProvider,
     private val getStreakSummary: GetStreakSummary,
+    private val boundaryStatus: BoundaryStatus,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TodayUiState())
@@ -62,6 +64,7 @@ class TodayViewModel(
                             seeded.defects.joinToString { it.toString() },
                         ),
                         streak = _state.value.streak,
+                        locationPrompt = currentLocationPrompt(),
                     )
                     return@launch
                 }
@@ -70,6 +73,12 @@ class TodayViewModel(
             openDate(time.today())
         }
     }
+
+    private fun currentLocationPrompt() = LocationPrompt(
+        visible = !boundaryStatus.promptShown(),
+        explanation = "Turning on location gives accurate local prayer times and the " +
+            "Maghrib-based Islamic day boundary.",
+    )
 
     /**
      * Subscribes independently of the day's task collector, so the tasks
@@ -126,6 +135,7 @@ class TodayViewModel(
                 _state.value = TodayUiState(
                     status = TodayUiState.Status.CatalogueUnavailable("no catalogue applies on $date"),
                     streak = _state.value.streak,
+                    locationPrompt = currentLocationPrompt(),
                 )
                 return
             }
@@ -182,6 +192,7 @@ class TodayViewModel(
             earnedPoints = score.earned,
             availablePoints = score.available,
             streak = _state.value.streak,
+            locationPrompt = currentLocationPrompt(),
         )
     }
 
@@ -199,6 +210,15 @@ class TodayViewModel(
             }
             TodayEvent.NextSection -> move(+1)
             TodayEvent.PreviousSection -> move(-1)
+            TodayEvent.EnableLocation -> viewModelScope.launch {
+                boundaryStatus.requestLocation()
+                boundaryStatus.markPromptShown()
+                _state.value = _state.value.copy(locationPrompt = currentLocationPrompt())
+            }
+            TodayEvent.DismissLocationPrompt -> viewModelScope.launch {
+                boundaryStatus.markPromptShown()
+                _state.value = _state.value.copy(locationPrompt = currentLocationPrompt())
+            }
         }
     }
 

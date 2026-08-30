@@ -1,63 +1,100 @@
 package com.giraffe.mizanapp.domain.streak
 
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.math.sin
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * `StreakClock` now takes `dayEndsAt` — the boundary's own `expiresAt` (FR-029) — rather than
+ * reading a fixed 20:00 against the zone itself. It stays a pure function of instants passed in;
+ * a Maghrib day's actual length is `:data`'s concern, not this object's.
+ */
 class StreakClockTest {
 
     private val zone = ZoneId.of("Africa/Cairo")
-    private val day = LocalDate.parse("2026-08-19")
 
-    private fun at(hour: Int, minute: Int): Instant = day.atTime(hour, minute).atZone(zone).toInstant()
+    /** A dayEndsAt sequence with realistic drift: `amplitudeHours` around 18:00 local per day. */
+    private fun maghribSeries(startDate: LocalDate, days: Int, amplitudeHours: Double): List<Instant> =
+        (0 until days).map { i ->
+            val date = startDate.plusDays(i.toLong())
+            val driftHours = amplitudeHours * sin(2 * Math.PI * i / 365.0)
+            val minutesFromMidnight = ((18 + driftHours) * 60).toLong()
+            date.atStartOfDay(zone).toInstant().plusSeconds(minutesFromMidnight * 60)
+        }
 
     @Test
-    fun before_twenty_hundred_is_not_at_risk() {
-        assertFalse(StreakClock.isAtRiskWindow(at(19, 59), zone))
+    fun atRiskPointIsAlwaysInsideItsOwnDay() {
+        // A low-latitude profile (small drift) and a high-latitude one (large drift, but still
+        // leaving well over four hours of day length either side).
+        val lowLatitude = maghribSeries(LocalDate.parse("2026-01-01"), 365, amplitudeHours = 0.5)
+        val highLatitude = maghribSeries(LocalDate.parse("2026-01-01"), 365, amplitudeHours = 3.5)
+
+        for (series in listOf(lowLatitude, highLatitude)) {
+            for (i in 1 until series.size) {
+                val previousDayEndsAt = series[i - 1]
+                val dayEndsAt = series[i]
+                val atRiskInstant = dayEndsAt.minus(StreakClock.AT_RISK_BEFORE_END)
+
+                assertTrue(
+                    "at-risk instant $atRiskInstant must fall after the previous day ended " +
+                        "($previousDayEndsAt)",
+                    atRiskInstant.isAfter(previousDayEndsAt),
+                )
+                assertTrue(
+                    "at-risk instant $atRiskInstant must fall before this day ends ($dayEndsAt)",
+                    atRiskInstant.isBefore(dayEndsAt),
+                )
+            }
+        }
     }
 
     @Test
-    fun exactly_twenty_hundred_is_at_risk_inclusive() {
-        assertTrue(StreakClock.isAtRiskWindow(at(20, 0), zone))
+    fun beforeTheAtRiskPointIsNotAtRisk() {
+        val dayEndsAt = Instant.parse("2026-08-19T16:00:00Z")
+        val justBefore = dayEndsAt.minus(StreakClock.AT_RISK_BEFORE_END).minusSeconds(60)
+        assertFalse(StreakClock.isAtRiskWindow(justBefore, dayEndsAt))
     }
 
     @Test
-    fun late_evening_is_at_risk() {
-        assertTrue(StreakClock.isAtRiskWindow(at(23, 59), zone))
+    fun exactlyAtTheAtRiskPointIsAtRiskInclusive() {
+        val dayEndsAt = Instant.parse("2026-08-19T16:00:00Z")
+        val atRiskInstant = dayEndsAt.minus(StreakClock.AT_RISK_BEFORE_END)
+        assertTrue(StreakClock.isAtRiskWindow(atRiskInstant, dayEndsAt))
     }
 
     @Test
-    fun midnight_and_morning_are_not_at_risk() {
-        assertFalse(StreakClock.isAtRiskWindow(at(0, 0), zone))
-        assertFalse(StreakClock.isAtRiskWindow(at(9, 0), zone))
+    fun justBeforeDayEndsIsStillAtRisk() {
+        val dayEndsAt = Instant.parse("2026-08-19T16:00:00Z")
+        assertTrue(StreakClock.isAtRiskWindow(dayEndsAt.minusSeconds(60), dayEndsAt))
     }
 
     @Test
-    fun next_boundary_from_morning_is_todays_twenty_hundred() {
-        val result = StreakClock.nextBoundaryAfter(at(9, 0), zone)
-        assertEquals(day.atTime(20, 0).atZone(zone).toInstant(), result)
+    fun nextBoundaryIsTheEarlierOfAtRiskAndDayEnd() {
+        val dayEndsAt = Instant.parse("2026-08-19T16:00:00Z")
+        val atRiskInstant = dayEndsAt.minus(StreakClock.AT_RISK_BEFORE_END)
+
+        assertEquals(atRiskInstant, StreakClock.nextBoundaryAfter(atRiskInstant.minusSeconds(60), dayEndsAt))
+        assertEquals(dayEndsAt, StreakClock.nextBoundaryAfter(atRiskInstant.plusSeconds(60), dayEndsAt))
     }
 
     @Test
-    fun next_boundary_from_twenty_hundred_is_next_midnight() {
-        val result = StreakClock.nextBoundaryAfter(at(20, 0), zone)
-        assertEquals(day.plusDays(1).atStartOfDay(zone).toInstant(), result)
-    }
-
-    @Test
-    fun next_boundary_from_late_evening_is_next_midnight() {
-        val result = StreakClock.nextBoundaryAfter(at(23, 59), zone)
-        assertEquals(day.plusDays(1).atStartOfDay(zone).toInstant(), result)
-    }
-
-    @Test
-    fun every_returned_boundary_is_strictly_after_the_instant_passed_in() {
-        listOf(at(0, 0), at(9, 0), at(19, 59), at(20, 0), at(23, 59)).forEach { now ->
-            val boundary = StreakClock.nextBoundaryAfter(now, zone)
+    fun everyReturnedBoundaryIsStrictlyAfterTheInstantPassedIn() {
+        val dayEndsAt = Instant.parse("2026-08-19T16:00:00Z")
+        val atRiskInstant = dayEndsAt.minus(StreakClock.AT_RISK_BEFORE_END)
+        listOf(
+            dayEndsAt.minus(Duration.ofHours(8)),
+            atRiskInstant.minusSeconds(1),
+            atRiskInstant,
+            atRiskInstant.plusSeconds(1),
+            dayEndsAt.minusSeconds(1),
+        ).forEach { now ->
+            val boundary = StreakClock.nextBoundaryAfter(now, dayEndsAt)
             assertTrue("$boundary must be strictly after $now", boundary.isAfter(now))
         }
     }

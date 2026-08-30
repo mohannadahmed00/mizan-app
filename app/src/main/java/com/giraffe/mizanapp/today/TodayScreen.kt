@@ -113,6 +113,13 @@ private fun ReadyState(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().padding(16.dp)) {
+        // A field on an already-populated state, never a gate (FR-007a) -- rendered above
+        // everything else, but nothing below it waits on the choice made here.
+        if (state.locationPrompt.visible) {
+            LocationPromptCard(state.locationPrompt, onEvent)
+            Spacer(Modifier.width(16.dp))
+        }
+
         // Fixed position, outside the stepped flow (FR-018a): stepping
         // between blocks below must never move or change this.
         StreakElement(panel = state.streak, onRetry = { onEvent(TodayEvent.RetryStreak) })
@@ -152,6 +159,32 @@ private fun ReadyState(
             }
 
             SectionNavigation(state, onEvent)
+        }
+    }
+}
+
+/**
+ * Copy states what location enables, never a warning or a consequence (FR-007e, Principle IX):
+ * no red, no icon, no "your record will be less accurate", no repeat nagging after dismissal --
+ * declining is a supported way to use the app.
+ */
+@Composable
+private fun LocationPromptCard(prompt: LocationPrompt, onEvent: (TodayEvent) -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                prompt.explanation,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            Spacer(Modifier.width(12.dp))
+            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = { onEvent(TodayEvent.DismissLocationPrompt) }) { Text("Not now") }
+                Button(onClick = { onEvent(TodayEvent.EnableLocation) }) { Text("Enable location") }
+            }
         }
     }
 }

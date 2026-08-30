@@ -42,7 +42,7 @@ class ZoneChangeReassignsRegionTest : DbTestBase() {
         val afterReassignment = repository.observe().first()
         assertEquals("pakistan-karachi", afterReassignment.region?.id?.value)
         assertEquals(ZoneId.of("Asia/Karachi"), afterReassignment.region?.zone)
-        assertEquals(DayBoundary.dateAt(time.now(), time.zone()), time.today())
+        assertEquals(DayBoundary.dateAt(time.now(), time.zone(), null), time.today())
 
         fake.currentUserId = OBSERVER
         val closedAfter = Json.encodeToString((fake.rankingPage(PeriodKind.WEEKLY, null) as RemoteResult.Ok).value)

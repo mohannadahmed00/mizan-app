@@ -3,6 +3,7 @@ package com.giraffe.mizanapp.domain.usecase
 import com.giraffe.mizanapp.domain.day.Completion
 import com.giraffe.mizanapp.domain.streak.StreakSummary
 import com.giraffe.mizanapp.domain.time.FakeTimeProvider
+import com.giraffe.mizanapp.domain.time.MidnightBoundaryStatus
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -36,7 +37,8 @@ class GetStreakSummaryTest {
         time: FakeTimeProvider,
         completionsRepo: FakeWeekCompletionRepository = FakeWeekCompletionRepository(),
         dayPlansRepo: FakeWeekDayPlanRepository = FakeWeekDayPlanRepository(time = time),
-    ) = GetStreakSummary(completionsRepo, dayPlansRepo, time, FakeRecordCoverageRepository()) to (completionsRepo to dayPlansRepo)
+    ) = GetStreakSummary(completionsRepo, dayPlansRepo, time, FakeRecordCoverageRepository(), MidnightBoundaryStatus(time)) to
+        (completionsRepo to dayPlansRepo)
 
     @Test
     fun reports_the_seeded_run() = runTest {

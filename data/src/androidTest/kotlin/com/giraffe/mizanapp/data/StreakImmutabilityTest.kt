@@ -35,7 +35,7 @@ class StreakImmutabilityTest : DbTestBase() {
 
         val recordStart = dayPlans.earliestPlanDate()
         val datesBefore = completions.observeConsistencyDates().first()
-        val summaryBefore = buildStreakSummary(datesBefore, time.today(), time.now(), time.zone(), recordStart)
+        val summaryBefore = buildStreakSummary(datesBefore, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), recordStart)
 
         // Bump the catalogue: different points, a changed schedule.
         val dao = db.catalogueDao()
@@ -56,7 +56,7 @@ class StreakImmutabilityTest : DbTestBase() {
         dao.insertTaskVersions(v2TaskVersions)
 
         val datesAfter = completions.observeConsistencyDates().first()
-        val summaryAfter = buildStreakSummary(datesAfter, time.today(), time.now(), time.zone(), recordStart)
+        val summaryAfter = buildStreakSummary(datesAfter, time.today(), time.now(), time.today().plusDays(1).atStartOfDay(time.zone()).toInstant(), recordStart)
 
         assertEquals(datesBefore, datesAfter)
         assertEquals(summaryBefore, summaryAfter)
