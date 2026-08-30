@@ -504,7 +504,7 @@ the date advance; advance across midnight and see it not.
       `refreshingBeforeExpiresAtChangesNothing`. These pin the store's half of FR-026 — the resolved
       date and `expiresAt` both move at the boundary instant, and only there.
 
-- [ ] T035b [US1] Make T035a pass, then add the trigger FR-026 actually asks for: rollover while the
+- [X] T035b [US1] Make T035a pass, then add the trigger FR-026 actually asks for: rollover while the
       app is **open**, with no start and no resume event. In `:app`, beside T035's resume hook,
       schedule a coroutine that waits until `BoundaryStatus.current().expiresAt`, calls
       `refresh(now, zone)`, and reschedules from the new `expiresAt`; cancel it when the app

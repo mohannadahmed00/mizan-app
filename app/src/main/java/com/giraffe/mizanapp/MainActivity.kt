@@ -44,7 +44,10 @@ import com.giraffe.mizanapp.week.WeekScreen
 import com.giraffe.mizanapp.week.WeekViewModel
 import com.giraffe.mizanapp.domain.time.BoundaryStatus
 import com.giraffe.mizanapp.domain.time.TimeProvider
+import java.time.Duration
 import java.time.LocalDate
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
@@ -145,10 +148,21 @@ private fun AppRoute(modifier: Modifier = Modifier) {
 
     // Re-resolves the boundary on every resume (FR-026), app-wide rather than per route: a
     // stale regime or an unnoticed zone change should not wait for whichever screen is open.
+    // The while loop below then waits for the exact instant the resolved date next changes and
+    // refreshes again, so the day rolls over even if the app is never backgrounded in between —
+    // `repeatOnLifecycle` cancels this coroutine the moment the app drops below RESUMED, which is
+    // the "cancel when the app backgrounds" FR-026 asks for, with no extra bookkeeping.
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             boundaryStatus.refresh(time.now(), time.zone())
+            while (isActive) {
+                val waitMillis = Duration.between(time.now(), boundaryStatus.current().expiresAt)
+                    .toMillis()
+                    .coerceAtLeast(0)
+                delay(waitMillis)
+                boundaryStatus.refresh(time.now(), time.zone())
+            }
         }
     }
 
