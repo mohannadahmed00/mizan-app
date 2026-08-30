@@ -665,7 +665,7 @@ opt-in, revocation-safe, and erasable.
       `BoundaryStatus.observe()`. Erasing goes through a confirmation, following the existing sign-out
       confirmation pattern already in this file.
 
-- [ ] T056 [US3] Render the section in
+- [X] T056 [US3] Render the section in
       `app/src/main/java/com/giraffe/mizanapp/profile/ProfileScreen.kt`: the statement, whether a
       location is held, an "Enable location" action when it is not, and an erase action with
       confirmation when it is. The confirmation must say the boundary returns to local midnight and
