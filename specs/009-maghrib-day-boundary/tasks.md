@@ -494,7 +494,7 @@ the date advance; advance across midnight and see it not.
       second construction, or the app would observe one state while `today()` reads another. Wire
       `SystemTimeProvider` to receive the store. DI wiring is exempt from test-first (Principle I).
 
-- [ ] T035 [US1] Call `boundaryStatus.refresh(timeProvider.now(), timeProvider.zone())` at app start
+- [X] T035 [US1] Call `boundaryStatus.refresh(timeProvider.now(), timeProvider.zone())` at app start
       in `app/src/main/java/com/giraffe/mizanapp/MizanApplication.kt` (in a coroutine, never blocking
       `onCreate`) and on resume in `MainActivity`. Inject `BoundaryStatus` and `TimeProvider`, not the
       concrete store. Follow how `ReconcileZone` is already called for the pattern.

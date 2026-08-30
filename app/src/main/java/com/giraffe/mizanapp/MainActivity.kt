@@ -42,6 +42,7 @@ import com.giraffe.mizanapp.ui.theme.MizanAppTheme
 import com.giraffe.mizanapp.week.WeekEvent
 import com.giraffe.mizanapp.week.WeekScreen
 import com.giraffe.mizanapp.week.WeekViewModel
+import com.giraffe.mizanapp.domain.time.BoundaryStatus
 import com.giraffe.mizanapp.domain.time.TimeProvider
 import java.time.LocalDate
 import org.koin.androidx.compose.koinViewModel
@@ -130,6 +131,7 @@ class MainActivity : ComponentActivity() {
 private fun AppRoute(modifier: Modifier = Modifier) {
     var stack by rememberSaveable(stateSaver = StackSaver) { mutableStateOf(listOf<Destination>(Destination.Today)) }
     val time: TimeProvider = koinInject()
+    val boundaryStatus: BoundaryStatus = koinInject()
 
     fun push(destination: Destination) {
         stack = stack + destination
@@ -140,6 +142,15 @@ private fun AppRoute(modifier: Modifier = Modifier) {
 
     // One handler for the whole stack: at the root, back exits the app as normal.
     BackHandler(enabled = stack.size > 1) { stack = stack.dropLast(1) }
+
+    // Re-resolves the boundary on every resume (FR-026), app-wide rather than per route: a
+    // stale regime or an unnoticed zone change should not wait for whichever screen is open.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            boundaryStatus.refresh(time.now(), time.zone())
+        }
+    }
 
     when (val current = stack.last()) {
         Destination.Today -> TodayRoute(
