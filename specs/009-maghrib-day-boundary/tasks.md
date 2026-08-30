@@ -671,7 +671,7 @@ opt-in, revocation-safe, and erasable.
       confirmation when it is. The confirmation must say the boundary returns to local midnight and
       must **not** suggest any recorded history changes.
 
-- [ ] T057 [TEST] [US3] Create
+- [X] T057 [TEST] [US3] Create
       `app/src/androidTest/.../FreshInstallNoLocationTest.kt` covering quickstart Scenario 3: the app
       renders and records with no location and **no system permission dialog raised** (SC-017).
 
