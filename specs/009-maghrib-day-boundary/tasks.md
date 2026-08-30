@@ -433,7 +433,7 @@ the date advance; advance across midnight and see it not.
       the regime to `Maghrib`; `resolvedDate` and `expiresAt` are populated in both cases;
       `lastResolvedDate` is persisted across a store reload.
 
-- [ ] T030 [US1] Create
+- [X] T030 [US1] Create
       `data/src/main/kotlin/com/giraffe/mizanapp/data/time/BoundaryStateStore.kt`. It holds the
       current `BoundaryState` in an in-memory field (a `MutableStateFlow`), loads it from
       `BoundaryStateDao` on first use, and exposes `current(): BoundaryState` as a **plain
@@ -458,7 +458,7 @@ the date advance; advance across midnight and see it not.
 
       `refresh()` is `suspend`; `current()` is not.
 
-- [ ] T030a [US1] Make `BoundaryStateStore` implement the `BoundaryStatus` interface from T010a.
+- [X] T030a [US1] Make `BoundaryStateStore` implement the `BoundaryStatus` interface from T010a.
       `current()` and `refresh(now, zone)` are the methods above; `observe()` exposes the
       `MutableStateFlow` as a read-only `Flow`. `requestLocation()` and `eraseLocation()` are filled
       in by T048 and T047 — until then they may throw `NotImplementedError`, since the only callers
