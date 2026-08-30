@@ -525,7 +525,7 @@ Friday is the start of accountability-Saturday, so "the Saturday on or before" i
 accountability-date space. This phase is therefore **verification only**. If you find yourself
 editing `WeekBoundary.kt`, stop — you have misunderstood the design.
 
-- [ ] T036 [TEST] [US2] Create
+- [X] T036 [TEST] [US2] Create
       `domain/src/test/kotlin/com/giraffe/mizanapp/domain/time/MaghribWeekBoundaryTest.kt`. Using
       `DayBoundary.dateAt` with a Friday Maghrib of 18:00, assert:
       `fridayBeforeMaghribIsInTheClosingWeek`,
@@ -533,13 +533,15 @@ editing `WeekBoundary.kt`, stop — you have misunderstood the design.
       `theWeekChangesAtMaghribAndNotAtMidnight`.
       Derive the week with the **existing** `WeekBoundary.weekContaining` and assert on its `key`.
 
-- [ ] T037 [TEST] [US2] Add `everyInstantMapsToExactlyOneDayAndOneWeek` to the same file: walk a full
+- [X] T037 [TEST] [US2] Add `everyInstantMapsToExactlyOneDayAndOneWeek` to the same file: walk a full
       year in one-hour steps with a fixed Maghrib table, collect the resolved date for each instant,
       and assert the sequence of distinct dates is contiguous with no gap and no repeat.
 
-- [ ] T038 [US2] Make T036 and T037 pass. Expected outcome: **no production change is needed**. If
+- [X] T038 [US2] Make T036 and T037 pass. Expected outcome: **no production change is needed**. If
       both pass with no edit, record that in the commit message. Only if one fails should you change
       anything, and then only in `DayBoundary.kt`, never in `WeekBoundary.kt`.
+
+      **Both passed with no production change.**
 
 - [ ] T038a [TEST] [US2] Create
       `domain/src/test/kotlin/com/giraffe/mizanapp/domain/leaderboard/LeaderboardPeriodBoundaryTest.kt`,
