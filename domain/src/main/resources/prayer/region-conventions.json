@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "default": { "convention": "MUSLIM_WORLD_LEAGUE", "asr": "STANDARD" },
+  "regions": [
+    { "zoneIds": ["Africa/Cairo"], "convention": "EGYPTIAN", "asr": "STANDARD" },
+    { "zoneIds": ["Asia/Riyadh"], "convention": "UMM_AL_QURA", "asr": "STANDARD" }
+  ]
+}
