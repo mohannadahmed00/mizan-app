@@ -1,13 +1,52 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.0.0 → 2.0.1 (2026-08-30)
+Bump rationale: PATCH. No principle is added, removed, or redefined. One bullet inside Principle VII
+is reworded so that the fixed calculation convention is fixed *per region* rather than globally. The
+rule's substance is unchanged and is in fact tightened: administrator-fixed, no per-user choice,
+on-device, no network all survive intact, and the amendment adds two requirements the old wording
+left unstated — that the region be resolvable entirely on-device, and that a documented default
+apply where no mapping entry matches. This is a clarification of scope within an existing principle.
+
+Amendment rationale: spec 009 (Maghrib-anchored day and week boundary) is the spec that introduces
+the single location and prayer-time provider Principle VII requires. Its clarification session on
+2026-08-30 settled that the calculation convention should follow the person's region rather than
+being fixed globally, because a user in Egypt and a user in Saudi Arabia follow different
+authorities and one global convention would be wrong for one of them. That decision satisfies the
+existing rule's intent — the mapping is administrator-defined and offers the user no choice at all —
+but contradicts its literal word "single", which reads as one convention for the whole product. Spec
+010 recorded this as FR-003d and blocked its own planning on this amendment, on the grounds that a
+plan may not pass a Constitution Check against a rule it contradicts on its face.
+
+Modified principles:
+  - VII. Deterministic Time (one bullet reworded: calculation convention is now per-region, with
+    on-device region resolution and a documented default added)
+
+Added sections: none.
+Removed sections: none.
+
+Invalidates: nothing. No merged spec and no shipped code implements prayer-time calculation at all —
+spec 009 is the first, and it is still at planning stage. Spec 010 (Notifications & Weekly
+Summaries) consumes this provider and is unaffected in substance, since it never assumed a
+particular convention.
+
+Deferred items / TODOs: none. The contents of the region-to-convention mapping, and the mechanism by
+which a region is resolved on-device, are spec 009's planning decisions and deliberately not fixed
+here (Principle VIII).
+
+Branch note: the v2.0.0 amendment reached this branch by cherry-pick and has still never been merged
+to develop-v1. This branch's pull request lands v2.0.0 and v2.0.1 together.
+
+---- PRIOR VERSIONS ----
+
 Version change: 1.1.1 → 2.0.0 (2026-08-30)
 Bump rationale: MAJOR. Principle VII (Deterministic Time) is redefined, not merely clarified: the
 accountability day moves from local midnight-to-midnight to a calculated Maghrib-to-Maghrib boundary,
 and the week moves from Saturday-to-Friday to Maghrib-Friday-to-Maghrib-Friday. This invalidates
 existing work per the versioning policy's own MAJOR trigger.
 
-Amendment rationale: requested directly by the product owner, for spec 009 (Notifications & Weekly
+Amendment rationale: requested directly by the product owner, for spec 010 (Notifications & Weekly
 Summaries) and beyond — the app's accountability day should follow the Islamic day (Maghrib to
 Maghrib), calculated from the user's location, rather than the civil calendar day. The
 Hijri-date-is-a-label-only rule and the single-source-of-truth rule are preserved in substance: the
@@ -240,9 +279,19 @@ by calling a real clock, a real location API, or a real astronomical calculation
   This holds even though Maghrib-to-Maghrib is the traditional Hijri day: the boundary is still
   computed independently, from the injected location/calculation provider, and MUST NOT be read off
   any separately synced Hijri calendar lookup or calendar API.
-- Prayer-time calculation MUST use a single, administrator-fixed calculation convention with no
-  per-user choice of method, computed entirely on-device from the injected location — never fetched
-  from a server, and never requiring a network call to resolve.
+- Prayer-time calculation MUST use a single administrator-fixed calculation convention **per
+  region**, selected automatically from an administrator-defined mapping of region to convention —
+  Egypt to the Egyptian General Authority of Survey, Saudi Arabia to Umm al-Qura, and so on. Exactly
+  one convention applies in any given region; there is no second opinion within a region. Where no
+  mapping entry matches, a single documented default convention applies, so the result is never
+  undefined. There MUST be no per-user choice of calculation method, calculation authority, or Asr
+  madhab anywhere in the product: selection is automatic and is never exposed as a setting. The
+  region itself MUST be resolved entirely on-device, with no network call and no reverse-geocoding
+  service — a convention resolvable only online would put the day boundary behind connectivity,
+  which Principle IV forbids. The calculation itself MUST likewise be computed entirely on-device
+  from the injected location, never fetched from a server, and never requiring a network call to
+  resolve. The mapping is fixed, administrator-defined content in the sense Principle VI already
+  uses for the task catalogue, and a change to it affects future days only.
 - When a location or a Maghrib calculation cannot be obtained, the boundary provider MUST still
   return a deterministic, previously-specified result — the exact fallback (for example, the last
   successfully calculated boundary, or another explicit rule) is a planning-time decision for the
@@ -367,4 +416,4 @@ conflicts with it, this constitution wins.
 Constitution Check, and again before an increment is considered complete. An increment that violates
 Principle I or Principle III is not complete, regardless of whether it works.
 
-**Version**: 2.0.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-30
+**Version**: 2.0.1 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-30
