@@ -572,30 +572,36 @@ opt-in, revocation-safe, and erasable.
 
 ### 5a. Fallback and trust rules
 
-- [ ] T039 [TEST] [US3] Add to `BoundaryStateStoreTest.kt`:
+- [X] T039 [TEST] [US3] Add to `BoundaryStateStoreTest.kt`:
       `freshInstallWithNoLocationUsesTheFallbackRegime`,
       `fallbackReasonIsNeverHadLocationOnAFreshInstall`,
       `currentReturnsImmediatelyWithNoCoordinates` (assert it does not suspend and does not throw).
 
-- [ ] T040 [US3] Make T039 pass in `BoundaryStateStore.kt`. The fallback path calls
+- [X] T040 [US3] Make T039 pass in `BoundaryStateStore.kt`. The fallback path calls
       `DayBoundary.dateAt(now, zone, null)` — the same function, third argument null. Do not write a
       separate fallback code path.
 
-- [ ] T041 [TEST] [US3] Add `ninetyOfflineDaysWithAnUnchangedZoneKeepTheMaghribRegime`: store
+      **Already passed from T030 — no production change made.**
+
+- [X] T041 [TEST] [US3] Add `ninetyOfflineDaysWithAnUnchangedZoneKeepTheMaghribRegime`: store
       coordinates, advance the clock 90 days without changing the zone and without a new fix, and
       assert the regime is still `Maghrib` at every step. Age must never invalidate coordinates
       (FR-012a).
 
-- [ ] T042 [TEST] [US3] Add `aZoneIdChangeWithNoFreshFixMovesToTheFallback` and
+- [X] T042 [TEST] [US3] Add `aZoneIdChangeWithNoFreshFixMovesToTheFallback` and
       `aDaylightSavingOffsetChangeDoesNotInvalidateCoordinates`. The second must compare zone
       **identifiers**, not offsets — `Africa/Cairo` stays `Africa/Cairo` across DST.
 
-- [ ] T043 [US3] Implement the trust rules in `BoundaryStateStore.refresh()`: compare the device zone
+- [X] T043 [US3] Implement the trust rules in `BoundaryStateStore.refresh()`: compare the device zone
       id against `zoneIdWhenObtained`; on a mismatch with no fresh fix, set
       `Fallback(ZONE_CHANGED_AWAITING_FIX)`. Never compare ages, never compare offsets.
 
-- [ ] T044 [TEST] [US3] Add `aFreshFixAfterAZoneChangeResumesTheMaghribRegime` (FR-012c), then make
+      **Already implemented in T030 — no production change made.**
+
+- [X] T044 [TEST] [US3] Add `aFreshFixAfterAZoneChangeResumesTheMaghribRegime` (FR-012c), then make
       it pass.
+
+      **Already passed from T030 — no production change made.**
 
 ### 5b. Permission revocation and erasure
 

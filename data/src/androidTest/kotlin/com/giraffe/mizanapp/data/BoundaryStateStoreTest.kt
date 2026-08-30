@@ -7,9 +7,13 @@ import com.giraffe.mizanapp.data.db.entities.BoundaryStateEntity
 import com.giraffe.mizanapp.data.prayer.FakeLocationSource
 import com.giraffe.mizanapp.data.prayer.FakePrayerTimes
 import com.giraffe.mizanapp.data.time.BoundaryStateStore
+import com.giraffe.mizanapp.domain.prayer.Coordinates
 import com.giraffe.mizanapp.domain.time.BoundaryRegime
+import com.giraffe.mizanapp.domain.time.FallbackReason
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -149,6 +153,74 @@ class BoundaryStateStoreTest {
 
         assertTrue(after.resolvedDate.isAfter(before.resolvedDate))
         assertTrue(after.expiresAt.isAfter(before.expiresAt))
+    }
+
+    @Test
+    fun freshInstallWithNoLocationUsesTheFallbackRegime() = runTest {
+        store.refresh(Instant.parse("2026-03-14T09:00:00Z"), zone)
+        assertTrue(store.current().regime is BoundaryRegime.Fallback)
+    }
+
+    @Test
+    fun fallbackReasonIsNeverHadLocationOnAFreshInstall() = runTest {
+        store.refresh(Instant.parse("2026-03-14T09:00:00Z"), zone)
+        val regime = store.current().regime as BoundaryRegime.Fallback
+        assertEquals(FallbackReason.NEVER_HAD_LOCATION, regime.reason)
+    }
+
+    @Test
+    fun currentReturnsImmediatelyWithNoCoordinates() {
+        // No runTest, no refresh: current() must be a plain, non-suspending field read.
+        val state = store.current()
+        assertTrue(state.regime is BoundaryRegime.Fallback)
+    }
+
+    @Test
+    fun ninetyOfflineDaysWithAnUnchangedZoneKeepTheMaghribRegime() = runTest {
+        storeCoordinates()
+        prayerTimes.setDefaultMaghribLocalTime(LocalTime.of(18, 0))
+
+        var now = Instant.parse("2026-03-14T09:00:00Z")
+        repeat(90) {
+            store.refresh(now, zone)
+            assertEquals(BoundaryRegime.Maghrib, store.current().regime)
+            now = now.plus(Duration.ofDays(1))
+        }
+    }
+
+    @Test
+    fun aZoneIdChangeWithNoFreshFixMovesToTheFallback() = runTest {
+        storeCoordinates(zoneId = "Africa/Cairo")
+        locationSource.setCoordinates(null)
+
+        store.refresh(Instant.parse("2026-03-14T09:00:00Z"), ZoneId.of("Asia/Riyadh"))
+
+        val regime = store.current().regime as BoundaryRegime.Fallback
+        assertEquals(FallbackReason.ZONE_CHANGED_AWAITING_FIX, regime.reason)
+    }
+
+    @Test
+    fun aDaylightSavingOffsetChangeDoesNotInvalidateCoordinates() = runTest {
+        storeCoordinates(zoneId = "Africa/Cairo")
+        prayerTimes.setDefaultMaghribLocalTime(LocalTime.of(18, 0))
+
+        store.refresh(Instant.parse("2026-01-14T09:00:00Z"), zone) // winter
+        assertEquals(BoundaryRegime.Maghrib, store.current().regime)
+
+        store.refresh(Instant.parse("2026-07-14T09:00:00Z"), zone) // summer
+        assertEquals(BoundaryRegime.Maghrib, store.current().regime)
+    }
+
+    @Test
+    fun aFreshFixAfterAZoneChangeResumesTheMaghribRegime() = runTest {
+        storeCoordinates(zoneId = "Africa/Cairo")
+        val riyadh = ZoneId.of("Asia/Riyadh")
+        locationSource.setCoordinates(Coordinates(24.7, 46.7))
+        prayerTimes.setDefaultMaghribLocalTime(LocalTime.of(18, 0))
+
+        store.refresh(Instant.parse("2026-03-14T09:00:00Z"), riyadh)
+
+        assertEquals(BoundaryRegime.Maghrib, store.current().regime)
     }
 
     private companion object {
