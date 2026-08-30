@@ -70,7 +70,7 @@ ksp {
 dependencies {
     api(project(":domain"))
 
-    implementation(libs.adhan2)
+    implementation(libs.adhan)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)

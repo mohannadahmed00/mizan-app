@@ -13,8 +13,11 @@ activityCompose = "1.10.1"
 kotlin = "2.2.10"
 composeBom = "2025.06.01"
 kotlinxSerialization = "1.9.0"
-# Spec 009 prayer-time calculation (MIT licensed); confined to :data because it depends on kotlinx-datetime.
-adhan = "0.0.7"
+# Spec 009 prayer-time calculation (MIT licensed); confined to :data.
+# The Java port, not adhan2: adhan2 0.0.7 is built against Kotlin 2.4.0 and pulls kotlin-stdlib 2.4.0
+# onto the compile classpath, whose metadata this project's Kotlin 2.2.10 cannot read. The Java port
+# carries no Kotlin metadata, so it cannot conflict. Fallback recorded in advance: research R5, task T002.
+adhan = "1.2.1"
 room = "2.8.1"
 koin = "4.1.0"
 ksp = "2.2.10-2.0.2"
@@ -44,7 +47,7 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-adhan2 = { group = "com.batoulapps.adhan", name = "adhan2", version.ref = "adhan" }
+adhan = { group = "com.batoulapps.adhan", name = "adhan", version.ref = "adhan" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }

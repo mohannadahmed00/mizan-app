@@ -14,7 +14,9 @@ No `isCompleted` column anywhere. A completion is a row: which task version, whi
 Deferring Supabase is right. Deferring *client-generated UUID primary keys, `updatedAt`, and a soft-delete marker* is not: those cost roughly an afternoon in Phase 2 and cost a full data migration in Phase 7. Ship local-only, but never let an auto-increment `Long` become the identity of a completion record.
 
 **4. Hijri date is a display label and a future feature key — it is not the accountability key.**
-The accountability day is the local civil date. Hijri must be *stored alongside* each Day Plan as a denormalized snapshot, not looked up at render time, or your history screens break when the cache is cold or the API-synced conversion shifts by a day. This lets the app work fully offline for any past date and unlocks later Ramadan/Ashura features without a new lookup path.
+Hijri must be *stored alongside* each Day Plan as a denormalized snapshot, not looked up at render time, or your history screens break when the cache is cold or the API-synced conversion shifts by a day. This lets the app work fully offline for any past date and unlocks later Ramadan/Ashura features without a new lookup path.
+
+This holds even now that the accountability day is Maghrib-to-Maghrib (Phase 9, constitution v2.0.0), which *is* the traditional Hijri day. The boundary is computed independently from the injected location and prayer-time provider, never read off a Hijri calendar lookup. Originally this observation read "the accountability day is the local civil date"; that was true until the constitution was amended on 2026-08-30, and Phase 9 is the increment that changes it.
 
 ## Phase overview
 
@@ -28,8 +30,13 @@ The accountability day is the local civil date. Hijri must be *stored alongside*
 | 6 | Charts & Insights | Yes | No |
 | 7 | Identity & Cloud Sync (Supabase) | Yes | No |
 | 8 | Leaderboards & Honor Board | Yes | No |
-| 9 | Notifications & Weekly Summaries | Yes | No |
-| 10 | Achievements, Friends & Challenges | Yes | No |
+| 9 | Maghrib-Anchored Day & Week Boundary | Yes | No |
+| 10 | Notifications & Weekly Summaries | Yes | No |
+| 11 | Achievements, Friends & Challenges | Yes | No |
+
+**Phase number and spec number stay aligned.** Phase N is spec `NNN` throughout. Notifications was
+drafted first and briefly held `009`; it was renumbered to `010` when the constitution amendment made
+the Maghrib boundary a prerequisite of it, so that build order and numbering do not disagree.
 
 ---
 
@@ -427,7 +434,65 @@ Impossible before identity and sync exist, and it introduces social pressure —
 
 ---
 
-## Phase 9 — Notifications & Weekly Summaries
+## Phase 9 — Maghrib-Anchored Day & Week Boundary
+
+**Spec `009-maghrib-day-boundary`.** Not in the original roadmap. Added 2026-08-30 when the
+constitution was amended to v2.0.0, redefining the accountability day from local midnight to
+Maghrib-to-Maghrib and the week from Saturday-to-Friday to Maghrib-Friday to Maghrib-Friday.
+Amended again to v2.0.1 so the calculation convention could be fixed per region rather than globally.
+
+### Goal
+Make the app's accountability day the Islamic day. Introduce the single location and prayer-time provider constitution Principle VII now requires, and move every existing surface onto the new boundary without touching a single already-recorded day.
+
+### User value
+The app finally records the day the user is actually living. A completion after Maghrib belongs to the new day, as it does in practice, rather than waiting for a civil midnight that means nothing in this domain.
+
+### Scope
+- One injected location and prayer-time provider for the whole app — on-device, no network, no per-user choice of method, region-derived calculation convention.
+- The day boundary redefined: Maghrib to the next Maghrib, calculated for the person's location.
+- An explicit, deterministic fallback for when no location has ever been obtained, when the person erases it, and when a time-zone change invalidates it. Principle VII deliberately deferred this decision to this spec; it is settled in the spec, not at planning time.
+- The changeover: no already-closed day or week is recomputed, and no accountability date is skipped or duplicated at the seam.
+- Every existing consumer brought onto the new boundary — Today's rollover, the weekly sheet, streaks, history, insights, sync's credited date, leaderboard period timing.
+
+### Out of scope
+Notifications of any kind (Phase 10 consumes this provider), any per-person choice of calculation method, any prayer-times display screen, any new network surface, and any remote schema change.
+
+### What it turned out *not* to require
+Two findings during planning cut the increment down, and are recorded because they are the reason this phase is small rather than sweeping:
+
+- **The week rule needs no change at all.** Maghrib on Friday *starts* accountability-Saturday, so "the Saturday on or before" is still exactly right in accountability-date space. `WeekBoundary` and every consumer of it — the week screen, history paging, personal bests, leaderboard periods — are untouched.
+- **The day rule has exactly one production call site.** Every ViewModel and use case reaches the date through `TimeProvider.today()`. Eight increments of Principle VII discipline held, so redefining the day touches one function and its provider.
+
+### Domain concepts introduced
+Coordinates, Calculation Convention, Region-to-Convention Mapping, Prayer Times, Boundary Regime, Boundary State, Changeover Seam.
+
+### Data/storage requirements
+One additive Room migration and one device-local single-row table holding the last known coordinates, the zone they were obtained under, and the last resolved accountability date. Deliberately **not** synchronisable — coordinates never leave the device, and each device resolves its own boundary. No recorded-history table is written by this phase at all.
+
+### Architecture requirements
+Provider interfaces in `:domain`; the calculation library and the location reader in `:data`. The boundary rule stays a pure function that takes the Maghrib instant as a parameter, so it is testable with literals and `:domain` keeps zero calculation dependencies. `TimeProvider.today()` stays synchronous, backed by resolved state held in memory — it may never block on a location fix.
+
+### UI/screens
+No new destination. A dismissible first-launch prompt on Today, and a location section on the existing profile screen stating which boundary is in force and offering an erase control.
+
+### Testing requirements
+Boundary mapping across a full year including both solstices; every instant maps to exactly one day and one week; the seam skips and duplicates nothing, tested at a cutover before and after that day's Maghrib; ninety offline days with an unchanged zone keep the Maghrib boundary; a zone change with no fresh fix falls back and says so. **Gating:** days and weeks closed under the old boundary must report identical figures afterwards — the Principle III immutability test.
+
+### Dependencies
+Phases 2–8, in the sense that it changes all of them. Blocks Phase 10.
+
+### Definition of Done
+The day turns over at the calculated Maghrib; a fresh install in airplane mode with no location is fully usable and says which boundary it is using; every screen agrees about the date in the window between Maghrib and midnight; every previously closed day and week reads exactly as it did.
+
+### Why now
+Forced. The constitution changed, and until the code follows it every increment is built against a rule the project has already abandoned. It also has to precede notifications: a weekly summary that fires "at week close" is meaningless until week close is defined.
+
+---
+
+## Phase 10 — Notifications & Weekly Summaries
+
+**Spec `010-notifications-weekly-summaries`.** Drafted before Phase 9 existed, under the number `009`;
+renumbered to `010` when the boundary became its prerequisite. Replanned on top of Phase 9.
 
 ### Goal
 Bring the user back at the right moments without becoming nagging — prayer-window nudges, streak-at-risk reminders, and an end-of-week summary.
@@ -436,17 +501,17 @@ Bring the user back at the right moments without becoming nagging — prayer-win
 Local scheduled notifications, per-category user control, streak-at-risk timing, weekly summary generation and screen/notification, quiet hours.
 
 ### Out of scope
-Push from server, prayer-time calculation from geolocation (a whole feature in itself), social notifications.
+Push from server, social notifications. **Prayer-time calculation from geolocation is no longer excluded** — it was listed here as out of scope in the original roadmap, on the grounds that it is a whole feature in itself. It is, and it became Phase 9. This phase consumes that provider and must not introduce a second.
 
 ### Dependencies
-Phases 4 and 6 (streaks and aggregates).
+Phases 4 and 6 (streaks and aggregates), and **Phase 9** — the provider and the week-close instant both come from there.
 
 ### Definition of Done
 Notifications respect user settings and quiet hours, survive reboot, never fire for already-completed tasks, and can be fully disabled.
 
 ---
 
-## Phase 10 — Achievements, Friends & Challenges
+## Phase 11 — Achievements, Friends & Challenges
 
 ### Goal
 Long-horizon engagement: badges and milestones, friend connections, time-boxed challenges.
@@ -492,8 +557,9 @@ The first usable version:
 | Then | 6 — Charts & Insights | Pattern recognition over trustworthy history |
 | Then | 7 — Identity & Cloud Sync | Backup, multi-device; precondition for everything social |
 | Then | 8 — Leaderboards & Honor Board | Competition on raw points |
-| Then | 9 — Notifications & Weekly Summaries | Re-engagement |
-| Later | 10 — Achievements, Friends, Challenges | Long-horizon retention |
+| Then | 9 — Maghrib-Anchored Day & Week Boundary | The app records the Islamic day; unblocks Phase 10 |
+| Then | 10 — Notifications & Weekly Summaries | Re-engagement |
+| Later | 11 — Achievements, Friends, Challenges | Long-horizon retention |
 
 ---
 
@@ -501,8 +567,10 @@ The first usable version:
 
 These are settled. Each states the decision taken and why. They are not open questions and must not be reopened per-feature — a decision here is changed only by amending this section deliberately, and where a decision is fixed by the constitution it cannot be changed here at all.
 
-1. **Accountability day boundary.** Local midnight to local midnight. *Why:* fixed by constitution Principle VII; testable with a fake clock and matches how the paper sheet is used. Hijri is a label attached to a day, never the thing defining its boundaries. A Maghrib-based day, if ever wanted, must arrive as a stored per-day rule rather than a code change.
-2. **Week boundary.** Saturday to Friday, implemented in exactly one `WeekCalculator`. *Why:* fixed by Principle VII, which also forbids a second implementation — two screens must never disagree about which week a date falls in.
+1. **Accountability day boundary.** Maghrib to the next Maghrib, calculated on-device from the person's location. *Why:* fixed by constitution Principle VII as amended to v2.0.0 on 2026-08-30 — the app's day should follow the Islamic day rather than the civil calendar day. Still testable without a real clock or a real location, because the rule is a pure function taking the Maghrib instant as a parameter. Hijri remains a label attached to a day, never the thing defining its boundaries, even though Maghrib-to-Maghrib *is* the traditional Hijri day: the boundary is computed independently and never read off a calendar lookup. **Superseded decision:** this read "local midnight to local midnight" until 2026-08-30, and predicted that a Maghrib-based day "must arrive as a stored per-day rule rather than a code change". That prediction was wrong — it arrived as a change to the one function that maps an instant to a date (Phase 9). Days closed under the old boundary are never recomputed (Principle III).
+   - **1a. Fallback when no location is available.** Local midnight and Saturday-to-Friday — the boundary the app shipped with — until coordinates have been obtained at least once, and again if the person erases them or a time-zone change invalidates them. *Why:* Principle VII forbids an undefined result and requires this decision to be made explicitly by the spec introducing the provider; Principle IV requires a fresh install in airplane mode to be fully usable, which rules out blocking. Once coordinates exist, Maghrib is computable offline for any future date forever, so ordinary offline use never reaches the fallback.
+   - **1b. Calculation convention.** One administrator-fixed convention *per region*, selected automatically from an administrator-defined mapping resolved on-device from the IANA time zone id, with Muslim World League and Standard Asr as the documented default. Never a per-person setting. *Why:* a user in Egypt and a user in Saudi Arabia follow different authorities, so one global convention is wrong for one of them. Required constitution v2.0.1, since v2.0.0 said "a single convention" and meant it literally.
+2. **Week boundary.** Maghrib on Friday to Maghrib on the following Friday, implemented in exactly one place. *Why:* fixed by Principle VII, which also forbids a second implementation — two screens must never disagree about which week a date falls in. In *accountability-date* space this is still Saturday through Friday and the existing `WeekBoundary` implements it unchanged, because Maghrib on Friday is the start of accountability-Saturday. The week's *instant* moved; the week's *rule* did not.
 3. **Historical accuracy strategy.** Immutable Task Versions, materialised immutable Day Plans, and `pointsAwarded` denormalised onto each completion. *Why:* Principle III. A recorded day must report the same figures forever, and this is the only category of bug that cannot be repaired after the fact.
 4. **Completion representation.** Append-only occurrence log. No boolean `isCompleted` column anywhere; undo removes or tombstones the most recent occurrence. *Why:* it is the only shape that supports multi-occurrence tasks, and it is what a sync engine and a leaderboard both want.
 5. **Identity of records.** Client-generated UUIDs for completions, day plans, and task versions — never auto-increment. **Task Definition identity is a human-readable slug** (`fajr-sunnah-before`), not a UUID. *Why:* Principle V governs synchronisable rows, and a catalogue definition is administrator content rather than user data. A slug keeps a hand-authored catalogue reviewable in a diff and stays a valid natural key when the catalogue later moves server-side. Recorded in `001` clarification Q1.
@@ -511,7 +579,7 @@ These are settled. Each states the decision taken and why. They are not open que
 8. **DI framework.** Koin, sole and uncontested. *Why:* `develop-v1` contains no Hilt, no KSP, and no DI wiring at all, so this is a decision to record rather than a migration to perform. Two DI frameworks may never coexist.
 9. **Module and layer boundaries.** `:domain` has zero Android and zero Room dependencies; repository interfaces live there and are implemented in `:data`. *Why:* Principle II. This is what makes the arrival of a backend an implementation swap instead of a rewrite.
 10. **Hijri date storage.** Snapshotted per Day Plan, never looked up at render time. *Why:* history screens must work offline for any past date, and a cold cache or a shifted API conversion must not change what a recorded day displays.
-11. **Clock injection.** A single injected time provider from the first commit; no other code reads the system clock, current date, or default timezone. *Why:* Principle VII. Day rollover and streak logic are untestable without it, and every hard bug in an app like this is a date bug.
+11. **Clock and location injection.** A single injected time provider from the first commit; no other code reads the system clock, current date, or default timezone. Since v2.0.0 the same discipline covers location: one injected provider reads device location and computes prayer times, and no other code may do either. *Why:* Principle VII. Day rollover and streak logic are untestable without it, and every hard bug in an app like this is a date bug. Anchoring the boundary to a calculated, location-dependent instant added a second axis of nondeterminism that has to be held to the same standard or the same class of bug returns in a harder-to-reproduce form.
 12. **Content and language strategy.** Task text is Arabic and is treated as data, not UI strings. The interface shell language is a product decision recorded in the design — an English shell with Arabic task content, each string rendered in an Arabic face with its own direction — and is not settled in the catalogue, which holds content rather than interface strings. *Why:* the catalogue must stay a content model; how it is presented is a separate concern that may change without touching it.
 
 ---
@@ -528,11 +596,12 @@ These are settled. Each states the decision taken and why. They are not open que
 - Retroactive edit window length, and whether it exists at all (Phase 5) — but the *policy object* it will live in should exist in Phase 2.
 - Streak grace rules, freezes, timezone-travel leniency (Phase 4, refine later).
 - Whether to cache streak and day-summary values (only when measurement says so).
-- Achievement catalogue (Phase 10).
+- Achievement catalogue (Phase 11).
 - Theming, dark mode, animations, onboarding polish.
 - Analytics and crash reporting vendor.
 - Admin tooling for editing the catalogue (until Phase 7 makes it remote).
-- Notification copy and timing heuristics (Phase 9).
+- Notification copy and timing heuristics (Phase 10).
+- Which regions the calculation-convention mapping covers beyond those actually served, and whether the streak's at-risk offset stays four hours before the day's end (Phase 9 ships both with a documented default).
 
 ---
 
@@ -605,8 +674,9 @@ Work in small specs. One spec should be implementable and verifiable in a sittin
 25. `spec: leaderboard-aggregation` (server-side)
 26. `spec: leaderboard-ui-and-consent`
 27. `spec: honor-board`
-28. `spec: notifications`
-29. `spec: weekly-summary`
-30. `spec: achievements`, then `spec: friends`, then `spec: challenges`
+28. `spec: maghrib-day-boundary` — the provider, the redefined day, the fallback, and the changeover. Must precede the two below: a nudge fired "during Maghrib's window" and a summary fired "at week close" both need this to exist first.
+29. `spec: notifications`
+30. `spec: weekly-summary`
+31. `spec: achievements`, then `spec: friends`, then `spec: challenges`
 
 The ordering principle throughout: **specs that define immutable data shapes come before specs that read them, and specs that touch existing user data come with their migration spec attached.**
