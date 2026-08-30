@@ -2,14 +2,14 @@ package com.giraffe.mizanapp.domain.prayer
 
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * The single prayer-times provider required by Constitution Principle VII.
  * Spec 010 consumes this provider rather than adding a second.
  */
 interface PrayerTimesProvider {
-    suspend fun timesFor(date: LocalDate): PrayerTimesOutcome
-    suspend fun timesFor(date: LocalDate, at: Coordinates): PrayerTimesOutcome
+    suspend fun timesFor(date: LocalDate, at: Coordinates, zone: ZoneId): PrayerTimesOutcome
 }
 
 data class PrayerTimes(
