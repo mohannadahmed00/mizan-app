@@ -19,5 +19,5 @@ class SystemTimeProvider : TimeProvider {
 
     override fun zone(): ZoneId = ZoneId.systemDefault()
 
-    override fun today(): LocalDate = DayBoundary.dateAt(now(), zone())
+    override fun today(): LocalDate = DayBoundary.dateAt(now(), zone(), null)
 }
