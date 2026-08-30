@@ -799,10 +799,15 @@ opt-in, revocation-safe, and erasable.
 
       **Verified** — `./gradlew build test connectedAndroidTest` BUILD SUCCESSFUL (20m40s).
 
-- [ ] T074 Open the pull request into `develop-v1`. In the body, state that the Constitution Check in
+- [X] T074 Open the pull request into `develop-v1`. In the body, state that the Constitution Check in
       `plan.md` passes and name the principles touched. Confirm before requesting merge that every
       `[TEST]` commit precedes its implementation commit in the PR's commit history — this is checked
       at the merge gate and cannot be verified after a squash merge.
+
+      **Opened**: https://github.com/mohannadahmed00/mizan-app/pull/17. All nine principles named
+      in the body. One known exception to strict test-then-impl ordering flagged explicitly in the
+      PR body (`431b0d4`) rather than silently passed — every other pair in the history is ordered
+      correctly.
 
 ---
 
