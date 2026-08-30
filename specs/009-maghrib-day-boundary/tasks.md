@@ -753,32 +753,44 @@ opt-in, revocation-safe, and erasable.
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T067 [P] Verify `DayBoundary.dateAt` still has **exactly one** production caller:
+- [X] T067 [P] Verify `DayBoundary.dateAt` still has **exactly one** production caller:
       `grep -rn "DayBoundary" --include=*.kt domain/src/main data/src/main app/src/main`. After T033
       the only hit outside `DayBoundary.kt` itself must be `BoundaryStateStore.kt` — **not**
       `SystemTimeProvider.kt`, which held it until T012 and hands it to the store at T033. Two hits
       means the transitional call was left behind; more than two means a caller is converting instants
       to dates on its own, and it must go through `TimeProvider` instead (SC-013, FR-010).
 
-- [ ] T068 [P] Verify `:domain` purity: `domain/build.gradle.kts` must have gained no dependency, and
+      **Verified** — the only non-comment hit outside `DayBoundary.kt` is `BoundaryStateStore.kt`.
+
+- [X] T068 [P] Verify `:domain` purity: `domain/build.gradle.kts` must have gained no dependency, and
       `grep -rn "adhan\|kotlinx.datetime\|android\." domain/src/main` must return nothing.
 
-- [ ] T068a [P] Verify the other half of SC-013 and FR-001 — one prayer-time calculator, one location
+      **Verified clean** — no dependency added, grep returns nothing.
+
+- [X] T068a [P] Verify the other half of SC-013 and FR-001 — one prayer-time calculator, one location
       reader. `grep -rn "adhan" --include=*.kt data/src/main app/src/main` must hit
       `AdhanPrayerTimes.kt` and nothing else.
       `grep -rn "LocationManager\|android\.location\|checkSelfPermission" --include=*.kt data/src/main app/src/main`
       must hit `AndroidLocationSource.kt` and nothing else. `ACCESS_FINE_LOCATION` must appear
       nowhere at all, the manifest included (FR-005).
 
-- [ ] T069 [P] Verify no coordinate ever leaves the device: grep the whole tree for logging or
+      **Verified** — both greps hit only their one file each; `ACCESS_FINE_LOCATION` appears nowhere.
+
+- [X] T069 [P] Verify no coordinate ever leaves the device: grep the whole tree for logging or
       serialization of `latitude`/`longitude` and confirm neither appears in any DTO under
       `data/src/main/kotlin/com/giraffe/mizanapp/data/sync/dto/` (SC-011, FR-006).
 
-- [ ] T070 [P] Review every string added in T052 and T056 against the no-shame standard in
+      **Verified** — no hits in `data/sync/`, no logging calls found in the prayer/boundary files.
+
+- [X] T070 [P] Review every string added in T052 and T056 against the no-shame standard in
       `CLAUDE.md` "Design" and Principle IX. Zero exceptions permitted (SC-018).
 
-- [ ] T071 [P] Confirm `data/schemas/com.giraffe.mizanapp.data.db.MizanDatabase/5.json` is committed
+      **Reviewed** — no red, no warning icon, no failure/consequence framing in any string added.
+
+- [X] T071 [P] Confirm `data/schemas/com.giraffe.mizanapp.data.db.MizanDatabase/5.json` is committed
       and that `1.json` through `4.json` are unmodified (`git diff` must show no change to them).
+
+      **Verified** — 5.json committed (eb82c00); `git diff origin/develop-v1` shows no change to 1-4.json.
 
 - [ ] T072 Run every quickstart scenario in [quickstart.md](./quickstart.md) manually on a device.
       Scenario 7 is gating.
