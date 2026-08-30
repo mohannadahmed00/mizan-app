@@ -125,6 +125,32 @@ class BoundaryStateStoreTest {
         assertEquals(day.plusDays(1), store.current().resolvedDate)
     }
 
+    @Test
+    fun refreshingBeforeExpiresAtChangesNothing() = runTest {
+        val now = Instant.parse("2026-03-14T09:00:00Z")
+        store.refresh(now, zone)
+        val afterFirst = store.current()
+
+        store.refresh(now.plusSeconds(60), zone)
+        val afterSecond = store.current()
+
+        assertEquals(afterFirst.resolvedDate, afterSecond.resolvedDate)
+        assertEquals(afterFirst.expiresAt, afterSecond.expiresAt)
+    }
+
+    @Test
+    fun refreshingPastExpiresAtAdvancesTheDateAndMovesExpiresAt() = runTest {
+        val now = Instant.parse("2026-03-14T09:00:00Z")
+        store.refresh(now, zone)
+        val before = store.current()
+
+        store.refresh(before.expiresAt.plusSeconds(60), zone)
+        val after = store.current()
+
+        assertTrue(after.resolvedDate.isAfter(before.resolvedDate))
+        assertTrue(after.expiresAt.isAfter(before.expiresAt))
+    }
+
     private companion object {
         const val TEST_DB = "boundary-state-test.db"
     }

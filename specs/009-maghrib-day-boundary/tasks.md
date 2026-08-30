@@ -499,7 +499,7 @@ the date advance; advance across midnight and see it not.
       `onCreate`) and on resume in `MainActivity`. Inject `BoundaryStatus` and `TimeProvider`, not the
       concrete store. Follow how `ReconcileZone` is already called for the pattern.
 
-- [ ] T035a [TEST] [US1] Add to `BoundaryStateStoreTest.kt`:
+- [X] T035a [TEST] [US1] Add to `BoundaryStateStoreTest.kt`:
       `refreshingPastExpiresAtAdvancesTheDateAndMovesExpiresAt` and
       `refreshingBeforeExpiresAtChangesNothing`. These pin the store's half of FR-026 — the resolved
       date and `expiresAt` both move at the boundary instant, and only there.
