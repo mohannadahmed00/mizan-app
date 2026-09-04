@@ -10,7 +10,7 @@ import com.giraffe.mizanapp.domain.week.WeekSummary
 import java.time.Instant
 import java.time.ZoneId
 
-fun evaluateAnchor(anchor: NotificationAnchor, now: Instant, zone: ZoneId, boundary: BoundaryState, plan: DayPlan?, completions: List<Completion>, streak: StreakSummary, preferences: NotificationPreferences, summary: WeekSummary?, ledger: DeliveryRecord?, hasPermission: Boolean, dormant: Boolean = false): NotificationVerdict {
+fun evaluateAnchor(anchor: NotificationAnchor, now: Instant, zone: ZoneId, boundary: BoundaryState, plan: DayPlan?, completions: List<Completion>, streak: StreakSummary, preferences: NotificationPreferences, summary: WeekSummary?, ledger: DeliveryRecord?, hasPermission: Boolean, dormant: Boolean = false, tasksRecorded: Int = 0): NotificationVerdict {
     if (ledger != null && ledger.state != DeliveryState.HELD) return NotificationVerdict.Discard(DiscardReason.ALREADY_DELIVERED)
     if (!hasPermission) return NotificationVerdict.Discard(DiscardReason.NO_PERMISSION)
     if (preferences.allSilenced) return NotificationVerdict.Discard(DiscardReason.ALL_SILENCED)
@@ -22,5 +22,14 @@ fun evaluateAnchor(anchor: NotificationAnchor, now: Instant, zone: ZoneId, bound
     if (anchor.category == NotificationCategory.STREAK_AT_RISK && streak.current == 0) return NotificationVerdict.Discard(DiscardReason.NO_LIVE_STREAK)
     if (anchor.category == NotificationCategory.WEEKLY_SUMMARY && dormant) return NotificationVerdict.Discard(DiscardReason.SUMMARY_DORMANT)
     preferences.quietHours?.takeIf { it.contains(now, zone) }?.let { return if (anchor.category == NotificationCategory.WEEKLY_SUMMARY) NotificationVerdict.Hold(it.endAfter(now, zone)) else NotificationVerdict.Discard(DiscardReason.QUIET_HOURS) }
-    return NotificationVerdict.Post(NotificationContent(anchor.category, anchor.category.name, emptyMap(), when (val s = anchor.speaksFor) { is AnchorSubject.PrayerWindow -> "TODAY:${s.sectionId}"; is AnchorSubject.Day -> "TODAY"; is AnchorSubject.ClosedWeek -> "WEEKLYSUMMARY:${s.key.value}" }))
+    val bodyArgs = when (anchor.category) {
+        NotificationCategory.PRAYER_WINDOW -> (anchor.speaksFor as? AnchorSubject.PrayerWindow)?.let { mapOf("section" to it.sectionId) } ?: emptyMap()
+        NotificationCategory.WEEKLY_SUMMARY -> mapOf(
+            "daysEngaged" to (summary?.days?.count { it.earned > 0 } ?: 0).toString(),
+            "tasksRecorded" to tasksRecorded.toString(),
+            "pointsEarned" to (summary?.score?.earned ?: 0).toString(),
+        )
+        NotificationCategory.STREAK_AT_RISK -> emptyMap()
+    }
+    return NotificationVerdict.Post(NotificationContent(anchor.category, anchor.category.name, bodyArgs, when (val s = anchor.speaksFor) { is AnchorSubject.PrayerWindow -> "TODAY:${s.sectionId}"; is AnchorSubject.Day -> "TODAY"; is AnchorSubject.ClosedWeek -> "WEEKLYSUMMARY:${s.key.value}" }))
 }

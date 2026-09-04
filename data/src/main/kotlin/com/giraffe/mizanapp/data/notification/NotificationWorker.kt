@@ -52,7 +52,14 @@ class NotificationWorker(
         val dormant = isSummaryDormant(closedWeeksNewestFirst(boundary))
         val planResult = buildNotificationPlan(now, zone, boundary, prayerTimes, plan, live, streaks().first(), preferences.preferences(), weekCloseInstant(boundary), deliveries.records(), dormant)
         inputData.getString(INPUT_ANCHOR_KEY)?.let { key -> planResult.anchors.firstOrNull { it.anchorKey == key }?.let { anchor ->
-            when (val verdict = evaluateAnchor(anchor, now, zone, boundary, plan, live, streaks().first(), preferences.preferences(), null, deliveries.records().firstOrNull { it.anchorKey == key }, presenter.hasPermission(), dormant)) {
+            val weekSummary = (anchor.speaksFor as? com.giraffe.mizanapp.domain.notification.AnchorSubject.ClosedWeek)?.let { subject ->
+                (closedWeekSummary(WeekBoundary.weekContaining(java.time.LocalDate.parse(subject.key.value))) as? ClosedWeekOutcome.Ready)?.summary
+            }
+            val tasksRecorded = (anchor.speaksFor as? com.giraffe.mizanapp.domain.notification.AnchorSubject.ClosedWeek)?.let { subject ->
+                val week = WeekBoundary.weekContaining(java.time.LocalDate.parse(subject.key.value))
+                completions.liveBetween(week.start, week.end).size
+            } ?: 0
+            when (val verdict = evaluateAnchor(anchor, now, zone, boundary, plan, live, streaks().first(), preferences.preferences(), weekSummary, deliveries.records().firstOrNull { it.anchorKey == key }, presenter.hasPermission(), dormant, tasksRecorded)) {
                 is NotificationVerdict.Post -> { presenter.post(anchor, verdict.content); deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.DELIVERED, null, now, null)) }
                 is NotificationVerdict.Discard -> { presenter.withdraw(key); deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.DISCARDED, verdict.reason, now, null)) }
                 is NotificationVerdict.Hold -> { deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.HELD, null, now, verdict.until)); scheduler.scheduleAt(key, verdict.until) }
