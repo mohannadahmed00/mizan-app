@@ -18,7 +18,7 @@ import com.giraffe.mizanapp.data.db.daos.BoundaryStateDao
  */
 fun createMizanDatabase(context: Context): MizanDatabase =
     Room.databaseBuilder(context, MizanDatabase::class.java, MizanDatabase.NAME)
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
         .build()
 
 /**
@@ -33,3 +33,5 @@ fun accountScopeDaoOf(database: MizanDatabase): AccountScopeDao = database.accou
 
 /** Same resolution as [accountScopeDaoOf], for [com.giraffe.mizanapp.data.db.daos.BoundaryStateDao]. */
 fun boundaryStateDaoOf(database: MizanDatabase): BoundaryStateDao = database.boundaryStateDao()
+
+fun notificationDaoOf(database: MizanDatabase): com.giraffe.mizanapp.data.db.daos.NotificationDao = database.notificationDao()
