@@ -124,19 +124,30 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Read once and clear immediately: a configuration change recreates this Activity with
+        // the same Intent, and re-reading a still-present extra would re-navigate on top of
+        // whatever the person has since done (research R7).
+        val initialDestination = intent.getStringExtra(EXTRA_DESTINATION)?.also { intent.removeExtra(EXTRA_DESTINATION) }
         setContent {
             MizanAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AppRoute(modifier = Modifier.padding(innerPadding))
+                    AppRoute(initialDestinationExtra = initialDestination, modifier = Modifier.padding(innerPadding))
                 }
             }
         }
     }
+
+    companion object {
+        /** Set by a posted notification's PendingIntent to open a specific destination. */
+        const val EXTRA_DESTINATION = "mizan.destination"
+    }
 }
 
 @Composable
-private fun AppRoute(modifier: Modifier = Modifier) {
-    var stack by rememberSaveable(stateSaver = StackSaver) { mutableStateOf(listOf<Destination>(Destination.Today)) }
+private fun AppRoute(initialDestinationExtra: String? = null, modifier: Modifier = Modifier) {
+    var stack by rememberSaveable(stateSaver = StackSaver) {
+        mutableStateOf(listOf(initialDestinationExtra?.let(::decode) ?: Destination.Today))
+    }
     val time: TimeProvider = koinInject()
     val boundaryStatus: BoundaryStatus = koinInject()
 
