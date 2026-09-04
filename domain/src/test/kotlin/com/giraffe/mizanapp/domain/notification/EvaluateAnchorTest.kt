@@ -145,6 +145,12 @@ class EvaluateAnchorTest {
         assertTrue(result is NotificationVerdict.Post)
     }
 
+    @Test fun `prayer window Post carries the section and what remains available in it`() {
+        val result = evaluate(prayerAnchor()) as NotificationVerdict.Post
+        assertEquals("asr", result.content.bodyArgs["section"])
+        assertEquals("1", result.content.bodyArgs["remaining"])
+    }
+
     // --- streak cases ---
 
     @Test fun `todayCounted at fire time produces DAY_ALREADY_COUNTED`() {

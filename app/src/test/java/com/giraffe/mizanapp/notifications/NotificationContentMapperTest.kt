@@ -40,4 +40,27 @@ class NotificationContentMapperTest {
         forbidden.forEach { word -> assertFalse("body must not contain '$word': ${rendered.body}", rendered.body.contains(word, ignoreCase = true)) }
         forbidden.forEach { word -> assertFalse("title must not contain '$word': ${rendered.title}", rendered.title.contains(word, ignoreCase = true)) }
     }
+
+    // --- T075: prayer nudge (US2) ---
+
+    private fun prayerContent(section: String, remaining: Int) = NotificationContent(
+        category = NotificationCategory.PRAYER_WINDOW,
+        titleKey = "PRAYER_WINDOW",
+        bodyArgs = mapOf("section" to section, "remaining" to remaining.toString()),
+        destination = "TODAY:$section",
+    )
+
+    @Test fun `prayer nudge body names the section and what remains available in it`() {
+        val rendered = prayerContent("asr", 2).render()
+        assertTrue(rendered.body.contains("asr", ignoreCase = true) || rendered.title.contains("asr", ignoreCase = true))
+        assertTrue(rendered.body.contains("2"))
+    }
+
+    @Test fun `prayer nudge contains none of the forbidden Principle IX vocabulary`() {
+        val rendered = prayerContent("asr", 2).render()
+        forbidden.forEach { word -> assertFalse("body must not contain '$word': ${rendered.body}", rendered.body.contains(word, ignoreCase = true)) }
+        listOf("missed", "forgot", "skipped").forEach { word ->
+            assertFalse("body must not contain '$word': ${rendered.body}", rendered.body.contains(word, ignoreCase = true))
+        }
+    }
 }
