@@ -78,10 +78,12 @@ private class FakePrayerTimesProvider : PrayerTimesProvider {
 private class FakeNotificationScheduler : NotificationScheduler {
     val replaceAllCalls = mutableListOf<List<NotificationAnchor>>()
     var refreshScheduledAt: Instant? = null
+    val scheduledAt = mutableMapOf<String, Instant>()
     override suspend fun replaceAll(anchors: List<NotificationAnchor>) { replaceAllCalls += anchors }
     override suspend fun cancelAll() {}
     override fun deliveryMode(): DeliveryMode = DeliveryMode.EXACT
     override suspend fun scheduleRefresh(at: Instant) { refreshScheduledAt = at }
+    override suspend fun scheduleAt(anchorKey: String, at: Instant) { scheduledAt[anchorKey] = at }
 }
 
 private class FakeNotificationPresenter : NotificationPresenter {

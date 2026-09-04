@@ -70,4 +70,12 @@ class AlarmNotificationSchedulerTest {
         assertEquals(true, pendingIntentExists(AlarmNotificationScheduler.REFRESH_KEY))
         scheduler.cancelAll()
     }
+
+    @Test fun scheduleAtSurvivesReplaceAllOfUnrelatedAnchors() = runBlocking {
+        val heldKey = "WEEK:2026-08-29"
+        scheduler.scheduleAt(heldKey, Instant.parse("2026-09-04T22:00:00Z"))
+        scheduler.replaceAll(listOf(anchor("fajr", 1)))
+        assertEquals(true, pendingIntentExists(heldKey))
+        scheduler.cancelAll()
+    }
 }
