@@ -68,6 +68,7 @@ sealed interface Destination {
     data class DaySummary(val date: LocalDate) : Destination
     data object SignIn : Destination
     data object Profile : Destination
+    data class WeeklySummary(val week: com.giraffe.mizanapp.domain.week.WeekKey?) : Destination
 }
 
 /**
@@ -86,6 +87,7 @@ internal fun encode(destination: Destination): String = when (destination) {
     is Destination.DaySummary -> "DAY:${destination.date}"
     Destination.SignIn -> "SIGNIN"
     Destination.Profile -> "PROFILE"
+    is Destination.WeeklySummary -> destination.week?.let { "WEEKLYSUMMARY:${it.value}" } ?: "WEEKLYSUMMARY"
 }
 
 internal fun decode(encoded: String): Destination = when {
@@ -96,6 +98,8 @@ internal fun decode(encoded: String): Destination = when {
     encoded == "SIGNIN" -> Destination.SignIn
     encoded == "PROFILE" -> Destination.Profile
     encoded.startsWith("DAY:") -> Destination.DaySummary(LocalDate.parse(encoded.removePrefix("DAY:")))
+    encoded == "WEEKLYSUMMARY" -> Destination.WeeklySummary(null)
+    encoded.startsWith("WEEKLYSUMMARY:") -> Destination.WeeklySummary(com.giraffe.mizanapp.domain.week.WeekKey(encoded.removePrefix("WEEKLYSUMMARY:")))
     else -> Destination.Today
 }
 
@@ -177,6 +181,7 @@ private fun AppRoute(modifier: Modifier = Modifier) {
             onOpenDay = ::openDate,
             onOpenHistory = { push(Destination.History) },
             onOpenInsights = { push(Destination.Insights) },
+            onOpenWeeklySummary = { push(Destination.WeeklySummary(null)) },
             modifier = modifier,
         )
         Destination.History -> HistoryRoute(
@@ -187,6 +192,7 @@ private fun AppRoute(modifier: Modifier = Modifier) {
         is Destination.DaySummary -> DaySummaryRoute(date = current.date, modifier = modifier)
         Destination.SignIn -> SignInRoute(modifier = modifier)
         Destination.Profile -> ProfileRoute(modifier = modifier)
+        is Destination.WeeklySummary -> WeeklySummaryRoute(week = current.week, onOpenWeekSheet = { push(Destination.Week) }, modifier = modifier)
     }
 }
 
@@ -249,6 +255,7 @@ private fun WeekRoute(
     onOpenDay: (LocalDate) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenInsights: () -> Unit,
+    onOpenWeeklySummary: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: WeekViewModel = koinViewModel()
@@ -275,6 +282,7 @@ private fun WeekRoute(
                 is WeekEvent.OpenDay -> onOpenDay(event.date)
                 WeekEvent.OpenHistory -> onOpenHistory()
                 WeekEvent.OpenInsights -> onOpenInsights()
+                WeekEvent.OpenWeeklySummary -> onOpenWeeklySummary()
                 else -> viewModel.onEvent(event)
             }
         },
@@ -326,4 +334,18 @@ private fun DaySummaryRoute(date: LocalDate, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     DaySummaryScreen(state = state, modifier = modifier)
+}
+
+@Composable
+private fun WeeklySummaryRoute(week: com.giraffe.mizanapp.domain.week.WeekKey?, onOpenWeekSheet: () -> Unit, modifier: Modifier = Modifier) {
+    val viewModel: com.giraffe.mizanapp.weeklysummary.WeeklySummaryViewModel = koinViewModel { parametersOf(week) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    com.giraffe.mizanapp.weeklysummary.WeeklySummaryScreen(
+        state = state,
+        onEarlier = viewModel::goEarlier,
+        onLater = viewModel::goLater,
+        onOpenWeekSheet = onOpenWeekSheet,
+        modifier = modifier,
+    )
 }

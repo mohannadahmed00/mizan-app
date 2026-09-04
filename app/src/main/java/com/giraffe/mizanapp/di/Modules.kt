@@ -176,6 +176,7 @@ val appModule = module {
     viewModel { TodayViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { WeekViewModel(get(), get(), get(), get()) }
     viewModel { (date: LocalDate) -> DaySummaryViewModel(get<GetDayDetail>(), date) }
+    viewModel { (week: com.giraffe.mizanapp.domain.week.WeekKey?) -> com.giraffe.mizanapp.weeklysummary.WeeklySummaryViewModel(get(), get(), get(), get(), week) }
     viewModel { HistoryViewModel(get(), get()) }
     viewModel { InsightsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get(), get(), get(), isSupabaseConfigured()) }
