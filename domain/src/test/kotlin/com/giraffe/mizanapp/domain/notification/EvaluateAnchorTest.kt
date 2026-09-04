@@ -82,7 +82,9 @@ class EvaluateAnchorTest {
         ledger: DeliveryRecord? = null,
         hasPermission: Boolean = true,
         dormant: Boolean = false,
-    ) = evaluateAnchor(anchor, now, zone, boundary, dayPlan, completions, streak, preferences, null, ledger, hasPermission, dormant)
+        summary: com.giraffe.mizanapp.domain.week.WeekSummary? = null,
+        tasksRecorded: Int = 0,
+    ) = evaluateAnchor(anchor, now, zone, boundary, dayPlan, completions, streak, preferences, summary, ledger, hasPermission, dormant, tasksRecorded)
 
     // --- shared order-of-checks cases ---
 
@@ -194,6 +196,18 @@ class EvaluateAnchorTest {
         val held = DeliveryRecord("k", NotificationCategory.WEEKLY_SUMMARY, DeliveryState.HELD, null, now, at(10, 0))
         val result = evaluate(summaryAnchor(), ledger = held)
         assertTrue(result is NotificationVerdict.Post)
+    }
+
+    @Test fun `weekly summary Post carries days engaged, tasks recorded and points earned in bodyArgs`() {
+        val week = com.giraffe.mizanapp.domain.time.WeekBoundary.weekContaining(date)
+        val days = week.dates.mapIndexed { index, d ->
+            com.giraffe.mizanapp.domain.week.DayCell(d, null, earned = if (index < 2) 3 else 0, available = 10, state = com.giraffe.mizanapp.domain.week.DayCellState.PARTLY_RECORDED)
+        }
+        val summary = com.giraffe.mizanapp.domain.week.WeekSummary(week, com.giraffe.mizanapp.domain.week.WeeklyScore(earned = 6, elapsedAvailable = 70, weekTarget = 70), days)
+        val result = evaluate(summaryAnchor(), summary = summary, tasksRecorded = 4) as NotificationVerdict.Post
+        assertEquals("2", result.content.bodyArgs["daysEngaged"])
+        assertEquals("4", result.content.bodyArgs["tasksRecorded"])
+        assertEquals("6", result.content.bodyArgs["pointsEarned"])
     }
 
     @Test fun `DELIVERED ledger row blocks`() {
