@@ -105,7 +105,8 @@ class BuildNotificationPlanTest {
         preferences: NotificationPreferences = preferences(),
         weekClosesAt: Instant? = null,
         ledger: List<DeliveryRecord> = emptyList(),
-    ) = buildNotificationPlan(now, zone, boundary, prayerTimes, dayPlan, completions, streak, preferences, weekClosesAt, ledger)
+        dormant: Boolean = false,
+    ) = buildNotificationPlan(now, zone, boundary, prayerTimes, dayPlan, completions, streak, preferences, weekClosesAt, ledger, dormant)
 
     @Test fun `all silenced returns no anchors but refreshAt still set`() {
         val result = plan(preferences = preferences(allSilenced = true))
@@ -157,6 +158,11 @@ class BuildNotificationPlanTest {
 
     @Test fun `no weekly summary anchor when weekClosesAt is null`() {
         val result = plan(weekClosesAt = null)
+        assertTrue(result.anchors.none { it.category == NotificationCategory.WEEKLY_SUMMARY })
+    }
+
+    @Test fun `no weekly summary anchor when dormant`() {
+        val result = plan(weekClosesAt = at(18, 5), dormant = true)
         assertTrue(result.anchors.none { it.category == NotificationCategory.WEEKLY_SUMMARY })
     }
 

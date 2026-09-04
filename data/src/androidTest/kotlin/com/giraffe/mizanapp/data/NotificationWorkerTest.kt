@@ -39,6 +39,7 @@ import com.giraffe.mizanapp.domain.time.BoundaryRegime
 import com.giraffe.mizanapp.domain.time.BoundaryState
 import com.giraffe.mizanapp.domain.time.BoundaryStatus
 import com.giraffe.mizanapp.domain.time.LocationRequestOutcome
+import com.giraffe.mizanapp.domain.usecase.GetClosedWeekSummary
 import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
 import java.time.Instant
 import java.time.LocalDate
@@ -57,6 +58,7 @@ private class FakeBoundaryStatus(initial: BoundaryState) : BoundaryStatus {
     val refreshCalls = mutableListOf<Instant>()
     var refreshedBeforeAnyRead = false
     private val stateFlow = MutableStateFlow(initial)
+    fun setState(state: BoundaryState) { stateFlow.value = state }
     override fun current(): BoundaryState = stateFlow.value
     override fun observe(): Flow<BoundaryState> = stateFlow.asStateFlow()
     override suspend fun refresh(now: Instant, zone: ZoneId) {
@@ -101,6 +103,7 @@ class NotificationWorkerTest {
     private lateinit var preferences: NotificationPreferencesStore
     private lateinit var deliveries: DeliveryStore
     private lateinit var streaks: GetStreakSummary
+    private lateinit var closedWeekSummary: GetClosedWeekSummary
     private lateinit var dayPlans: RoomDayPlanRepository
     private lateinit var completions: RoomCompletionRepository
 
@@ -131,6 +134,7 @@ class NotificationWorkerTest {
         completions = RoomCompletionRepository(db, dayPlans, DayWritePolicy(time), time)
         val coverage = RoomRecordCoverageRepository(db, AccountScope(db.accountScopeDao(), time))
         streaks = GetStreakSummary(completions, dayPlans, time, coverage, boundary)
+        closedWeekSummary = GetClosedWeekSummary(dayPlans, completions, catalogue, coverage)
     }
 
     @After fun tearDown() {
@@ -153,7 +157,7 @@ class NotificationWorkerTest {
     private fun buildWorker(anchorKeyInput: String? = null): ListenableWorker {
         val factory = object : androidx.work.WorkerFactory() {
             override fun createWorker(appContext: Context, workerClassName: String, workerParameters: WorkerParameters) =
-                NotificationWorker(appContext, workerParameters, time, boundary, FakePrayerTimesProvider(), dayPlans, completions, streaks, preferences, deliveries, scheduler, presenter)
+                NotificationWorker(appContext, workerParameters, time, boundary, FakePrayerTimesProvider(), dayPlans, completions, streaks, closedWeekSummary, preferences, deliveries, scheduler, presenter)
         }
         val builder = TestListenableWorkerBuilder<NotificationWorker>(context)
         anchorKeyInput?.let { builder.setInputData(androidx.work.workDataOf(NotificationWorker.INPUT_ANCHOR_KEY to it)) }
@@ -202,6 +206,26 @@ class NotificationWorkerTest {
         worker.doWork()
         assertTrue(scheduler.replaceAllCalls.single().isEmpty())
         assertEquals(dayEndsAt, scheduler.refreshScheduledAt)
+    }
+
+    @Test fun dormantSummaryProducesNoWeeklySummaryAnchor() = runBlocking {
+        // No day plans anywhere -> every closed week reads as empty -> dormant after three.
+        preferences.save(NotificationPreferences(setOf(NotificationCategory.WEEKLY_SUMMARY), false, null))
+        val friday = com.giraffe.mizanapp.domain.time.WeekBoundary.weekContaining(date).end
+        boundary.setState(
+            BoundaryState(
+                regime = BoundaryRegime.Fallback(com.giraffe.mizanapp.domain.time.FallbackReason.NEVER_HAD_LOCATION),
+                coordinates = null,
+                zoneIdWhenObtained = null,
+                resolvedDate = friday,
+                expiresAt = dayEndsAt,
+                lastResolvedDate = friday,
+                lastResolvedRegime = null,
+            ),
+        )
+        val worker = buildWorker() as NotificationWorker
+        worker.doWork()
+        assertTrue(scheduler.replaceAllCalls.single().none { it.category == NotificationCategory.WEEKLY_SUMMARY })
     }
 
     @Test fun prunesLedgerRowsOlderThanNinetyDays() = runBlocking {

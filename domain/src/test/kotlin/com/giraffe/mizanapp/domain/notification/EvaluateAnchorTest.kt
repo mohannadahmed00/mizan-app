@@ -81,7 +81,8 @@ class EvaluateAnchorTest {
         preferences: NotificationPreferences = preferences(),
         ledger: DeliveryRecord? = null,
         hasPermission: Boolean = true,
-    ) = evaluateAnchor(anchor, now, zone, boundary, dayPlan, completions, streak, preferences, null, ledger, hasPermission)
+        dormant: Boolean = false,
+    ) = evaluateAnchor(anchor, now, zone, boundary, dayPlan, completions, streak, preferences, null, ledger, hasPermission, dormant)
 
     // --- shared order-of-checks cases ---
 
@@ -176,6 +177,16 @@ class EvaluateAnchorTest {
 
     @Test fun `weekly summary outside quiet hours posts`() {
         val result = evaluate(summaryAnchor())
+        assertTrue(result is NotificationVerdict.Post)
+    }
+
+    @Test fun `dormant summary produces SUMMARY_DORMANT`() {
+        val result = evaluate(summaryAnchor(), dormant = true)
+        assertEquals(NotificationVerdict.Discard(DiscardReason.SUMMARY_DORMANT), result)
+    }
+
+    @Test fun `dormant is ignored for non-summary categories`() {
+        val result = evaluate(streakAnchor(), streak = streak(current = 3), dormant = true)
         assertTrue(result is NotificationVerdict.Post)
     }
 
