@@ -1,3 +1,4 @@
 package com.giraffe.mizanapp.domain.notification
-interface NotificationScheduler { suspend fun replaceAll(anchors: List<NotificationAnchor>); suspend fun cancelAll(); fun deliveryMode(): DeliveryMode }
+import java.time.Instant
+interface NotificationScheduler { suspend fun replaceAll(anchors: List<NotificationAnchor>); suspend fun cancelAll(); fun deliveryMode(): DeliveryMode; suspend fun scheduleRefresh(at: Instant) }
 enum class DeliveryMode { EXACT, RELAXED }
