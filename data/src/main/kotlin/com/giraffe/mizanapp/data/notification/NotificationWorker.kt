@@ -16,13 +16,32 @@ import com.giraffe.mizanapp.domain.prayer.PrayerTimesOutcome
 import com.giraffe.mizanapp.domain.prayer.PrayerTimesProvider
 import com.giraffe.mizanapp.domain.repository.CompletionRepository
 import com.giraffe.mizanapp.domain.repository.DayPlanRepository
+import com.giraffe.mizanapp.domain.time.BoundaryState
 import com.giraffe.mizanapp.domain.time.BoundaryStatus
 import com.giraffe.mizanapp.domain.time.TimeProvider
+import com.giraffe.mizanapp.domain.time.WeekBoundary
+import com.giraffe.mizanapp.domain.usecase.ClosedWeekOutcome
+import com.giraffe.mizanapp.domain.usecase.GetClosedWeekSummary
 import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
+import com.giraffe.mizanapp.domain.week.isSummaryDormant
 import kotlinx.coroutines.flow.first
 
 /** Worker entry point. Its dependencies are supplied by Koin when notification processing is wired. */
-class NotificationWorker(context: Context, params: WorkerParameters, private val time: TimeProvider, private val boundaryStatus: BoundaryStatus, private val prayers: PrayerTimesProvider, private val plans: DayPlanRepository, private val completions: CompletionRepository, private val streaks: GetStreakSummary, private val preferences: NotificationPreferencesStore, private val deliveries: DeliveryStore, private val scheduler: NotificationScheduler, private val presenter: NotificationPresenter) : CoroutineWorker(context, params) {
+class NotificationWorker(
+    context: Context,
+    params: WorkerParameters,
+    private val time: TimeProvider,
+    private val boundaryStatus: BoundaryStatus,
+    private val prayers: PrayerTimesProvider,
+    private val plans: DayPlanRepository,
+    private val completions: CompletionRepository,
+    private val streaks: GetStreakSummary,
+    private val closedWeekSummary: GetClosedWeekSummary,
+    private val preferences: NotificationPreferencesStore,
+    private val deliveries: DeliveryStore,
+    private val scheduler: NotificationScheduler,
+    private val presenter: NotificationPresenter,
+) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = runCatching {
         val now = time.now(); val zone = time.zone()
         boundaryStatus.refresh(now, zone)
@@ -30,9 +49,10 @@ class NotificationWorker(context: Context, params: WorkerParameters, private val
         val plan = plans.planFor(boundary.resolvedDate)
         val live = completions.liveBetween(boundary.resolvedDate, boundary.resolvedDate)
         val prayerTimes = boundary.coordinates?.let { (prayers.timesFor(boundary.resolvedDate, it, zone) as? PrayerTimesOutcome.Calculated)?.times }
-        val planResult = buildNotificationPlan(now, zone, boundary, prayerTimes, plan, live, streaks().first(), preferences.preferences(), weekCloseInstant(boundary), deliveries.records())
+        val dormant = isSummaryDormant(closedWeeksNewestFirst(boundary))
+        val planResult = buildNotificationPlan(now, zone, boundary, prayerTimes, plan, live, streaks().first(), preferences.preferences(), weekCloseInstant(boundary), deliveries.records(), dormant)
         inputData.getString(INPUT_ANCHOR_KEY)?.let { key -> planResult.anchors.firstOrNull { it.anchorKey == key }?.let { anchor ->
-            when (val verdict = evaluateAnchor(anchor, now, zone, boundary, plan, live, streaks().first(), preferences.preferences(), null, deliveries.records().firstOrNull { it.anchorKey == key }, presenter.hasPermission())) {
+            when (val verdict = evaluateAnchor(anchor, now, zone, boundary, plan, live, streaks().first(), preferences.preferences(), null, deliveries.records().firstOrNull { it.anchorKey == key }, presenter.hasPermission(), dormant)) {
                 is NotificationVerdict.Post -> { presenter.post(anchor, verdict.content); deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.DELIVERED, null, now, null)) }
                 is NotificationVerdict.Discard -> { presenter.withdraw(key); deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.DISCARDED, verdict.reason, now, null)) }
                 is NotificationVerdict.Hold -> deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.HELD, null, now, verdict.until))
@@ -43,5 +63,27 @@ class NotificationWorker(context: Context, params: WorkerParameters, private val
         deliveries.prune(now)
         Result.success()
     }.getOrElse { Result.retry() }
+
+    /** The three most recently closed weeks, newest first, each true iff it had at least one
+     *  recorded completion. Read-only: [GetClosedWeekSummary] never backfills. */
+    private suspend fun closedWeeksNewestFirst(boundary: BoundaryState): List<Boolean> {
+        val currentWeek = WeekBoundary.weekContaining(boundary.resolvedDate)
+        val currentWeekAlreadyClosed = weekCloseInstant(boundary) != null
+        val weeks = buildList {
+            if (currentWeekAlreadyClosed) add(currentWeek)
+            var start = currentWeek.start.minusDays(7)
+            while (size < 3) {
+                add(WeekBoundary.weekContaining(start))
+                start = start.minusDays(7)
+            }
+        }.take(3)
+        return weeks.map { week ->
+            when (val outcome = closedWeekSummary(week)) {
+                is ClosedWeekOutcome.Ready -> outcome.summary.score.earned > 0
+                is ClosedWeekOutcome.NoCatalogue -> false
+            }
+        }
+    }
+
     companion object { const val INPUT_ANCHOR_KEY = "anchorKey" }
 }

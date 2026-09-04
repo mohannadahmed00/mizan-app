@@ -4,6 +4,12 @@ import com.giraffe.mizanapp.data.db.MizanDatabase
 import com.giraffe.mizanapp.data.db.accountScopeDaoOf
 import com.giraffe.mizanapp.data.db.boundaryStateDaoOf
 import com.giraffe.mizanapp.data.db.createMizanDatabase
+import com.giraffe.mizanapp.data.db.notificationDaoOf
+import com.giraffe.mizanapp.data.notification.AlarmNotificationScheduler
+import com.giraffe.mizanapp.data.notification.AndroidNotificationPresenter
+import com.giraffe.mizanapp.data.notification.DeliveryStore
+import com.giraffe.mizanapp.data.notification.NotificationPreferencesStore
+import com.giraffe.mizanapp.data.notification.NotificationWorker
 import com.giraffe.mizanapp.data.prayer.AdhanPrayerTimes
 import com.giraffe.mizanapp.data.prayer.AndroidLocationSource
 import com.giraffe.mizanapp.data.repository.OutboxSyncRepository
@@ -48,6 +54,8 @@ import com.giraffe.mizanapp.domain.repository.RecordCoverageRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.time.BoundaryStatus
 import com.giraffe.mizanapp.domain.time.TimeProvider
+import com.giraffe.mizanapp.domain.notification.NotificationPresenter
+import com.giraffe.mizanapp.domain.notification.NotificationScheduler
 import com.giraffe.mizanapp.domain.usecase.ConfirmSignInCode
 import com.giraffe.mizanapp.domain.usecase.GetDayDetail
 import com.giraffe.mizanapp.domain.usecase.GetDaySummary
@@ -60,6 +68,7 @@ import com.giraffe.mizanapp.domain.usecase.GetPersonalBests
 import com.giraffe.mizanapp.domain.usecase.GetRanking
 import com.giraffe.mizanapp.domain.usecase.GetSectionBreakdown
 import com.giraffe.mizanapp.domain.usecase.GetStreakSummary
+import com.giraffe.mizanapp.domain.usecase.GetClosedWeekSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeekSummary
 import com.giraffe.mizanapp.domain.usecase.GetWeeklyTrend
 import com.giraffe.mizanapp.domain.usecase.ReconcileZone
@@ -93,6 +102,7 @@ val domainModule = module {
     single<TimeProvider> { SystemTimeProvider(get()) }
     factory { DayWritePolicy(get()) }
     factory { GetWeekSummary(get(), get(), get(), get(), get()) }
+    factory { GetClosedWeekSummary(get(), get(), get(), get()) }
     factory { GetDaySummary(get(), get()) }
     factory { GetStreakSummary(get(), get(), get(), get(), get()) }
     factory { GetHistoryPage(get(), get(), get(), get(), get()) }
@@ -120,6 +130,11 @@ val dataModule = module {
     single<PrayerTimesProvider> { AdhanPrayerTimes(loadRegionConventionMapping()) }
     single { BoundaryStateStore(boundaryStateDaoOf(get()), get(), get()) }
     single<BoundaryStatus> { get<BoundaryStateStore>() }
+    single { notificationDaoOf(get()) }
+    single { NotificationPreferencesStore(get()) }
+    single { DeliveryStore(get()) }
+    single<NotificationScheduler> { AlarmNotificationScheduler(androidContext()) }
+    single<NotificationPresenter> { AndroidNotificationPresenter(androidContext()) }
 
     single { CatalogueSeeder(get(), get()) }
     single<CatalogueRepository> { RoomCatalogueRepository(get(), get()) }
@@ -154,6 +169,7 @@ val dataModule = module {
     factory { SignOut(get(), get()) }
     factory { UpdateDisplayName(get()) }
     worker { SyncWorker(get(), get(), get(), get(), get()) }
+    worker { NotificationWorker(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }
 
 val appModule = module {

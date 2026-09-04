@@ -12,7 +12,7 @@ import java.time.ZoneId
 
 data class NotificationPlan(val anchors: List<NotificationAnchor>, val refreshAt: Instant)
 
-fun buildNotificationPlan(now: Instant, zone: ZoneId, boundary: BoundaryState, prayerTimes: PrayerTimes?, plan: DayPlan?, completions: List<Completion>, streak: StreakSummary, preferences: NotificationPreferences, weekClosesAt: Instant?, ledger: List<DeliveryRecord>): NotificationPlan {
+fun buildNotificationPlan(now: Instant, zone: ZoneId, boundary: BoundaryState, prayerTimes: PrayerTimes?, plan: DayPlan?, completions: List<Completion>, streak: StreakSummary, preferences: NotificationPreferences, weekClosesAt: Instant?, ledger: List<DeliveryRecord>, dormant: Boolean = false): NotificationPlan {
     if (preferences.allSilenced) return NotificationPlan(emptyList(), boundary.expiresAt)
     val anchors = mutableListOf<NotificationAnchor>()
     if (NotificationCategory.PRAYER_WINDOW in preferences.enabled && prayerTimes != null && plan != null) {
@@ -24,6 +24,6 @@ fun buildNotificationPlan(now: Instant, zone: ZoneId, boundary: BoundaryState, p
         }
     }
     if (NotificationCategory.STREAK_AT_RISK in preferences.enabled && streak.current >= 1 && !streak.todayCounted) anchors += NotificationAnchor(NotificationCategory.STREAK_AT_RISK, StreakClock.nextBoundaryAfter(now, boundary.expiresAt), AnchorSubject.Day(boundary.resolvedDate))
-    if (NotificationCategory.WEEKLY_SUMMARY in preferences.enabled && weekClosesAt != null) anchors += NotificationAnchor(NotificationCategory.WEEKLY_SUMMARY, weekClosesAt, AnchorSubject.ClosedWeek(com.giraffe.mizanapp.domain.time.WeekBoundary.weekContaining(boundary.resolvedDate).key))
+    if (NotificationCategory.WEEKLY_SUMMARY in preferences.enabled && weekClosesAt != null && !dormant) anchors += NotificationAnchor(NotificationCategory.WEEKLY_SUMMARY, weekClosesAt, AnchorSubject.ClosedWeek(com.giraffe.mizanapp.domain.time.WeekBoundary.weekContaining(boundary.resolvedDate).key))
     return NotificationPlan(anchors.filter { it.firesAt.isAfter(now) && ledger.terminalFor(it.anchorKey) == null }.sortedBy { it.firesAt }, boundary.expiresAt)
 }
