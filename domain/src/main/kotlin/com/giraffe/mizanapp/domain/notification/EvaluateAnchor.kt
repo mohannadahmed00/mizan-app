@@ -23,7 +23,12 @@ fun evaluateAnchor(anchor: NotificationAnchor, now: Instant, zone: ZoneId, bound
     if (anchor.category == NotificationCategory.WEEKLY_SUMMARY && dormant) return NotificationVerdict.Discard(DiscardReason.SUMMARY_DORMANT)
     preferences.quietHours?.takeIf { it.contains(now, zone) }?.let { return if (anchor.category == NotificationCategory.WEEKLY_SUMMARY) NotificationVerdict.Hold(it.endAfter(now, zone)) else NotificationVerdict.Discard(DiscardReason.QUIET_HOURS) }
     val bodyArgs = when (anchor.category) {
-        NotificationCategory.PRAYER_WINDOW -> (anchor.speaksFor as? AnchorSubject.PrayerWindow)?.let { mapOf("section" to it.sectionId) } ?: emptyMap()
+        NotificationCategory.PRAYER_WINDOW -> (anchor.speaksFor as? AnchorSubject.PrayerWindow)?.let { subject ->
+            val remaining = plan?.sectionsInOrder()?.firstOrNull { it.first == subject.sectionId }?.second
+                ?.sumOf { (it.maxOccurrencesPerDay - liveCount(completions, it.taskSlug)).coerceAtLeast(0) * it.points }
+                ?: 0
+            mapOf("section" to subject.sectionId, "remaining" to remaining.toString())
+        } ?: emptyMap()
         NotificationCategory.WEEKLY_SUMMARY -> mapOf(
             "daysEngaged" to (summary?.days?.count { it.earned > 0 } ?: 0).toString(),
             "tasksRecorded" to tasksRecorded.toString(),
