@@ -55,7 +55,7 @@ class NotificationWorker(
             when (val verdict = evaluateAnchor(anchor, now, zone, boundary, plan, live, streaks().first(), preferences.preferences(), null, deliveries.records().firstOrNull { it.anchorKey == key }, presenter.hasPermission(), dormant)) {
                 is NotificationVerdict.Post -> { presenter.post(anchor, verdict.content); deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.DELIVERED, null, now, null)) }
                 is NotificationVerdict.Discard -> { presenter.withdraw(key); deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.DISCARDED, verdict.reason, now, null)) }
-                is NotificationVerdict.Hold -> deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.HELD, null, now, verdict.until))
+                is NotificationVerdict.Hold -> { deliveries.record(DeliveryRecord(key, anchor.category, DeliveryState.HELD, null, now, verdict.until)); scheduler.scheduleAt(key, verdict.until) }
             }
         } }
         scheduler.replaceAll(planResult.anchors)
