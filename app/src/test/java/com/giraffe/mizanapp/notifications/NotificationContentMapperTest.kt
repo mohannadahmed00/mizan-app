@@ -63,4 +63,31 @@ class NotificationContentMapperTest {
             assertFalse("body must not contain '$word': ${rendered.body}", rendered.body.contains(word, ignoreCase = true))
         }
     }
+
+    // --- T085: streak reminder (US3) ---
+
+    private fun streakContent(current: Int) = NotificationContent(
+        category = NotificationCategory.STREAK_AT_RISK,
+        titleKey = "STREAK_AT_RISK",
+        bodyArgs = mapOf("current" to current.toString()),
+        destination = "TODAY",
+    )
+
+    private val streakForbidden = listOf(
+        "lose", "lost", "break", "expire", "don't", "last chance",
+    )
+
+    @Test fun `streak reminder names the streak being continued`() {
+        val rendered = streakContent(12).render()
+        assertTrue(rendered.body.contains("12"))
+    }
+
+    @Test fun `streak reminder contains none of the forbidden loss vocabulary or a countdown`() {
+        val rendered = streakContent(12).render()
+        streakForbidden.forEach { word ->
+            assertFalse("body must not contain '$word': ${rendered.body}", rendered.body.contains(word, ignoreCase = true))
+            assertFalse("title must not contain '$word': ${rendered.title}", rendered.title.contains(word, ignoreCase = true))
+        }
+        assertFalse("body must not contain a countdown", Regex("\\d+\\s*(hour|hr|minute|min)s?\\s*(left|remaining)", RegexOption.IGNORE_CASE).containsMatchIn(rendered.body))
+    }
 }
