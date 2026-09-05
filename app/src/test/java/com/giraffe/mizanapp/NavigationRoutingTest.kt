@@ -20,7 +20,7 @@ class NavigationRoutingTest {
     @Test
     fun `today routes to the Today destination from the week sheet`() {
         val destination = destinationForDate(clock.today(), clock.today())
-        assertEquals(Destination.Today, destination)
+        assertEquals(Destination.Today(), destination)
     }
 
     @Test
@@ -28,7 +28,7 @@ class NavigationRoutingTest {
         // The routing function is identical regardless of caller - that IS
         // the guarantee (FR-023): one place decides, every caller obeys it.
         val destination = destinationForDate(clock.today(), clock.today())
-        assertEquals(Destination.Today, destination)
+        assertEquals(Destination.Today(), destination)
     }
 
     @Test
@@ -40,7 +40,7 @@ class NavigationRoutingTest {
 
     @Test
     fun `back from a day opened in history returns to history, not the week sheet`() {
-        var stack = listOf<Destination>(Destination.Today, Destination.Week, Destination.History)
+        var stack = listOf<Destination>(Destination.Today(), Destination.Week, Destination.History)
         val date = clock.today().minusDays(1)
         stack = stack + destinationForDate(date, clock.today())
         assertEquals(Destination.DaySummary(date), stack.last())
@@ -51,7 +51,7 @@ class NavigationRoutingTest {
 
     @Test
     fun `back from a day opened in the week sheet returns to the week sheet`() {
-        var stack = listOf<Destination>(Destination.Today, Destination.Week)
+        var stack = listOf<Destination>(Destination.Today(), Destination.Week)
         val date = clock.today().minusDays(1)
         stack = stack + destinationForDate(date, clock.today())
 
@@ -63,7 +63,7 @@ class NavigationRoutingTest {
     @Test
     fun `a date that was current when opened stops accepting writes once midnight passes`() {
         val date = clock.today()
-        assertEquals(Destination.Today, destinationForDate(date, clock.today()))
+        assertEquals(Destination.Today(), destinationForDate(date, clock.today()))
 
         clock.setDate(date.plusDays(1)) // midnight passes
 
@@ -78,7 +78,7 @@ class NavigationRoutingTest {
 
     @Test
     fun `back stack at the root has nothing to pop`() {
-        val stack = listOf<Destination>(Destination.Today)
+        val stack = listOf<Destination>(Destination.Today())
         assertTrue("a single-entry stack has nothing further back", stack.size == 1)
     }
 
@@ -90,7 +90,7 @@ class NavigationRoutingTest {
 
     @Test
     fun `a stack containing SignIn survives the StackSaver save and restore cycle`() {
-        val stack = listOf<Destination>(Destination.Today, Destination.SignIn)
+        val stack = listOf<Destination>(Destination.Today(), Destination.SignIn)
         val scope = SaverScope { true }
         val saved = with(StackSaver) { scope.save(stack) }
         val restored = StackSaver.restore(requireNotNull(saved))
@@ -105,7 +105,7 @@ class NavigationRoutingTest {
 
     @Test
     fun `a stack containing Profile survives the StackSaver save and restore cycle`() {
-        val stack = listOf<Destination>(Destination.Today, Destination.Profile)
+        val stack = listOf<Destination>(Destination.Today(), Destination.Profile)
         val scope = SaverScope { true }
         val saved = with(StackSaver) { scope.save(stack) }
         val restored = StackSaver.restore(requireNotNull(saved))
@@ -114,6 +114,6 @@ class NavigationRoutingTest {
 
     @Test
     fun `an unrecognised token still falls back to Today`() {
-        assertEquals(Destination.Today, decode("SOMETHING-UNKNOWN"))
+        assertEquals(Destination.Today(), decode("SOMETHING-UNKNOWN"))
     }
 }

@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -138,27 +139,29 @@ private fun ReadyState(
 
         val section = state.currentSection
         if (section != null) {
-            Text(
-                text = "${state.currentSectionIndex + 1} of ${state.sections.size}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            ArabicText(
-                text = section.label,
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            )
+            Column(Modifier.weight(1f).testTag("section-${section.id}")) {
+                Text(
+                    text = "${state.currentSectionIndex + 1} of ${state.sections.size}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                ArabicText(
+                    text = section.label,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                )
 
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(section.tasks, key = { it.slug }) { task ->
-                    TaskRow(task, onEvent)
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(section.tasks, key = { it.slug }) { task ->
+                        TaskRow(task, onEvent)
+                    }
                 }
-            }
 
-            SectionNavigation(state, onEvent)
+                SectionNavigation(state, onEvent)
+            }
         }
     }
 }

@@ -61,7 +61,7 @@ import org.koin.core.parameter.parametersOf
  * single field cannot represent.
  */
 sealed interface Destination {
-    data object Today : Destination
+    data class Today(val sectionId: String? = null) : Destination
     data object Week : Destination
     data object History : Destination
     data object Insights : Destination
@@ -80,7 +80,7 @@ sealed interface Destination {
  * a character that cannot appear in an ISO date.
  */
 internal fun encode(destination: Destination): String = when (destination) {
-    Destination.Today -> "TODAY"
+    is Destination.Today -> destination.sectionId?.let { "TODAY:$it" } ?: "TODAY"
     Destination.Week -> "WEEK"
     Destination.History -> "HISTORY"
     Destination.Insights -> "INSIGHTS"
@@ -91,7 +91,8 @@ internal fun encode(destination: Destination): String = when (destination) {
 }
 
 internal fun decode(encoded: String): Destination = when {
-    encoded == "TODAY" -> Destination.Today
+    encoded == "TODAY" -> Destination.Today()
+    encoded.startsWith("TODAY:") -> Destination.Today(encoded.removePrefix("TODAY:"))
     encoded == "WEEK" -> Destination.Week
     encoded == "HISTORY" -> Destination.History
     encoded == "INSIGHTS" -> Destination.Insights
@@ -100,14 +101,14 @@ internal fun decode(encoded: String): Destination = when {
     encoded.startsWith("DAY:") -> Destination.DaySummary(LocalDate.parse(encoded.removePrefix("DAY:")))
     encoded == "WEEKLYSUMMARY" -> Destination.WeeklySummary(null)
     encoded.startsWith("WEEKLYSUMMARY:") -> Destination.WeeklySummary(com.giraffe.mizanapp.domain.week.WeekKey(encoded.removePrefix("WEEKLYSUMMARY:")))
-    else -> Destination.Today
+    else -> Destination.Today()
 }
 
 internal val StackSaver = Saver<List<Destination>, String>(
     save = { stack -> stack.joinToString("|") { encode(it) } },
     restore = { encoded ->
         encoded.split("|").filter { it.isNotEmpty() }.map { decode(it) }
-            .ifEmpty { listOf(Destination.Today) }
+            .ifEmpty { listOf(Destination.Today()) }
     },
 )
 
@@ -117,7 +118,7 @@ internal val StackSaver = Saver<List<Destination>, String>(
  * (FR-023) — every other date opens the read-only detail.
  */
 fun destinationForDate(date: LocalDate, today: LocalDate): Destination =
-    if (date == today) Destination.Today else Destination.DaySummary(date)
+    if (date == today) Destination.Today() else Destination.DaySummary(date)
 
 class MainActivity : ComponentActivity() {
 
@@ -146,7 +147,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun AppRoute(initialDestinationExtra: String? = null, modifier: Modifier = Modifier) {
     var stack by rememberSaveable(stateSaver = StackSaver) {
-        mutableStateOf(listOf(initialDestinationExtra?.let(::decode) ?: Destination.Today))
+        mutableStateOf(listOf(initialDestinationExtra?.let(::decode) ?: Destination.Today()))
     }
     val time: TimeProvider = koinInject()
     val boundaryStatus: BoundaryStatus = koinInject()
@@ -182,7 +183,8 @@ private fun AppRoute(initialDestinationExtra: String? = null, modifier: Modifier
     }
 
     when (val current = stack.last()) {
-        Destination.Today -> TodayRoute(
+        is Destination.Today -> TodayRoute(
+            initialSectionId = current.sectionId,
             onOpenWeek = { push(Destination.Week) },
             onOpenSignIn = { push(Destination.SignIn) },
             onOpenProfile = { push(Destination.Profile) },
@@ -209,6 +211,7 @@ private fun AppRoute(initialDestinationExtra: String? = null, modifier: Modifier
 
 @Composable
 private fun TodayRoute(
+    initialSectionId: String? = null,
     onOpenWeek: () -> Unit,
     onOpenSignIn: () -> Unit = {},
     onOpenProfile: () -> Unit = {},
@@ -216,6 +219,12 @@ private fun TodayRoute(
 ) {
     val viewModel: TodayViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // A section named by a tapped notification (FR opening a specific block) is applied once,
+    // the same way the deep-link key seeds WeeklySummaryRoute — never re-applied on recomposition.
+    LaunchedEffect(initialSectionId) {
+        initialSectionId?.let(viewModel::openOnSection)
+    }
 
     // Returning to the app after local midnight moves the screen to the new
     // date (FR-023). The ViewModel decides whether anything changed; this only

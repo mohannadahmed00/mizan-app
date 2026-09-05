@@ -49,6 +49,7 @@ class TodayViewModel(
     private var observing: Job? = null
     private var streakJob: Job? = null
     private var loadedDate: LocalDate? = null
+    private var pendingSectionId: String? = null
 
     init {
         load()
@@ -179,15 +180,19 @@ class TodayViewModel(
         val keepPosition = _state.value.status is TodayUiState.Status.Ready &&
             _state.value.civilDate == plan.date
 
+        val pendingIndex = pendingSectionId?.let { id -> sections.indexOfFirst { it.id == id } }
+            ?.takeIf { it >= 0 }
+        if (pendingIndex != null) pendingSectionId = null
+
         _state.value = TodayUiState(
             status = TodayUiState.Status.Ready,
             civilDate = plan.date,
             hijriLabel = plan.hijriLabel,
             sections = sections,
-            currentSectionIndex = if (keepPosition) {
-                _state.value.currentSectionIndex.coerceAtMost(sections.lastIndex.coerceAtLeast(0))
-            } else {
-                landing
+            currentSectionIndex = when {
+                pendingIndex != null -> pendingIndex
+                keepPosition -> _state.value.currentSectionIndex.coerceAtMost(sections.lastIndex.coerceAtLeast(0))
+                else -> landing
             },
             earnedPoints = score.earned,
             availablePoints = score.available,
@@ -219,6 +224,20 @@ class TodayViewModel(
                 boundaryStatus.markPromptShown()
                 _state.value = _state.value.copy(locationPrompt = currentLocationPrompt())
             }
+        }
+    }
+
+    /**
+     * Opens directly on a named section — a tapped prayer-window notification (FR-030-series).
+     * Applied immediately when the sections are already on screen; otherwise remembered and
+     * applied the moment they load, since a section jump can arrive before [openDate] finishes.
+     */
+    fun openOnSection(sectionId: String) {
+        val index = _state.value.sections.indexOfFirst { it.id == sectionId }
+        if (index >= 0) {
+            _state.value = _state.value.copy(currentSectionIndex = index)
+        } else {
+            pendingSectionId = sectionId
         }
     }
 
