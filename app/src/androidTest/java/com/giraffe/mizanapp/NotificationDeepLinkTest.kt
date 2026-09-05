@@ -59,4 +59,18 @@ class NotificationDeepLinkTest {
         compose.onNodeWithTag("streak-element").assertExists()
         scenario.close()
     }
+
+    @Test fun sectionExtraOpensTodayOnThatBlock() {
+        val scenario = launch("TODAY:asr")
+        compose.waitForIdle()
+        compose.onNodeWithTag("section-asr").assertExists()
+        scenario.close()
+    }
+
+    @Test fun streakReminderDestinationOpensToday() {
+        val scenario = launch("TODAY")
+        compose.waitForIdle()
+        compose.onNodeWithTag("streak-element").assertExists()
+        scenario.close()
+    }
 }
