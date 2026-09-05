@@ -5,6 +5,10 @@ import com.giraffe.mizanapp.domain.time.BoundaryRegime
 import com.giraffe.mizanapp.domain.time.BoundaryState
 import com.giraffe.mizanapp.domain.time.FallbackReason
 import java.time.Instant
+import com.giraffe.mizanapp.notifications.NotificationSettings
+import com.giraffe.mizanapp.notifications.PermissionState
+import com.giraffe.mizanapp.notifications.notificationStatements
+import com.giraffe.mizanapp.domain.notification.DeliveryMode
 
 /**
  * One immutable state for the profile screen, per `contracts/ui-state.md`.
@@ -35,6 +39,7 @@ data class ProfileUiState(
         ),
     ),
     val confirmingEraseLocation: Boolean = false,
+    val notifications: NotificationSettings = NotificationSettings(false, false, true, false, null, PermissionState.NOT_YET_ASKED, DeliveryMode.EXACT, notificationStatements(PermissionState.NOT_YET_ASKED, DeliveryMode.EXACT, false, false, false)),
 )
 
 const val CONFLICT_POLICY_STATEMENT =
@@ -59,6 +64,16 @@ sealed interface ProfileEvent {
     data object EraseLocation : ProfileEvent
     data object ConfirmEraseLocation : ProfileEvent
     data object CancelEraseLocation : ProfileEvent
+    data class NotificationSettingsChanged(val event: NotificationSettingsEvent) : ProfileEvent
+}
+
+sealed interface NotificationSettingsEvent {
+    data class SetCategory(val category: com.giraffe.mizanapp.domain.notification.NotificationCategory, val enabled: Boolean) : NotificationSettingsEvent
+    data class SetAllSilenced(val silenced: Boolean) : NotificationSettingsEvent
+    data class SetQuietHours(val start: java.time.LocalTime, val end: java.time.LocalTime) : NotificationSettingsEvent
+    data object ClearQuietHours : NotificationSettingsEvent
+    data object RequestPermission : NotificationSettingsEvent
+    data object OpenSystemSettings : NotificationSettingsEvent
 }
 
 enum class BoundaryRegimeLabel { MAGHRIB, NEVER_HAD_LOCATION, ERASED, ZONE_CHANGED_AWAITING_FIX }

@@ -7,13 +7,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.giraffe.mizanapp.domain.notification.NotificationCategory
+import com.giraffe.mizanapp.notifications.PermissionState
 import com.giraffe.mizanapp.sync.SyncStatusBar
 
 /**
@@ -63,6 +71,10 @@ fun ProfileScreen(state: ProfileUiState, onEvent: (ProfileEvent) -> Unit, modifi
         Text(state.conflictPolicy, modifier = Modifier.testTag("profile-conflict-policy"))
 
         LocationSettingsSection(state.locationSettings, onEvent)
+
+        HorizontalDivider()
+        NotificationSettingsSection(state.notifications, onEvent)
+        HorizontalDivider()
 
         Button(
             onClick = { onEvent(ProfileEvent.SignOut) },
@@ -123,6 +135,133 @@ private fun LocationSettingsSection(settings: LocationSettings, onEvent: (Profil
             onClick = { onEvent(ProfileEvent.EraseLocation) },
             modifier = Modifier.testTag("profile-erase-location"),
         ) { Text("Erase location") }
+    }
+}
+
+/**
+ * Per-category switches, the master silence, quiet hours and every disclosure line from
+ * [NotificationSettings.statements] (contracts/ui-state.md §1). No red or warning iconography
+ * anywhere here (Principle IX) — a category being off, or the summary dormant, is an ordinary
+ * state described in plain language, never flagged.
+ */
+@Composable
+private fun NotificationSettingsSection(settings: com.giraffe.mizanapp.notifications.NotificationSettings, onEvent: (ProfileEvent) -> Unit) {
+    var editingQuietHours by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
+    Text("Notifications", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+
+    settings.statements.forEach { line -> Text(line, modifier = Modifier.testTag("notifications-statement")) }
+
+    NotificationCategoryRow(
+        label = "Prayer window nudges",
+        checked = settings.prayerWindowEnabled,
+        tag = "notifications-prayer-window",
+        onCheckedChange = { onEvent(ProfileEvent.NotificationSettingsChanged(NotificationSettingsEvent.SetCategory(NotificationCategory.PRAYER_WINDOW, it))) },
+    )
+    NotificationCategoryRow(
+        label = "Streak reminder",
+        checked = settings.streakAtRiskEnabled,
+        tag = "notifications-streak-at-risk",
+        onCheckedChange = { onEvent(ProfileEvent.NotificationSettingsChanged(NotificationSettingsEvent.SetCategory(NotificationCategory.STREAK_AT_RISK, it))) },
+    )
+    NotificationCategoryRow(
+        label = "Weekly summary",
+        checked = settings.weeklySummaryEnabled,
+        tag = "notifications-weekly-summary",
+        onCheckedChange = { onEvent(ProfileEvent.NotificationSettingsChanged(NotificationSettingsEvent.SetCategory(NotificationCategory.WEEKLY_SUMMARY, it))) },
+    )
+    NotificationCategoryRow(
+        label = "Silence everything",
+        checked = settings.allSilenced,
+        tag = "notifications-all-silenced",
+        onCheckedChange = { onEvent(ProfileEvent.NotificationSettingsChanged(NotificationSettingsEvent.SetAllSilenced(it))) },
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth().testTag("notifications-quiet-hours-row"),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        val quietHours = settings.quietHours
+        Text(
+            if (quietHours != null) "Quiet hours: ${quietHours.start} to ${quietHours.end}" else "Quiet hours: off",
+        )
+        Row {
+            TextButton(onClick = { editingQuietHours = true }, modifier = Modifier.testTag("notifications-edit-quiet-hours")) { Text("Set") }
+            if (quietHours != null) {
+                TextButton(
+                    onClick = { onEvent(ProfileEvent.NotificationSettingsChanged(NotificationSettingsEvent.ClearQuietHours)) },
+                    modifier = Modifier.testTag("notifications-clear-quiet-hours"),
+                ) { Text("Clear") }
+            }
+        }
+    }
+
+    if (editingQuietHours) {
+        QuietHoursEditor(
+            initialStart = settings.quietHours?.start ?: java.time.LocalTime.of(22, 0),
+            initialEnd = settings.quietHours?.end ?: java.time.LocalTime.of(6, 0),
+            onSet = { start, end ->
+                editingQuietHours = false
+                onEvent(ProfileEvent.NotificationSettingsChanged(NotificationSettingsEvent.SetQuietHours(start, end)))
+            },
+            onDismiss = { editingQuietHours = false },
+        )
+    }
+
+    if (settings.systemPermission != PermissionState.GRANTED) {
+        TextButton(
+            onClick = { onEvent(ProfileEvent.NotificationSettingsChanged(NotificationSettingsEvent.OpenSystemSettings)) },
+            modifier = Modifier.testTag("notifications-open-system-settings"),
+        ) { Text("Open system settings") }
+    }
+}
+
+@Composable
+private fun NotificationCategoryRow(label: String, checked: Boolean, tag: String, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label)
+        Switch(checked = checked, onCheckedChange = onCheckedChange, modifier = Modifier.testTag(tag))
+    }
+}
+
+/** A minimal HH:mm editor for the quiet-hours window — interpreted in device-local time. */
+@Composable
+private fun QuietHoursEditor(
+    initialStart: java.time.LocalTime,
+    initialEnd: java.time.LocalTime,
+    onSet: (java.time.LocalTime, java.time.LocalTime) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var startText by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(initialStart.toString()) }
+    var endText by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(initialEnd.toString()) }
+
+    Column(modifier = Modifier.testTag("notifications-quiet-hours-editor")) {
+        OutlinedTextField(
+            value = startText,
+            onValueChange = { startText = it },
+            label = { Text("Start (HH:mm)") },
+            modifier = Modifier.testTag("notifications-quiet-hours-start"),
+        )
+        OutlinedTextField(
+            value = endText,
+            onValueChange = { endText = it },
+            label = { Text("End (HH:mm)") },
+            modifier = Modifier.testTag("notifications-quiet-hours-end"),
+        )
+        Row {
+            Button(
+                onClick = {
+                    val start = runCatching { java.time.LocalTime.parse(startText) }.getOrNull()
+                    val end = runCatching { java.time.LocalTime.parse(endText) }.getOrNull()
+                    if (start != null && end != null) onSet(start, end)
+                },
+                modifier = Modifier.testTag("notifications-quiet-hours-confirm"),
+            ) { Text("Save") }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
     }
 }
 

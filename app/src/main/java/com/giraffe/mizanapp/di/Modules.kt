@@ -181,7 +181,7 @@ val appModule = module {
     viewModel { InsightsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get(), get(), get(), isSupabaseConfigured()) }
     viewModel { SyncStatusViewModel(get()) }
-    viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { LeaderboardViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }
 
