@@ -62,4 +62,7 @@ sealed interface WeekEvent {
 
     /** Opens Insights (`006`). Handled by the host navigating, like [OpenHistory]. */
     data object OpenInsights : WeekEvent
+
+    /** Opens the Weekly Summary screen (`010`). Handled by the host navigating, like [OpenInsights]. */
+    data object OpenWeeklySummary : WeekEvent
 }

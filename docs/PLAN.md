@@ -509,6 +509,48 @@ Phases 4 and 6 (streaks and aggregates), and **Phase 9** — the provider and th
 ### Definition of Done
 Notifications respect user settings and quiet hours, survive reboot, never fire for already-completed tasks, and can be fully disabled.
 
+### Delivered (spec 010)
+Two pure `:domain` functions decide everything — `buildNotificationPlan` (which anchors exist right
+now) and `evaluateAnchor` (what happens when one fires). Android supplies only instants and
+delivers broadcasts; the delivery ledger's `anchorKey` primary key is the only idempotency
+guarantee, never application logic layered on top.
+
+Five clarifications shaped the design, all resolved on 2026-09-04: weekly summaries are
+recalculated on demand and never stored (`GetClosedWeekSummary`, never `GetWeekSummary` — see
+below); delivery is exact when the platform allows it, with a stated relaxed-mode degradation path
+that discards a late-arriving anchor as `WINDOW_PASSED` rather than showing it stale; the summary
+goes dormant after two consecutive empty weeks and resumes the moment any task is recorded; the
+Weekly Summary screen renders only closed weeks, with a dedicated `Waiting` state before the first
+one; and no notification permission is requested during the app's first week, deferring to the
+first week close or an earlier deliberate opt-in.
+
+**Research finding R4 — `GetWeekSummary` cannot be reused for the summary notification.** It calls
+`ensurePlanFor`, which writes a `DayPlan` for any date it is asked about. A background worker
+deciding whether to post a notification must never have a side effect on recorded history
+(Principle III), so `GetClosedWeekSummary` was written as a strictly read-only sibling: it reads
+stored plans with `plansBetween`, projects only the *elapsed, never-opened* days of an already-past
+week using `projectAvailablePoints` against the catalogue version in force on each date, and calls
+the same `buildWeekSummary` the weekly sheet uses. `SummaryAgreesWithSheetTest` proves the two
+produce identical figures for the same seed.
+
+**Two corrections `/speckit-analyze` forced before implementation began**, on top of the design
+`/speckit-analyze` had already reworked once (see tasks.md's Revision note): `buildNotificationPlan`
+returns `NotificationPlan(anchors, refreshAt)` rather than a bare list, because the day-end wake
+that lets the worker notice a rolled-over day cannot be typed as a notification anchor without
+inventing a fourth, fake category; and `weekCloseInstant(boundary)` was pulled out as the single
+named derivation of a week's close, rather than leaving it an undefined parameter — Principle VII's
+"one week rule" would otherwise have had no single place to point to.
+
+**Deferred rather than shipped:** the full quiet-hours picker is a plain HH:mm text entry, not a
+platform time-picker dial — functionally complete (round-trips, handles midnight-crossing windows)
+but not the design's intended widget. Settling on it beyond a device-connected environment was out
+of scope for this pass. The androidTest suites proving reboot survival, relaxed-mode degradation,
+history immutability under a full week of notification activity, and offline behaviour (SC-007a,
+SC-012, SC-013, FR-036/FR-045) are written and compile against this module's existing device-test
+harness (`TestTimeProvider`, the Room-backed `DbTestBase` pattern), but were not run against a
+device or emulator in this environment — that, the four by-hand device checks, and
+`:data`/`:app:connectedAndroidTest` are outstanding before this spec's pull request can merge.
+
 ---
 
 ## Phase 11 — Achievements, Friends & Challenges

@@ -131,6 +131,10 @@ private fun ReadyState(
             onClick = { onEvent(WeekEvent.OpenInsights) },
             modifier = Modifier.testTag("open-insights-button"),
         ) { Text("Insights") }
+        TextButton(
+            onClick = { onEvent(WeekEvent.OpenWeeklySummary) },
+            modifier = Modifier.testTag("open-weekly-summary-button"),
+        ) { Text("Weekly Summary") }
         progressContent()
     }
 }

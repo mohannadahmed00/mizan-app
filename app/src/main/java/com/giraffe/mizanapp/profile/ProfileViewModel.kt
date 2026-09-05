@@ -2,13 +2,21 @@ package com.giraffe.mizanapp.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.giraffe.mizanapp.data.notification.NotificationPreferencesStore
 import com.giraffe.mizanapp.domain.identity.AccountSession
 import com.giraffe.mizanapp.domain.identity.SignOutMode
+import com.giraffe.mizanapp.domain.notification.NotificationCategory
+import com.giraffe.mizanapp.domain.notification.NotificationPreferences
+import com.giraffe.mizanapp.domain.notification.NotificationPresenter
+import com.giraffe.mizanapp.domain.notification.NotificationScheduler
+import com.giraffe.mizanapp.domain.notification.QuietHours
 import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.time.BoundaryStatus
+import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.usecase.SignOut
 import com.giraffe.mizanapp.domain.usecase.UpdateDisplayName
+import com.giraffe.mizanapp.notifications.NotificationSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,6 +36,10 @@ class ProfileViewModel(
     private val signOut: SignOut,
     private val updateDisplayName: UpdateDisplayName,
     private val boundaryStatus: BoundaryStatus,
+    private val notificationPreferencesStore: NotificationPreferencesStore,
+    private val notificationScheduler: NotificationScheduler,
+    private val notificationPresenter: NotificationPresenter,
+    private val time: TimeProvider,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProfileUiState())
@@ -78,6 +90,63 @@ class ProfileViewModel(
                 viewModelScope.launch { boundaryStatus.eraseLocation() }
             }
             ProfileEvent.CancelEraseLocation -> _state.value = _state.value.copy(confirmingEraseLocation = false)
+            is ProfileEvent.NotificationSettingsChanged -> updateNotificationState(event.event)
+        }
+    }
+
+    /**
+     * Every event that changes preferences persists and then withdraws or cancels in the same
+     * operation (FR-005): a switch flipped off must stop being true the instant it flips, not at
+     * the worker's next natural wake. A category still on, or the master silence turning off, is
+     * safe to leave to the next fire — `evaluateAnchor`'s `CATEGORY_OFF`/`ALL_SILENCED` checks
+     * already guard it, so nothing stale can be shown in the meantime.
+     */
+    private fun updateNotificationState(event: NotificationSettingsEvent) {
+        if (event is NotificationSettingsEvent.RequestPermission || event is NotificationSettingsEvent.OpenSystemSettings) return
+
+        val current = _state.value.notifications
+        val next = when (event) {
+            is NotificationSettingsEvent.SetCategory -> when (event.category) {
+                NotificationCategory.PRAYER_WINDOW -> current.copy(prayerWindowEnabled = event.enabled)
+                NotificationCategory.STREAK_AT_RISK -> current.copy(streakAtRiskEnabled = event.enabled)
+                NotificationCategory.WEEKLY_SUMMARY -> current.copy(weeklySummaryEnabled = event.enabled)
+            }
+            is NotificationSettingsEvent.SetAllSilenced -> current.copy(allSilenced = event.silenced)
+            is NotificationSettingsEvent.SetQuietHours -> current.copy(quietHours = QuietHours(event.start, event.end))
+            NotificationSettingsEvent.ClearQuietHours -> current.copy(quietHours = null)
+            else -> current
+        }
+        _state.value = _state.value.copy(notifications = next)
+
+        viewModelScope.launch {
+            notificationPreferencesStore.save(next.toDomain())
+            if (next.allSilenced) {
+                notificationScheduler.cancelAll()
+            } else if (event is NotificationSettingsEvent.SetCategory && !event.enabled) {
+                withdrawTodayKeysFor(event.category)
+            }
+        }
+    }
+
+    private fun NotificationSettings.toDomain() = NotificationPreferences(
+        enabled = buildSet {
+            if (prayerWindowEnabled) add(NotificationCategory.PRAYER_WINDOW)
+            if (streakAtRiskEnabled) add(NotificationCategory.STREAK_AT_RISK)
+            if (weeklySummaryEnabled) add(NotificationCategory.WEEKLY_SUMMARY)
+        },
+        allSilenced = allSilenced,
+        quietHours = quietHours,
+    )
+
+    private suspend fun withdrawTodayKeysFor(category: NotificationCategory) {
+        val today = time.today()
+        when (category) {
+            NotificationCategory.PRAYER_WINDOW ->
+                listOf("fajr", "dhuhr", "asr", "maghrib", "isha").forEach { notificationPresenter.withdraw("PRAYER:$today:$it") }
+            NotificationCategory.STREAK_AT_RISK -> notificationPresenter.withdraw("STREAK:$today")
+            NotificationCategory.WEEKLY_SUMMARY -> notificationPresenter.withdraw(
+                "WEEK:${com.giraffe.mizanapp.domain.time.WeekBoundary.weekContaining(today).key.value}",
+            )
         }
     }
 

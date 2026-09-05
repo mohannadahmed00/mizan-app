@@ -1,16 +1,29 @@
 package com.giraffe.mizanapp.profile
 
+import com.giraffe.mizanapp.data.db.daos.NotificationDao
+import com.giraffe.mizanapp.data.db.entities.NotificationDeliveryEntity
+import com.giraffe.mizanapp.data.db.entities.NotificationPreferencesEntity
+import com.giraffe.mizanapp.data.notification.NotificationPreferencesStore
 import com.giraffe.mizanapp.domain.identity.AccountSession
 import com.giraffe.mizanapp.domain.identity.SignOutMode
+import com.giraffe.mizanapp.domain.notification.DeliveryMode
+import com.giraffe.mizanapp.domain.notification.NotificationAnchor
+import com.giraffe.mizanapp.domain.notification.NotificationContent
+import com.giraffe.mizanapp.domain.notification.NotificationPresenter
+import com.giraffe.mizanapp.domain.notification.NotificationScheduler
 import com.giraffe.mizanapp.domain.repository.AccountRepository
 import com.giraffe.mizanapp.domain.repository.CodeConfirmation
 import com.giraffe.mizanapp.domain.repository.CodeRequest
 import com.giraffe.mizanapp.domain.repository.LocalRecordCounts
 import com.giraffe.mizanapp.domain.repository.SyncRepository
 import com.giraffe.mizanapp.domain.sync.SyncStatus
+import com.giraffe.mizanapp.domain.time.TimeProvider
 import com.giraffe.mizanapp.domain.usecase.SignOut
 import com.giraffe.mizanapp.domain.usecase.UpdateDisplayName
 import com.giraffe.mizanapp.today.FakeBoundaryStatus
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -74,6 +87,36 @@ class ProfileViewModelTest {
         override fun syncNow() = Unit
     }
 
+    private class NoopNotificationDao : NotificationDao {
+        override suspend fun preferences(): NotificationPreferencesEntity? = null
+        override fun observePreferences(): Flow<NotificationPreferencesEntity?> = MutableStateFlow(null)
+        override suspend fun upsertPreferences(e: NotificationPreferencesEntity) = Unit
+        override suspend fun deliveries(): List<NotificationDeliveryEntity> = emptyList()
+        override suspend fun delivery(anchorKey: String): NotificationDeliveryEntity? = null
+        override suspend fun upsertDelivery(e: NotificationDeliveryEntity) = Unit
+        override suspend fun pruneBefore(before: Long) = Unit
+    }
+
+    private class NoopScheduler : NotificationScheduler {
+        override suspend fun replaceAll(anchors: List<NotificationAnchor>) = Unit
+        override suspend fun cancelAll() = Unit
+        override fun deliveryMode(): DeliveryMode = DeliveryMode.EXACT
+        override suspend fun scheduleRefresh(at: Instant) = Unit
+        override suspend fun scheduleAt(anchorKey: String, at: Instant) = Unit
+    }
+
+    private class NoopPresenter : NotificationPresenter {
+        override suspend fun post(anchor: NotificationAnchor, content: NotificationContent) = Unit
+        override suspend fun withdraw(anchorKey: String) = Unit
+        override fun hasPermission(): Boolean = true
+    }
+
+    private class FixedTime : TimeProvider {
+        override fun now(): Instant = LocalDate.of(2026, 9, 5).atStartOfDay(ZoneId.of("UTC")).toInstant()
+        override fun today(): LocalDate = LocalDate.of(2026, 9, 5)
+        override fun zone(): ZoneId = ZoneId.of("UTC")
+    }
+
     private fun buildViewModel(
         session: AccountSession = AccountSession.SignedIn(userId = "u-1", email = "user@example.test"),
         counts: LocalRecordCounts = LocalRecordCounts(recordedDays = 12, completionCount = 40),
@@ -87,6 +130,10 @@ class ProfileViewModelTest {
             SignOut(accounts, sync),
             UpdateDisplayName(accounts),
             FakeBoundaryStatus(),
+            NotificationPreferencesStore(NoopNotificationDao()),
+            NoopScheduler(),
+            NoopPresenter(),
+            FixedTime(),
         )
         return Triple(viewModel, accounts, sync)
     }

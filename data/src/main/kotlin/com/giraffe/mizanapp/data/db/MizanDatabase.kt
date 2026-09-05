@@ -13,6 +13,7 @@ import com.giraffe.mizanapp.data.db.daos.CompletionDao
 import com.giraffe.mizanapp.data.db.daos.DayPlanDao
 import com.giraffe.mizanapp.data.db.daos.OutboxDao
 import com.giraffe.mizanapp.data.db.daos.SyncCursorDao
+import com.giraffe.mizanapp.data.db.daos.NotificationDao
 import com.giraffe.mizanapp.data.db.entity.LeaderboardCacheEntity
 import com.giraffe.mizanapp.data.db.entity.ParticipationStateEntity
 import com.giraffe.mizanapp.data.db.entities.AccountScopeEntity
@@ -26,6 +27,8 @@ import com.giraffe.mizanapp.data.db.entities.SectionEntity
 import com.giraffe.mizanapp.data.db.entities.SyncCursorEntity
 import com.giraffe.mizanapp.data.db.entities.TaskDefinitionEntity
 import com.giraffe.mizanapp.data.db.entities.TaskVersionEntity
+import com.giraffe.mizanapp.data.db.entities.NotificationPreferencesEntity
+import com.giraffe.mizanapp.data.db.entities.NotificationDeliveryEntity
 
 /**
  * The single source of truth for task recording and scoring (Principle IV).
@@ -48,8 +51,10 @@ import com.giraffe.mizanapp.data.db.entities.TaskVersionEntity
         LeaderboardCacheEntity::class,
         ParticipationStateEntity::class,
         BoundaryStateEntity::class,
+        NotificationPreferencesEntity::class,
+        NotificationDeliveryEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class MizanDatabase : RoomDatabase() {
@@ -70,9 +75,17 @@ abstract class MizanDatabase : RoomDatabase() {
 
     abstract fun participationStateDao(): ParticipationStateDao
     abstract fun boundaryStateDao(): BoundaryStateDao
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
         const val NAME = "mizan.db"
+    }
+}
+
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS notification_preferences (id INTEGER NOT NULL PRIMARY KEY, prayerWindowEnabled INTEGER NOT NULL DEFAULT 0, streakAtRiskEnabled INTEGER NOT NULL DEFAULT 0, weeklySummaryEnabled INTEGER NOT NULL DEFAULT 1, allSilenced INTEGER NOT NULL DEFAULT 0, quietStart TEXT, quietEnd TEXT, permissionAskedAt INTEGER)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS notification_deliveries (anchorKey TEXT NOT NULL PRIMARY KEY, category TEXT NOT NULL, state TEXT NOT NULL, reason TEXT, decidedAt INTEGER NOT NULL, heldUntil INTEGER)")
     }
 }
 
