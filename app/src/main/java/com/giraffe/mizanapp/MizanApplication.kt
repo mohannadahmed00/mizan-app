@@ -45,8 +45,17 @@ class MizanApplication : Application(), Configuration.Provider, KoinComponent {
         // this leaves behind, stale until this completes, which is why it must never block here.
         val boundaryStatus = get<BoundaryStatus>()
         val timeProvider = get<TimeProvider>()
-        CoroutineScope(Dispatchers.Default).launch {
+        val appScope = CoroutineScope(Dispatchers.Default)
+        appScope.launch {
             boundaryStatus.refresh(timeProvider.now(), timeProvider.zone())
         }
+
+        com.giraffe.mizanapp.notifications.NotificationReconciler(
+            get(),
+            get(),
+            get(),
+            appScope,
+            timeProvider,
+        ).start()
     }
 }
