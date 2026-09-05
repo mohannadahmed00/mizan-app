@@ -35,8 +35,15 @@ google-services.json
 
 out/
 *.class
+*.jar
 .env
 .env.*
+.env*
 Thumbs.db
 *.tmp
 *.swp
+
+# Local build caches and Codex implementation snapshots.
+.codex-gradle/
+.gradle-user/
+.codex-spec009-snapshot/
