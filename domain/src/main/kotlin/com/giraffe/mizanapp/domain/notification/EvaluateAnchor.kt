@@ -34,7 +34,7 @@ fun evaluateAnchor(anchor: NotificationAnchor, now: Instant, zone: ZoneId, bound
             "tasksRecorded" to tasksRecorded.toString(),
             "pointsEarned" to (summary?.score?.earned ?: 0).toString(),
         )
-        NotificationCategory.STREAK_AT_RISK -> emptyMap()
+        NotificationCategory.STREAK_AT_RISK -> mapOf("current" to streak.current.toString())
     }
     return NotificationVerdict.Post(NotificationContent(anchor.category, anchor.category.name, bodyArgs, when (val s = anchor.speaksFor) { is AnchorSubject.PrayerWindow -> "TODAY:${s.sectionId}"; is AnchorSubject.Day -> "TODAY"; is AnchorSubject.ClosedWeek -> "WEEKLYSUMMARY:${s.key.value}" }))
 }
